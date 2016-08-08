@@ -13491,8 +13491,6 @@ window.Laya=(function(window,document){
 			assets.push({url:"res/atlas/role.json",type:"atlas"});
 			assets.push({url:"res/atlas/combo.json",type:"atlas"});
 			assets.push({url:"res/atlas/result.json",type:"atlas"});
-			assets.push({url:"res/skeleton/swordman/SwordsMan_1.sk",type:"arraybuffer"});
-			assets.push({url:"res/skeleton/swordman/texture.png",type:"image"});
 			assets.push({url:"res/skeleton/zhangfei/zhangfei.sk",type:"arraybuffer"});
 			assets.push({url:"res/skeleton/zhangfei/zhangfei.png",type:"image"});
 			assets.push({url:"res/skeleton/zhaoyun/zhaoyun.sk",type:"arraybuffer"});
@@ -14215,8 +14213,7 @@ window.Laya=(function(window,document){
 				if(this.arenaView.roleView.attackPlayer.canShowResult()){
 					this.arenaView.roleView.showResult();
 					this.arenaView.timer.clearAll(this);
-					this.arenaView.timer.clearAll(this);
-					this.arenaView.timer.frameOnce(40,this,this.restartGame);
+					this.arenaView.timer.frameOnce(40,this,this.showResultView);
 				}
 				break ;
 				default :
@@ -22716,8 +22713,7 @@ window.Laya=(function(window,document){
 		__getset(0,__proto,'measureHeight',function(){
 			var max=0;
 			this.commitMeasure();
-			for (var i=this.numChildren-1
-			;i >-1;i--){
+			for (var i=this.numChildren-1;i >-1;i--){
 				var comp=this.getChildAt(i);
 				if (comp.visible){
 					max=Math.max(comp.y+comp.height *comp.scaleY,max);
@@ -35223,8 +35219,7 @@ window.Laya=(function(window,document){
 		}
 
 		__static(LoadingSceneUI,
-		['uiView',function(){return this.uiView={"type":"View","child":[{"props":{"x":0,"y":0,"skin":"loading/img_loading_bg.jpg"},"type":"Image"},{"props":{"x":361,"y":305,"skin":"comp/progress.png","width":431,"height":14,"var":"pbLoading","name":"pbLoading"},"type":"ProgressBar"},{"props":{"x":420,"y":329,"text":"加载中...0%","color":"#ffffff","fontSize":22,"font":"微软雅黑","width":339,"height":34,"align":"center","stroke"
-						:2,"var":"lbProgress","name":"lbProgress"},"type":"Label"}],"props":{"width":1136,"height":640}};}
+		['uiView',function(){return this.uiView={"type":"View","child":[{"props":{"x":0,"y":0,"skin":"loading/img_loading_bg.jpg"},"type":"Image"},{"props":{"x":361,"y":305,"skin":"comp/progress.png","width":431,"height":14,"var":"pbLoading","name":"pbLoading"},"type":"ProgressBar"},{"props":{"x":420,"y":329,"text":"加载中...0%","color":"#ffffff","fontSize":22,"font":"微软雅黑","width":339,"height":34,"align":"center","stroke":2,"var":"lbProgress","name":"lbProgress"},"type":"Label"}],"props":{"width":1136,"height":640}};}
 		]);
 		return LoadingSceneUI;
 	})(View)
