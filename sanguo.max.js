@@ -14031,6 +14031,8 @@ window.Laya=(function(window,document){
 				this.arenaView.roleListView["roleItemView"+(i+1)].hpView.imgHp.scaleX=1;
 				this.arenaView.roleListView["roleItemView"+(i+1)].mpView.imgMp.scaleX=0;
 			}
+			GameContext.i.arenaContext.gameView.rightPlayerInfoView.imgPlayerHp.scaleX=1;
+			GameContext.i.arenaContext.gameView.leftPlayerInfoView.imgPlayerHp.scaleX=1;
 		}
 
 		__proto.startGame=function(){
