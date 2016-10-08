@@ -1,5 +1,5 @@
 /***********************************/
-/*http://www.layabox.com 2016/2/27*/
+/*http://www.layabox.com 2016/05/19*/
 /***********************************/
 window.Laya=(function(window,document){
 	var Laya={
@@ -11,7 +11,6 @@ window.Laya=(function(window,document){
 		__presubstr:String.prototype.substr,
 		__substr:function(ofs,sz){return arguments.length==1?Laya.__presubstr.call(this,ofs):Laya.__presubstr.call(this,ofs,sz>0?sz:(this.length+sz));},
 		__init:function(_classs){_classs.forEach(function(o){o.__init$ && o.__init$();});},
-		__parseInt:function(value){return !value?0:parseInt(value);},
 		__isClass:function(o){return o && (o.__isclass || o==Object || o==String || o==Array);},
 		__newvec:function(sz,value){
 			var d=[];
@@ -87,7 +86,7 @@ window.Laya=(function(window,document){
 					if(fullName.indexOf('laya.')==0){
 						var paths=fullName.split('.');
 						miniName=miniName || paths[paths.length-1];
-						if(Laya[miniName]) console.log('warning:class name redefinition,'+fullName+'/'+Laya[miniName]);
+						if(Laya[miniName]) debugger;
 						Laya[miniName]=o;
 					}					
 				}
@@ -96,7 +95,8 @@ window.Laya=(function(window,document){
 						window.Main=o;
 					else{
 						if(Laya[fullName]){
-							console.log('warning:class name redefinition,'+fullName+'/'+Laya[fullName]);
+							console.log("Err!,Same class:"+fullName,Laya[fullName]);
+							debugger;
 						}
 						Laya[fullName]=o;
 					}
@@ -156,7 +156,7 @@ window.Laya=(function(window,document){
 				}
 		},		
 		un:function(obj,name,value){
-			arguments.length<3 &&(value=obj[name]);
+			value || (value=obj[name]);
 			Laya.__propun.value=value;
 			Object.defineProperty(obj, name, Laya.__propun);
 			return value;
@@ -177,21 +177,22 @@ window.Laya=(function(window,document){
 
 (function(window,document,Laya){
 	var __un=Laya.un,__uns=Laya.uns,__static=Laya.static,__class=Laya.class,__getset=Laya.getset,__newvec=Laya.__newvec;
-	Laya.interface('laya.filters.IFilterAction');
 	Laya.interface('laya.webgl.text.ICharSegment');
-	Laya.interface('laya.ui.IItem');
 	Laya.interface('laya.webgl.shapes.IShape');
-	Laya.interface('laya.webgl.canvas.save.ISaveData');
+	Laya.interface('laya.ui.ISelect');
+	Laya.interface('laya.runtime.IConchNode');
+	Laya.interface('laya.display.ILayout');
 	Laya.interface('laya.resource.IDispose');
 	Laya.interface('com.gamepark.casino.handler.IServerMessageHandler');
-	Laya.interface('laya.webgl.resource.IMergeAtlasBitmap');
+	Laya.interface('laya.runtime.IMarket');
 	Laya.interface('laya.webgl.submit.ISubmit');
-	Laya.interface('laya.runtime.IConchNode');
-	Laya.interface('laya.ui.ISelect');
-	Laya.interface('laya.display.ILayout');
-	Laya.interface('com.gamepark.casino.model.IRelationChangedObserver');
-	Laya.interface('com.gamepark.casino.delegate.IPlatformDelegate');
+	Laya.interface('laya.webgl.canvas.save.ISaveData');
 	Laya.interface('laya.filters.IFilter');
+	Laya.interface('laya.filters.IFilterAction');
+	Laya.interface('com.gamepark.casino.delegate.IPlatformDelegate');
+	Laya.interface('laya.ui.IItem');
+	Laya.interface('laya.webgl.resource.IMergeAtlasBitmap');
+	Laya.interface('com.gamepark.casino.model.IRelationChangedObserver');
 	Laya.interface('laya.filters.IFilterActionGL','laya.filters.IFilterAction');
 	var load=Laya.load=function(url,type){
 		return Asyn.load(url,type);
@@ -205,13 +206,13 @@ window.Laya=(function(window,document){
 	}
 
 
-	var sleep=Laya.sleep=function(value){
-		Asyn.sleep(value);
+	var wait=Laya.wait=function(conditions){
+		return Asyn.wait(conditions);
 	}
 
 
-	var wait=Laya.wait=function(conditions){
-		return Asyn.wait(conditions);
+	var sleep=Laya.sleep=function(value){
+		Asyn.sleep(value);
 	}
 
 
@@ -271,7 +272,7 @@ window.Laya=(function(window,document){
 			return {width:RunDriver._charSizeTestDiv.offsetWidth,height:RunDriver._charSizeTestDiv.offsetHeight};
 		}
 
-		RunDriver.benginFlush=function(){
+		RunDriver.beginFlush=function(){
 		};
 
 		RunDriver.endFinish=function(){
@@ -316,6 +317,18 @@ window.Laya=(function(window,document){
 		RunDriver.addTextureToAtlas=function(value){
 		};
 
+		RunDriver.getTexturePixels=function(value,x,y,width,height){
+			return null;
+		}
+
+		RunDriver.fillTextureShader=function(value,x,y,width,height){
+			return null;
+		}
+
+		RunDriver.skinAniSprite=function(){
+			return null;
+		}
+
 		return RunDriver;
 	})()
 
@@ -354,7 +367,8 @@ window.Laya=(function(window,document){
 			Font.__init__();
 			Style.__init__();
 			ResourceManager.__init__();
-			Laya.stage=new Stage();
+			CacheManger.beginCheck();
+			Laya.stageBox=Laya.stage=new Stage();
 			Laya.stage.model&&Laya.stage.model.setRootNode();
 			var location=Browser.window.location;
 			var pathName=location.pathname;
@@ -364,8 +378,9 @@ window.Laya=(function(window,document){
 			Laya.stage.size(width,height);
 			RenderSprite.__init__();
 			KeyBoardManager.__init__();
-			MouseManager.instance.__init__();
+			MouseManager.instance.__init__(Laya.stage,Render.canvas);
 			Input.__init__();
+			SoundManager.autoStopMusic=true;
 			return Render.canvas;
 		}
 
@@ -373,7 +388,11 @@ window.Laya=(function(window,document){
 		Laya.timer=null;
 		Laya.loader=null;
 		Laya.render=null
-		Laya.version="1.0.4";
+		Laya.version="1.2.0";
+		Laya.stageBox=null
+		__static(Laya,
+		['conchMarket',function(){return this.conchMarket=window.conch?conchMarket:null;}
+		]);
 		return Laya;
 	})()
 
@@ -478,16 +497,6 @@ window.Laya=(function(window,document){
 		function BaseContext(){}
 		__class(BaseContext,'com.gamepark.casino.context.BaseContext');
 		return BaseContext;
-	})()
-
-
-	//class com.gamepark.casino.enum.GameNameEnum
-	var GameNameEnum=(function(){
-		function GameNameEnum(){};
-		__class(GameNameEnum,'com.gamepark.casino.enum.GameNameEnum');
-		GameNameEnum.BACCARAT=101;
-		GameNameEnum.LUCKY_BIG_WHEEL=101;
-		return GameNameEnum;
 	})()
 
 
@@ -806,7 +815,7 @@ window.Laya=(function(window,document){
 			if (data==null)
 				var result=this.method.apply(this.caller,this.args);
 			else if (!this.args && !data.unshift)result=this.method.call(this.caller,data);
-			else if (this.args)result=this.method.apply(this.caller,this.args ? this.args.concat(data):data);
+			else if (this.args)result=this.method.apply(this.caller,this.args.concat(data));
 			else result=this.method.apply(this.caller,data);
 			this._id===id && this.once && this.recover();
 			return result;
@@ -854,20 +863,42 @@ window.Laya=(function(window,document){
 		__class(ArenaTestCase,'com.gamepark.casino.game.arena.ArenaTestCase');
 		var __proto=ArenaTestCase.prototype;
 		__proto.buildTestData=function(){
-			var me=new PlayerInfo();
+			var me=new ArenaPlayerInfo();
 			me.id=1;
 			me.name="遥远的神";
 			me.isMe=true;
 			me.roleVO=new RoleVO();
-			me.roleVO.buildTestData(me.isMe);
+			me.roleVO.buildTestData(me);
 			this.arenaContext.data.playerList[0]=me;
-			var enemy=new PlayerInfo();
+			var enemy=new ArenaPlayerInfo();
 			enemy.id=2;
 			enemy.name="三国老道士";
 			enemy.isMe=false;
 			enemy.roleVO=new RoleVO();
-			enemy.roleVO.buildTestData(enemy.isMe);
+			enemy.roleVO.buildTestData(enemy);
 			this.arenaContext.data.playerList[1]=enemy;
+		}
+
+		__proto.battleOperation=function(){
+			var attackDefenceRolePosition=this.arenaContext.manager.roleListLogic.getAutoAttackDefenceRolePosition();
+			var uniqueSkillRolePositionList=[];
+			if(this.arenaContext.manager.roleListLogic.canSuperUniqueSkill()){
+				uniqueSkillRolePositionList=this.arenaContext.manager.roleListLogic.getSuperUniqueSkillRolePositionList();
+			}
+			else{
+			};
+			var comboList=[];
+			var i=0;
+			var combo=0;
+			for(i=0;i < this.arenaContext.manager.roleListLogic.getAttackRoleAmount();i++){
+				combo=Math.floor(Math.random()*ArenaComboEnum.COMBO_EFFECT_LIST.length);
+				comboList.push(combo);
+			}
+			console.log("battle operation result : ");
+			console.log("attackDefenceRolePosition : ",attackDefenceRolePosition);
+			console.log("uniqueSkillRolePositionList : ",uniqueSkillRolePositionList);
+			console.log("comboList : ",comboList);
+			this.arenaContext.manager.onFinishBattleOperation(attackDefenceRolePosition,uniqueSkillRolePositionList,comboList);
 		}
 
 		return ArenaTestCase;
@@ -890,32 +921,15 @@ window.Laya=(function(window,document){
 	var ArenaComboEnum=(function(){
 		function ArenaComboEnum(){};
 		__class(ArenaComboEnum,'com.gamepark.casino.game.arena.enum.ArenaComboEnum');
+		ArenaComboEnum.MISS=0;
 		ArenaComboEnum.BAD=1;
 		ArenaComboEnum.GOOD=2;
 		ArenaComboEnum.GREAT=3;
 		ArenaComboEnum.PERFECT=4;
+		__static(ArenaComboEnum,
+		['COMBO_EFFECT_LIST',function(){return this.COMBO_EFFECT_LIST=[0,0.05,0.1,0.15,0.2];}
+		]);
 		return ArenaComboEnum;
-	})()
-
-
-	//class com.gamepark.casino.game.arena.enum.ArenaEffectTypeEnum
-	var ArenaEffectTypeEnum=(function(){
-		function ArenaEffectTypeEnum(){};
-		__class(ArenaEffectTypeEnum,'com.gamepark.casino.game.arena.enum.ArenaEffectTypeEnum');
-		ArenaEffectTypeEnum.NORMAL_DAMAGE=1;
-		ArenaEffectTypeEnum.CRIT_DAMAGE=2;
-		ArenaEffectTypeEnum.PARRY_DAMAGE=3;
-		ArenaEffectTypeEnum.OPERATE_MP=4;
-		ArenaEffectTypeEnum.SHOW_MULTY_ATTACK=5;
-		ArenaEffectTypeEnum.UPDATE_MULTY_ATTACK=6;
-		ArenaEffectTypeEnum.HIDE_MULTY_ATTACK=7;
-		ArenaEffectTypeEnum.SHOW_ATTACK_COMBO=8;
-		ArenaEffectTypeEnum.SHOW_SUPER_UNIQUE_SKILL_DAMAGE=9;
-		ArenaEffectTypeEnum.UPDATE_SUPER_UNIQUE_SKILL_DAMAGE=10;
-		ArenaEffectTypeEnum.HIDE_SUPER_UNIQUE_SKILL_DAMAGE=11;
-		ArenaEffectTypeEnum.SHOW_ATTACK_TOTAL_DAMAGE=12;
-		ArenaEffectTypeEnum.SHOW_COMBO_TYPE=13;
-		return ArenaEffectTypeEnum;
 	})()
 
 
@@ -923,27 +937,29 @@ window.Laya=(function(window,document){
 	var ArenaRoleAniNameEnum=(function(){
 		function ArenaRoleAniNameEnum(){};
 		__class(ArenaRoleAniNameEnum,'com.gamepark.casino.game.arena.enum.ArenaRoleAniNameEnum');
-		ArenaRoleAniNameEnum.ATTACK="attack";
-		ArenaRoleAniNameEnum.DIE="fall";
-		ArenaRoleAniNameEnum.FALL="die";
-		ArenaRoleAniNameEnum.HURT="hurt";
 		ArenaRoleAniNameEnum.IDLE="idle";
 		ArenaRoleAniNameEnum.RUN="run";
 		ArenaRoleAniNameEnum.SKILL="skill";
 		ArenaRoleAniNameEnum.SUPER_UNIQUE_SKILL="superUniqueSkill";
 		ArenaRoleAniNameEnum.WIN="win";
+		ArenaRoleAniNameEnum.ATTACK1="attack1";
+		ArenaRoleAniNameEnum.ATTACK2="attack2";
+		ArenaRoleAniNameEnum.ATTACK3="attack3";
+		ArenaRoleAniNameEnum.ATTACK4="attack4";
+		ArenaRoleAniNameEnum.ATTACK5="attack5";
+		ArenaRoleAniNameEnum.HURT1a="hurt1a";
+		ArenaRoleAniNameEnum.HURT1b="hurt1b";
+		ArenaRoleAniNameEnum.HURT2="hurt2";
+		ArenaRoleAniNameEnum.HURT3="hurt3";
+		ArenaRoleAniNameEnum.HURT4="hurt4";
+		ArenaRoleAniNameEnum.HURT5="hurt5";
+		ArenaRoleAniNameEnum.HURT_IDLE1="hurtidle1";
+		ArenaRoleAniNameEnum.HURT_IDLE2="hurtidle2";
+		ArenaRoleAniNameEnum.INJURED_IDLE="injuredidle";
+		__static(ArenaRoleAniNameEnum,
+		['ATTACK_LIST',function(){return this.ATTACK_LIST=[0,"attack1","attack2","attack3","attack4","attack5"];}
+		]);
 		return ArenaRoleAniNameEnum;
-	})()
-
-
-	//class com.gamepark.casino.game.arena.enum.ArenaRoleEnum
-	var ArenaRoleEnum=(function(){
-		function ArenaRoleEnum(){};
-		__class(ArenaRoleEnum,'com.gamepark.casino.game.arena.enum.ArenaRoleEnum');
-		ArenaRoleEnum.ID_ZHU_GE_LIANG=1;
-		ArenaRoleEnum.ID_ZHANG_FEI=2;
-		ArenaRoleEnum.ID_ZHAO_YUN=3;
-		return ArenaRoleEnum;
 	})()
 
 
@@ -952,33 +968,41 @@ window.Laya=(function(window,document){
 		function ArenaRoleStatusEnum(){};
 		__class(ArenaRoleStatusEnum,'com.gamepark.casino.game.arena.enum.ArenaRoleStatusEnum');
 		ArenaRoleStatusEnum.ENTER=1;
-		ArenaRoleStatusEnum.READY_TO_ENTER=1;
-		ArenaRoleStatusEnum.ENTERING=2;
-		ArenaRoleStatusEnum.ENTER_COMPLETE=3;
+		ArenaRoleStatusEnum.READY_TO_ENTER=101;
+		ArenaRoleStatusEnum.ENTERING=102;
+		ArenaRoleStatusEnum.ENTER_COMPLETE=103;
 		ArenaRoleStatusEnum.IDLE=2;
+		ArenaRoleStatusEnum.IDLE_ACTION=201;
 		ArenaRoleStatusEnum.BUFF=3;
 		ArenaRoleStatusEnum.SUPER_UNIQUE_SKILL=4;
 		ArenaRoleStatusEnum.ATTACK=5;
-		ArenaRoleStatusEnum.RUNNING_TO_ATTACK=604;
-		ArenaRoleStatusEnum.FINISH_RUN_TO_ATTACK=605;
-		ArenaRoleStatusEnum.READY_ATTACK_TARGET=606;
-		ArenaRoleStatusEnum.ATTACKING_TARGET=607;
-		ArenaRoleStatusEnum.FINISH_ATTACK_TARGET=608;
-		ArenaRoleStatusEnum.RUN_BACK_ATTACK=609;
-		ArenaRoleStatusEnum.FINISH_RUN_BACK_ATTACK=610;
-		ArenaRoleStatusEnum.FINISH_ATTACK=611;
+		ArenaRoleStatusEnum.RUNNING_TO_ATTACK=504;
+		ArenaRoleStatusEnum.FINISH_RUN_TO_ATTACK=505;
+		ArenaRoleStatusEnum.READY_ATTACK_TARGET=506;
+		ArenaRoleStatusEnum.ATTACKING_TARGET=507;
+		ArenaRoleStatusEnum.FINISH_ATTACK_TARGET=508;
+		ArenaRoleStatusEnum.RUN_BACK_ATTACK=509;
+		ArenaRoleStatusEnum.FINISH_RUN_BACK_ATTACK=510;
+		ArenaRoleStatusEnum.FINISH_ATTACK=511;
 		ArenaRoleStatusEnum.HURT=6;
 		ArenaRoleStatusEnum.READY_TO_HURT=601;
 		ArenaRoleStatusEnum.HURTING=602;
 		ArenaRoleStatusEnum.READY_TO_FALL=603;
 		ArenaRoleStatusEnum.FALLING=604;
-		ArenaRoleStatusEnum.DIE=7;
-		ArenaRoleStatusEnum.READY_TO_DIE=701;
-		ArenaRoleStatusEnum.DYING=702;
-		ArenaRoleStatusEnum.FINISH_DIE=703;
-		ArenaRoleStatusEnum.RESULT=8;
-		ArenaRoleStatusEnum.READY_TO_RESULT=801;
-		ArenaRoleStatusEnum.SHOW_RESULT=802;
+		ArenaRoleStatusEnum.RUN_BACK_HURT=605;
+		ArenaRoleStatusEnum.FINISH_RUN_BACK_HURT=606;
+		ArenaRoleStatusEnum.READY_TO_FULL_FALL=607;
+		ArenaRoleStatusEnum.FULL_FALLING=608;
+		ArenaRoleStatusEnum.HURT_IDLE=8;
+		ArenaRoleStatusEnum.HURT_IDLE_ACTION1=801;
+		ArenaRoleStatusEnum.HURT_IDLE_ACTION2=802;
+		ArenaRoleStatusEnum.DIE=9;
+		ArenaRoleStatusEnum.READY_TO_DIE=901;
+		ArenaRoleStatusEnum.DYING=902;
+		ArenaRoleStatusEnum.FINISH_DIE=903;
+		ArenaRoleStatusEnum.RESULT=10;
+		ArenaRoleStatusEnum.READY_TO_RESULT=1001;
+		ArenaRoleStatusEnum.SHOW_RESULT=1002;
 		ArenaRoleStatusEnum.SECOND_RUN=1;
 		ArenaRoleStatusEnum.SECOND_IDIE=2;
 		ArenaRoleStatusEnum.SECOND_ATTACK=3;
@@ -1003,6 +1027,18 @@ window.Laya=(function(window,document){
 	})()
 
 
+	//class com.gamepark.casino.game.arena.enum.ArenaSkillTypeEnum
+	var ArenaSkillTypeEnum=(function(){
+		function ArenaSkillTypeEnum(){};
+		__class(ArenaSkillTypeEnum,'com.gamepark.casino.game.arena.enum.ArenaSkillTypeEnum');
+		ArenaSkillTypeEnum.ENEMY=1;
+		ArenaSkillTypeEnum.HANG=2;
+		ArenaSkillTypeEnum.LIE=3;
+		ArenaSkillTypeEnum.ALL=4;
+		return ArenaSkillTypeEnum;
+	})()
+
+
 	//class com.gamepark.casino.game.arena.enum.ArenaStatusEnum
 	var ArenaStatusEnum=(function(){
 		function ArenaStatusEnum(){};
@@ -1014,16 +1050,387 @@ window.Laya=(function(window,document){
 		ArenaStatusEnum.CHECK_FIRST_ATTACK=2;
 		ArenaStatusEnum.TURN_ATTACK_AND_DEFENSE=3;
 		ArenaStatusEnum.BUFF=4;
-		ArenaStatusEnum.SUPER_UNIQUE_SKILL=5;
-		ArenaStatusEnum.ATTACK=6;
+		ArenaStatusEnum.BATTLE_OPERATION=5;
+		ArenaStatusEnum.READY_TO_BATTLE_OPERATION=501;
+		ArenaStatusEnum.BATTLE_OPERATING=502;
+		ArenaStatusEnum.FINISH_BATTLE_OPERATION=503;
+		ArenaStatusEnum.SUPER_UNIQUE_SKILL=6;
+		ArenaStatusEnum.ATTACK=7;
 		ArenaStatusEnum.READY_TO_ATTACK=601;
 		ArenaStatusEnum.GET_ATTACK_TARGET=602;
 		ArenaStatusEnum.RUN_TO_ATTACK=603;
 		ArenaStatusEnum.ATTACKING_TARGET=604;
 		ArenaStatusEnum.FINISH_ATTACK_TARGET=605;
 		ArenaStatusEnum.FINISH_ATTACK=606;
-		ArenaStatusEnum.RESULT=7;
+		ArenaStatusEnum.RESULT=8;
 		return ArenaStatusEnum;
+	})()
+
+
+	//class com.gamepark.casino.game.arena.enum.battle.BattleDamageTypeEnum
+	var BattleDamageTypeEnum=(function(){
+		function BattleDamageTypeEnum(){};
+		__class(BattleDamageTypeEnum,'com.gamepark.casino.game.arena.enum.battle.BattleDamageTypeEnum');
+		BattleDamageTypeEnum.NORMAL_DAMAGE=1;
+		BattleDamageTypeEnum.CRIT_DAMAGE=2;
+		BattleDamageTypeEnum.PARRY_DAMAGE=3;
+		BattleDamageTypeEnum.OPERATE_MP=4;
+		BattleDamageTypeEnum.SHOW_MULTY_ATTACK=5;
+		BattleDamageTypeEnum.UPDATE_MULTY_ATTACK=6;
+		BattleDamageTypeEnum.HIDE_MULTY_ATTACK=7;
+		BattleDamageTypeEnum.SHOW_SUPER_UNIQUE_SKILL_DAMAGE=9;
+		BattleDamageTypeEnum.UPDATE_SUPER_UNIQUE_SKILL_DAMAGE=10;
+		BattleDamageTypeEnum.HIDE_SUPER_UNIQUE_SKILL_DAMAGE=11;
+		BattleDamageTypeEnum.SHOW_ATTACK_TOTAL_DAMAGE=12;
+		BattleDamageTypeEnum.SHOW_COMBO_TYPE=13;
+		return BattleDamageTypeEnum;
+	})()
+
+
+	//class com.gamepark.casino.game.arena.enum.battle.BattleGroupEnum
+	var BattleGroupEnum=(function(){
+		function BattleGroupEnum(){};
+		__class(BattleGroupEnum,'com.gamepark.casino.game.arena.enum.battle.BattleGroupEnum');
+		BattleGroupEnum.LEFT=0;
+		BattleGroupEnum.RIGHT=1;
+		return BattleGroupEnum;
+	})()
+
+
+	//class com.gamepark.casino.game.arena.enum.battle.BattleModeEnum
+	var BattleModeEnum=(function(){
+		function BattleModeEnum(){};
+		__class(BattleModeEnum,'com.gamepark.casino.game.arena.enum.battle.BattleModeEnum');
+		BattleModeEnum.MANUAL=1;
+		BattleModeEnum.AUTOMATIC=2;
+		return BattleModeEnum;
+	})()
+
+
+	//class com.gamepark.casino.game.arena.enum.battle.BattleRolePropertyKeyEnum
+	var BattleRolePropertyKeyEnum=(function(){
+		function BattleRolePropertyKeyEnum(){};
+		__class(BattleRolePropertyKeyEnum,'com.gamepark.casino.game.arena.enum.battle.BattleRolePropertyKeyEnum');
+		BattleRolePropertyKeyEnum.HP="hp";
+		BattleRolePropertyKeyEnum.MP="mp";
+		BattleRolePropertyKeyEnum.STATUS="status";
+		return BattleRolePropertyKeyEnum;
+	})()
+
+
+	//class com.gamepark.casino.game.arena.enum.battle.BattleRoleStatusEnum
+	var BattleRoleStatusEnum=(function(){
+		function BattleRoleStatusEnum(){};
+		__class(BattleRoleStatusEnum,'com.gamepark.casino.game.arena.enum.battle.BattleRoleStatusEnum');
+		BattleRoleStatusEnum.NORMAL=1;
+		BattleRoleStatusEnum.MA_BI=2;
+		BattleRoleStatusEnum.CHEN_MO=3;
+		BattleRoleStatusEnum.DIE=4;
+		return BattleRoleStatusEnum;
+	})()
+
+
+	//class com.gamepark.casino.game.arena.enum.battle.BattleRoundStatusEnum
+	var BattleRoundStatusEnum=(function(){
+		function BattleRoundStatusEnum(){};
+		__class(BattleRoundStatusEnum,'com.gamepark.casino.game.arena.enum.battle.BattleRoundStatusEnum');
+		BattleRoundStatusEnum.BEFORE_ATTACK=1;
+		BattleRoundStatusEnum.ATTACKING=2;
+		BattleRoundStatusEnum.AFTER_ATTACK=3;
+		return BattleRoundStatusEnum;
+	})()
+
+
+	//class com.gamepark.casino.game.arena.enum.battle.BattleSetValueEnum
+	var BattleSetValueEnum=(function(){
+		function BattleSetValueEnum(){};
+		__class(BattleSetValueEnum,'com.gamepark.casino.game.arena.enum.battle.BattleSetValueEnum');
+		BattleSetValueEnum.ROLE_VIEW_SCALE=0.5;
+		BattleSetValueEnum.ATTCK_TYPE1=1;
+		BattleSetValueEnum.ATTCK_TYPE2=2;
+		BattleSetValueEnum.ATTCK_TYPE3=3;
+		BattleSetValueEnum.ATTCK_TYPE4=4;
+		BattleSetValueEnum.ATTCK_TYPE5=5;
+		BattleSetValueEnum.HURT_MOVE_DISTANCE=130;
+		BattleSetValueEnum.HURT_IDLE_TYPE1=1;
+		BattleSetValueEnum.HURT_IDLE_TYPE2=2;
+		BattleSetValueEnum.MAX_MP=1000;
+		BattleSetValueEnum.DEFENSE_BASE_ADD_MP=30;
+		BattleSetValueEnum.DEFENSE_ADD_MP_PARAM=700;
+		BattleSetValueEnum.ATTACK_BASE_ADD_MP=150;
+		BattleSetValueEnum.ATTACK_KILL_ADD_MP=200;
+		return BattleSetValueEnum;
+	})()
+
+
+	//class com.gamepark.casino.game.arena.enum.battle.BattleStepEnum
+	var BattleStepEnum=(function(){
+		function BattleStepEnum(){};
+		__class(BattleStepEnum,'com.gamepark.casino.game.arena.enum.battle.BattleStepEnum');
+		BattleStepEnum.BUFF=1;
+		BattleStepEnum.SUPER_UNIQUE_SKILL=2;
+		BattleStepEnum.ATTACK=3;
+		BattleStepEnum.DEBUFF=4;
+		return BattleStepEnum;
+	})()
+
+
+	//class com.gamepark.casino.game.arena.manager.ArenaManager
+	var ArenaManager=(function(){
+		function ArenaManager(){
+			this.arenaContext=null;
+			this.roleListLogic=null;
+			this.firstStatus=0;
+			this.secondStatus=0;
+			this._round=1;
+			this._playerIndex=0;
+			this._attackActionIndex=0;
+			this._battleAttackRoleInfo=null;
+			this.arenaContext=ArenaContext.i;
+			this.roleListLogic=new RoleListLogic(this.arenaContext.gameView.roleView);
+		}
+
+		__class(ArenaManager,'com.gamepark.casino.game.arena.manager.ArenaManager');
+		var __proto=ArenaManager.prototype;
+		__proto.showRoleListByPlayer=function($playerInfo,$group){
+			this.roleListLogic.showRoleListByPlayer($playerInfo,$group);
+		}
+
+		__proto.doEnter=function(){
+			this.firstStatus=1;
+			this.secondStatus=101;
+		}
+
+		__proto.addEnterFrameHandler=function(){
+			this.arenaContext.gameView.timer.frameLoop(1,this,this.enterFrameHandler);
+		}
+
+		__proto.enterFrameHandler=function(){
+			switch(this.firstStatus){
+				case 1:
+				switch(this.secondStatus){
+					case 101:
+						this.roleListLogic.doEnter();
+						this.secondStatus=102;
+						break ;
+					case 102:
+						if(this.roleListLogic.isCompleteEntering()){
+							this.secondStatus=103;
+						}
+						break ;
+					case 103:
+						this.roleListLogic.doIdle();
+						this.firstStatus=2;
+						break ;
+					}
+				break ;
+				case 2:;
+				var leftPlayer=this.arenaContext.data.playerList[0];
+				var rightPlayer=this.arenaContext.data.playerList[1];
+				if(leftPlayer.roleVO.firstAttack >=rightPlayer.roleVO.firstAttack){
+					leftPlayer.status=1;
+					rightPlayer.status=2;
+					this.roleListLogic.attackPlayer=leftPlayer;
+					this.roleListLogic.defensePlayer=rightPlayer;
+				}
+				else{
+					leftPlayer.status=2;
+					rightPlayer.status=1;
+					this.roleListLogic.attackPlayer=rightPlayer;
+					this.roleListLogic.defensePlayer=leftPlayer;
+				}
+				this.roleListLogic.attackPlayer.roleVO.actionIndex=0;
+				this.roleListLogic.attackPlayer.roleVO.turnToAttack();
+				this._round=1;
+				this._playerIndex=0;
+				this.firstStatus=5;
+				this.secondStatus=501;
+				break ;
+				case 5:
+				switch(this.secondStatus){
+					case 501:
+						if(this.roleListLogic.attackPlayer.isMe){
+							if(this.arenaContext.data.isAutoBattle){
+								console.log("enter function doAutoBattleOperation");
+								this.arenaContext.data.doAutoBattleOperation();
+							}
+							else{
+								console.log("enter function battleOperation");
+								this.arenaContext.gameMediator.uniqueSkillOrQteStage();
+								this.secondStatus=502;
+							}
+						}
+						else{
+							console.log("enter function doAutoBattleOperation");
+							this.arenaContext.data.doAutoBattleOperation();
+						}
+						break ;
+					case 502:
+						break ;
+					case 503:
+						this.firstStatus=4;
+						break ;
+					}
+				break ;
+				case 4:
+				this.firstStatus=6;
+				this.secondStatus=601;
+				break ;
+				case 6:
+				switch(this.secondStatus){
+					case 601:
+						this.roleListLogic.preUniqueSkill();
+						this._attackActionIndex=0;
+						if(this.arenaContext.data.battleVO.hasSuperUniqueSkillActionByIndex(this._round,this._playerIndex,this._attackActionIndex)){
+							this.secondStatus=602;
+						}
+						else{
+							this.firstStatus=7;
+							this.secondStatus=601;
+						}
+						break ;
+					case 602:
+						this._battleAttackRoleInfo=this.arenaContext.data.battleVO.getSuperUniqueSkillAttackerByIndex(this._round,this._playerIndex,this._attackActionIndex);
+						this._battleAttackRoleInfo.logic.doSuperUniqueSkill(this._battleAttackRoleInfo);
+						this.secondStatus=603;
+						break ;
+					case 603:
+						console.log("mediator do run to attack");
+						this._battleAttackRoleInfo.logic.doRunToAttack();
+						this.secondStatus=604;
+						break ;
+					case 604:
+						if(this._battleAttackRoleInfo.logic.isFinishSuperUniqueSkill()){
+							if(this.arenaContext.data.battleVO.isFinishBattle(this._round,this._playerIndex,2,this._attackActionIndex)){
+								this.firstStatus=8;
+							}
+							else if(this.arenaContext.data.battleVO.isFinishSuperUniqueSkill(this._round,this._playerIndex,this._attackActionIndex)){
+								this.secondStatus=606;
+							}
+							else{
+								this.secondStatus=602;
+								this._attackActionIndex++;
+							}
+						}
+						break ;
+					case 606:
+						this.firstStatus=7;
+						this.secondStatus=601;
+						break ;
+					}
+				break ;
+				case 7:
+				switch(this.secondStatus){
+					case 601:
+						this.roleListLogic.preAttack();
+						this._attackActionIndex=0;
+						if(this.arenaContext.data.battleVO.hasAttackActionByIndex(this._round,this._playerIndex,this._attackActionIndex)){
+							this.secondStatus=602;
+						}
+						else{
+							this.secondStatus=606;
+						}
+						break ;
+					case 602:
+						this._battleAttackRoleInfo=this.arenaContext.data.battleVO.getAttackAttackerByIndex(this._round,this._playerIndex,this._attackActionIndex);
+						this._battleAttackRoleInfo.logic.doAttack(this._battleAttackRoleInfo);
+						this.secondStatus=603;
+						break ;
+					case 603:
+						this._battleAttackRoleInfo.logic.doRunToAttack();
+						this.secondStatus=604;
+						break ;
+					case 604:
+						if(this._battleAttackRoleInfo.logic.isFinishAttacking()){
+							if(this.arenaContext.data.battleVO.isFinishBattle(this._round,this._playerIndex,3,this._attackActionIndex)){
+								this.firstStatus=8;
+							}
+							else if(this.arenaContext.data.battleVO.isFinishAttack(this._round,this._playerIndex,this._attackActionIndex)){
+								this.secondStatus=606;
+							}
+							else{
+								this.secondStatus=602;
+								this._attackActionIndex++;
+							}
+						}
+						break ;
+					case 606:
+						if(this._battleAttackRoleInfo.roleInfo.playerInfo.isMe){
+							var effectInfo=new EffectItemInfo();
+							effectInfo.damage=this.roleListLogic.attackPlayer.roleVO.totalDamage;
+							effectInfo.type=12;
+							effectInfo.sourceRoleLogic=this._battleAttackRoleInfo.logic;
+							this.arenaContext.gameView.effectView.addEffect(effectInfo);
+						}
+						if(this._playerIndex==0){
+							this._playerIndex=1;
+						}
+						else{
+							this._playerIndex=0;
+							this._round++;
+						};
+						var tempPlayer=this.roleListLogic.attackPlayer;
+						this.roleListLogic.attackPlayer=this.roleListLogic.defensePlayer;
+						this.roleListLogic.defensePlayer=tempPlayer;
+						this.roleListLogic.attackPlayer.status=1;
+						this.roleListLogic.defensePlayer.status=2;
+						this.firstStatus=5;
+						this.secondStatus=501;
+						break ;
+					}
+				break ;
+				case 8:
+				console.log("result!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+				if(this.roleListLogic.attackPlayer.canShowResult()){
+					this.roleListLogic.showResult();
+					this.arenaContext.gameView.timer.clearAll(this);
+					this.arenaContext.gameView.timer.frameOnce(40,this,this.showResultView);
+				}
+				break ;
+				default :
+				console.log("error!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+				break ;
+			}
+			this.roleListLogic.update();
+			this.arenaContext.gameView.effectView.update();
+		}
+
+		__proto.onFinishBattleOperation=function($attackDefenceRolePosition,$uniqueSkillRolePositionList,$comboList){
+			console.log("attackDefenceRolePosition : ",$attackDefenceRolePosition);
+			console.log("uniqueSkillRolePositionList : ",$uniqueSkillRolePositionList);
+			console.log("comboList : ",$comboList);
+			this.arenaContext.data.attackDefenceRolePosition=$attackDefenceRolePosition;
+			ArenaUtil.calcAutoBattleAttackInfo((this._playerIndex==0),$uniqueSkillRolePositionList,$comboList);
+			this.secondStatus=503;
+		}
+
+		__proto.showResultView=function(){
+			var showResulitView=new AreanResultView();
+			GameContext.i.uiService.addPopup(showResulitView);
+		}
+
+		__proto.pause=function(){
+			this.roleListLogic.pause();
+			this.arenaContext.gameView.timer.clearAll(this);
+		}
+
+		__proto.resume=function(){
+			this.roleListLogic.resume();
+			this.arenaContext.gameView.timer.frameLoop(1,this,this.enterFrameHandler);
+		}
+
+		__proto.isBattleOperation=function(){
+			if(this.firstStatus==5){
+				if(this.secondStatus !=503){
+					if(this.roleListLogic.attackPlayer.isMe){
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
+		return ArenaManager;
 	})()
 
 
@@ -1031,7 +1438,8 @@ window.Laya=(function(window,document){
 	var ActionInfo=(function(){
 		function ActionInfo(){
 			this.damage=0;
-			this.type=0;
+			this.damageType=0;
+			this.attackType=0;
 			this.sourceRoleInfo=null;
 			this.animationIndex=0;
 		}
@@ -1055,75 +1463,22 @@ window.Laya=(function(window,document){
 	//class com.gamepark.casino.game.arena.model.ArenaData
 	var ArenaData=(function(){
 		function ArenaData(){
-			this.roleMetaList=[];
 			this.playerList=[];
-			var roleMeta=new RoleMeta();
-			roleMeta.id=1;
-			roleMeta.name="诸葛亮";
-			roleMeta.icon="1";
-			roleMeta.type=2;
-			roleMeta.hpMax=8905;
-			roleMeta.attack=2751;
-			roleMeta.deffence=687;
-			roleMeta.crit=2500;
-			roleMeta.resist=0;
-			roleMeta.critDamage=0;
-			roleMeta.parry=0;
-			roleMeta.breakParry=0;
-			roleMeta.parryPower=0;
-			roleMeta.firstAttack=50;
-			roleMeta.skillType=4;
-			roleMeta.attackAnimationMeta.infoList=[10,25,32,40];
-			roleMeta.superUniqueSkillAnimationMeta.infoList=[38,48,58,68];
-			roleMeta.resAniData="res/skeleton/zhugeliang/zhugeliang.sk";
-			roleMeta.resAniTexture="res/skeleton/zhugeliang/zhugeliang.png";
-			this.roleMetaList.push(roleMeta);
-			roleMeta=new RoleMeta();
-			roleMeta.id=2;
-			roleMeta.name="张飞";
-			roleMeta.icon="2";
-			roleMeta.type=3;
-			roleMeta.hpMax=13176;
-			roleMeta.attack=2463;
-			roleMeta.deffence=1106;
-			roleMeta.crit=0;
-			roleMeta.resist=0;
-			roleMeta.critDamage=0;
-			roleMeta.parry=8000;
-			roleMeta.breakParry=0;
-			roleMeta.parryPower=0;
-			roleMeta.firstAttack=20;
-			roleMeta.skillType=2;
-			roleMeta.resAniData="res/skeleton/zhangfei/zhangfei.sk";
-			roleMeta.resAniTexture="res/skeleton/zhangfei/zhangfei.png";
-			roleMeta.attackAnimationMeta.infoList=[4,33];
-			roleMeta.superUniqueSkillAnimationMeta.infoList=[38,48,58,68];
-			this.roleMetaList.push(roleMeta);
-			roleMeta=new RoleMeta();
-			roleMeta.id=3;
-			roleMeta.name="赵云";
-			roleMeta.icon="3";
-			roleMeta.type=1;
-			roleMeta.hpMax=9596;
-			roleMeta.attack=2794;
-			roleMeta.deffence=734;
-			roleMeta.crit=4000;
-			roleMeta.resist=0;
-			roleMeta.critDamage=0;
-			roleMeta.parry=0;
-			roleMeta.breakParry=4000;
-			roleMeta.parryPower=0;
-			roleMeta.firstAttack=35;
-			roleMeta.skillType=3;
-			roleMeta.resAniData="res/skeleton/zhaoyun/zhaoyun.sk";
-			roleMeta.resAniTexture="res/skeleton/zhaoyun/zhaoyun.png";
-			roleMeta.attackAnimationMeta.infoList=[9,39];
-			roleMeta.superUniqueSkillAnimationMeta.infoList=[58,60,62,64,66,68];
-			this.roleMetaList.push(roleMeta);
+			this.speed=1;
+			this.isAutoBattle=false;
+			this.attackDefenceRolePosition=0;
+			this.battleVO=new BattleVO();
 		}
 
 		__class(ArenaData,'com.gamepark.casino.game.arena.model.ArenaData');
 		var __proto=ArenaData.prototype;
+		// this.roleMetaList.push(roleMeta);
+		__proto.initialize=function(){
+			this.isAutoBattle=false;
+			this.attackDefenceRolePosition=0;
+			this.battleVO.initialize();
+		}
+
 		__proto.getAttackPlayerInfo=function(){
 			var playerInfo;
 			var i=0;
@@ -1136,7 +1491,383 @@ window.Laya=(function(window,document){
 			return null;
 		}
 
+		__proto.doAutoBattleOperation=function(){
+			ArenaContext.i.testCase.battleOperation();
+		}
+
 		return ArenaData;
+	})()
+
+
+	//class com.gamepark.casino.game.arena.model.ArenaPlayerInfo
+	var ArenaPlayerInfo=(function(){
+		function ArenaPlayerInfo(){
+			this.id=0;
+			this.name=null;
+			this.level=0;
+			this.roleVO=null;
+			this.isMe=false;
+			this.status=0;
+		}
+
+		__class(ArenaPlayerInfo,'com.gamepark.casino.game.arena.model.ArenaPlayerInfo');
+		var __proto=ArenaPlayerInfo.prototype;
+		__proto.canShowResult=function(){
+			var roleItemView;
+			var roleInfo;
+			var i=0;
+			for(i=0;i < this.roleVO.roleInfoList.length;i++){
+				roleInfo=this.roleVO.roleInfoList[i];
+				roleItemView=roleInfo.roleItemLogic.view;
+				if((roleItemView.logic.firstStatus !=2)&& (roleItemView.logic.roleStatus !=4)){
+					return false;
+				}
+			}
+			return true;
+		}
+
+		return ArenaPlayerInfo;
+	})()
+
+
+	//class com.gamepark.casino.game.arena.model.battle.BattleAttackPlayerInfo
+	var BattleAttackPlayerInfo=(function(){
+		function BattleAttackPlayerInfo(){
+			this.stepInfoList=[];
+		}
+
+		__class(BattleAttackPlayerInfo,'com.gamepark.casino.game.arena.model.battle.BattleAttackPlayerInfo');
+		return BattleAttackPlayerInfo;
+	})()
+
+
+	//class com.gamepark.casino.game.arena.model.battle.BattleAttackRoleInfo
+	var BattleAttackRoleInfo=(function(){
+		function BattleAttackRoleInfo(){
+			this.roleId=0;
+			this.roleInfo=null;
+			this.comboEffect=0;
+			this.attackType=0;
+			this.useSkillFlag=0;
+			this.targetRoleInfoList=[];
+			this.updateRoleInfoList=[];
+			this.logic=null;
+		}
+
+		__class(BattleAttackRoleInfo,'com.gamepark.casino.game.arena.model.battle.BattleAttackRoleInfo');
+		return BattleAttackRoleInfo;
+	})()
+
+
+	//class com.gamepark.casino.game.arena.model.battle.BattleChangePropertyInfo
+	var BattleChangePropertyInfo=(function(){
+		function BattleChangePropertyInfo(){
+			this.key=null;
+			this.value=0;
+		}
+
+		__class(BattleChangePropertyInfo,'com.gamepark.casino.game.arena.model.battle.BattleChangePropertyInfo');
+		return BattleChangePropertyInfo;
+	})()
+
+
+	//class com.gamepark.casino.game.arena.model.battle.BattleInfo
+	var BattleInfo=(function(){
+		function BattleInfo(){
+			this.round=0;
+			this.playerInfoList=[];
+			this.battleRoundInfoList=[];
+		}
+
+		__class(BattleInfo,'com.gamepark.casino.game.arena.model.battle.BattleInfo');
+		var __proto=BattleInfo.prototype;
+		__proto.initialize=function(){
+			this.round=1;
+			this.playerInfoList=[];
+			this.battleRoundInfoList=[];
+		}
+
+		return BattleInfo;
+	})()
+
+
+	//class com.gamepark.casino.game.arena.model.battle.BattlePlayerInfo
+	var BattlePlayerInfo=(function(){
+		function BattlePlayerInfo(){
+			this.id=0;
+			this.name=null;
+			this.level=0;
+			this.firstAttack=0;
+			this.roleInfoList=[];
+			this.position=0;
+			this.playerInfo=null;
+			this.updateRoleInfoList=[];
+			this.attackRoleInfoList=[];
+		}
+
+		__class(BattlePlayerInfo,'com.gamepark.casino.game.arena.model.battle.BattlePlayerInfo');
+		return BattlePlayerInfo;
+	})()
+
+
+	//class com.gamepark.casino.game.arena.model.battle.BattleRoundInfo
+	var BattleRoundInfo=(function(){
+		function BattleRoundInfo(){
+			this.status=0;
+			this.updateRoleInfoList=[];
+			this.attackPlayerInfoList=[];
+		}
+
+		__class(BattleRoundInfo,'com.gamepark.casino.game.arena.model.battle.BattleRoundInfo');
+		return BattleRoundInfo;
+	})()
+
+
+	//class com.gamepark.casino.game.arena.model.battle.BattleStepInfo
+	var BattleStepInfo=(function(){
+		function BattleStepInfo(){
+			this.stepId=0;
+			this.attackRoleInfoList=[];
+		}
+
+		__class(BattleStepInfo,'com.gamepark.casino.game.arena.model.battle.BattleStepInfo');
+		return BattleStepInfo;
+	})()
+
+
+	//class com.gamepark.casino.game.arena.model.battle.BattleTargetRoleInfo
+	var BattleTargetRoleInfo=(function(){
+		function BattleTargetRoleInfo(){
+			this.roleId=0;
+			this.playerId=0;
+			this.damage=0;
+			this.damageType=0;
+			this.attackType=0;
+			this.logic=null;
+		}
+
+		__class(BattleTargetRoleInfo,'com.gamepark.casino.game.arena.model.battle.BattleTargetRoleInfo');
+		return BattleTargetRoleInfo;
+	})()
+
+
+	//class com.gamepark.casino.game.arena.model.battle.BattleUpdateRoleInfo
+	var BattleUpdateRoleInfo=(function(){
+		function BattleUpdateRoleInfo(){
+			this.roleId=0;
+			this.roleInfo=null;
+			this.playerId=0;
+			this.playerInfo=null;
+			this.status=0;
+			this.changePropertyInfoList=[];
+			this.buffInfoList=[];
+			this.logic=null;
+		}
+
+		__class(BattleUpdateRoleInfo,'com.gamepark.casino.game.arena.model.battle.BattleUpdateRoleInfo');
+		return BattleUpdateRoleInfo;
+	})()
+
+
+	//class com.gamepark.casino.game.arena.model.battle.BattleVO
+	var BattleVO=(function(){
+		function BattleVO(){
+			this.mode=0;
+			this.roundInfoList=[];
+		}
+
+		__class(BattleVO,'com.gamepark.casino.game.arena.model.battle.BattleVO');
+		var __proto=BattleVO.prototype;
+		// }
+		__proto.initialize=function(){
+			this.mode=1;
+			this.roundInfoList=[];
+			var battleInfo=new BattleInfo();
+			battleInfo.round=0;
+			this.roundInfoList[0]=battleInfo;
+		}
+
+		//TODO-douzhix 补全双方初始化玩家和角色信息
+		__proto.hasSuperUniqueSkillActionByIndex=function($round,$playerIndex,$attackActionIndex){
+			console.log("$round : ",$round);
+			console.log("$playerIndex : ",$playerIndex);
+			console.log("$attackActionIndex : ",$attackActionIndex);
+			var battleInfo=this.roundInfoList[$round];
+			var i=0;
+			var roundInfo;
+			for(i=0;i < battleInfo.battleRoundInfoList.length;i++){
+				roundInfo=battleInfo.battleRoundInfoList[i];
+				if(roundInfo.status==2){
+					var attackPlayerInfo=roundInfo.attackPlayerInfoList[$playerIndex];
+					var j=0;
+					var stepInfo;
+					for(j=0;j < attackPlayerInfo.stepInfoList.length;j++){
+						stepInfo=attackPlayerInfo.stepInfoList[j];
+						if(stepInfo.stepId==2){
+							if(stepInfo.attackRoleInfoList.length > $attackActionIndex){
+								return true;
+							}
+						}
+					}
+				}
+			}
+			return false;
+		}
+
+		__proto.getSuperUniqueSkillAttackerByIndex=function($round,$playerIndex,$attackActionIndex){
+			var battleInfo=this.roundInfoList[$round];
+			var i=0;
+			var roundInfo;
+			for(i=0;i < battleInfo.battleRoundInfoList.length;i++){
+				roundInfo=battleInfo.battleRoundInfoList[i];
+				if(roundInfo.status==2){
+					var attackPlayerInfo=roundInfo.attackPlayerInfoList[$playerIndex];
+					var j=0;
+					var stepInfo;
+					for(j=0;j < attackPlayerInfo.stepInfoList.length;j++){
+						stepInfo=attackPlayerInfo.stepInfoList[j];
+						if(stepInfo.stepId==2){
+							return stepInfo.attackRoleInfoList[$attackActionIndex];
+						}
+					}
+				}
+			}
+			return null;
+		}
+
+		__proto.isFinishBattle=function($round,$playerIndex,$stepId,$attackActionIndex){
+			if((this.roundInfoList.length-1)==$round){
+				var battleInfo=this.roundInfoList[$round];
+				var i=0;
+				var roundInfo;
+				for(i=0;i < battleInfo.battleRoundInfoList.length;i++){
+					roundInfo=battleInfo.battleRoundInfoList[i];
+					if(roundInfo.status==2){
+						if((roundInfo.attackPlayerInfoList.length-1)==$playerIndex){
+							var attackPlayerInfo=roundInfo.attackPlayerInfoList[$playerIndex];
+							var j=0;
+							var stepInfo;
+							for(j=0;j < attackPlayerInfo.stepInfoList.length;j++){
+								stepInfo=attackPlayerInfo.stepInfoList[j];
+								if(stepInfo.stepId==$stepId){
+									if(ArenaContext.i.data.battleVO.mode==1){
+										if((attackPlayerInfo.stepInfoList.length-1)==j){
+											if((stepInfo.attackRoleInfoList.length-1)==$attackActionIndex){
+												var attackRoleInfo=stepInfo.attackRoleInfoList[$attackActionIndex];
+												var targetRoleInfo=attackRoleInfo.targetRoleInfoList[0];
+												if(targetRoleInfo.logic.roleInfo.roleVO.isAllDie()){
+													return true;
+												}
+											}
+										}
+									}
+									else if(ArenaContext.i.data.battleVO.mode==1){
+										if((attackPlayerInfo.stepInfoList.length-1)==j){
+											if((stepInfo.attackRoleInfoList.length-1)==$attackActionIndex){
+												return true;
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+			return false;
+		}
+
+		__proto.isFinishSuperUniqueSkill=function($round,$playerIndex,$attackActionIndex){
+			var battleInfo=this.roundInfoList[$round];
+			var i=0;
+			var roundInfo;
+			for(i=0;i < battleInfo.battleRoundInfoList.length;i++){
+				roundInfo=battleInfo.battleRoundInfoList[i];
+				if(roundInfo.status==2){
+					var attackPlayerInfo=roundInfo.attackPlayerInfoList[$playerIndex];
+					var j=0;
+					var stepInfo;
+					for(j=0;j < attackPlayerInfo.stepInfoList.length;j++){
+						stepInfo=attackPlayerInfo.stepInfoList[j];
+						if(stepInfo.stepId==2){
+							if((stepInfo.attackRoleInfoList.length-1)==$attackActionIndex){
+								return true;
+							}
+						}
+					}
+				}
+			}
+			return false;
+		}
+
+		__proto.hasAttackActionByIndex=function($round,$playerIndex,$attackActionIndex){
+			var battleInfo=this.roundInfoList[$round];
+			var i=0;
+			var roundInfo;
+			for(i=0;i < battleInfo.battleRoundInfoList.length;i++){
+				roundInfo=battleInfo.battleRoundInfoList[i];
+				if(roundInfo.status==2){
+					var attackPlayerInfo=roundInfo.attackPlayerInfoList[$playerIndex];
+					var j=0;
+					var stepInfo;
+					for(j=0;j < attackPlayerInfo.stepInfoList.length;j++){
+						stepInfo=attackPlayerInfo.stepInfoList[j];
+						if(stepInfo.stepId==3){
+							if(stepInfo.attackRoleInfoList.length > $attackActionIndex){
+								return true;
+							}
+						}
+					}
+				}
+			}
+			return false;
+		}
+
+		__proto.getAttackAttackerByIndex=function($round,$playerIndex,$attackActionIndex){
+			var battleInfo=this.roundInfoList[$round];
+			var i=0;
+			var roundInfo;
+			for(i=0;i < battleInfo.battleRoundInfoList.length;i++){
+				roundInfo=battleInfo.battleRoundInfoList[i];
+				if(roundInfo.status==2){
+					var attackPlayerInfo=roundInfo.attackPlayerInfoList[$playerIndex];
+					var j=0;
+					var stepInfo;
+					for(j=0;j < attackPlayerInfo.stepInfoList.length;j++){
+						stepInfo=attackPlayerInfo.stepInfoList[j];
+						if(stepInfo.stepId==3){
+							return stepInfo.attackRoleInfoList[$attackActionIndex];
+						}
+					}
+				}
+			}
+			return null;
+		}
+
+		__proto.isFinishAttack=function($round,$playerIndex,$attackActionIndex){
+			var battleInfo=this.roundInfoList[$round];
+			var i=0;
+			var roundInfo;
+			for(i=0;i < battleInfo.battleRoundInfoList.length;i++){
+				roundInfo=battleInfo.battleRoundInfoList[i];
+				if(roundInfo.status==2){
+					var attackPlayerInfo=roundInfo.attackPlayerInfoList[$playerIndex];
+					var j=0;
+					var stepInfo;
+					for(j=0;j < attackPlayerInfo.stepInfoList.length;j++){
+						stepInfo=attackPlayerInfo.stepInfoList[j];
+						if(stepInfo.stepId==3){
+							if((stepInfo.attackRoleInfoList.length-1)==$attackActionIndex){
+								return true;
+							}
+						}
+					}
+				}
+			}
+			return false;
+		}
+
+		return BattleVO;
 	})()
 
 
@@ -1145,8 +1876,8 @@ window.Laya=(function(window,document){
 		function EffectItemInfo(){
 			this.damage=0;
 			this.type=0;
-			this.sourceRoleInfo=null;
-			this.targetRoleInfo=null;
+			this.sourceRoleLogic=null;
+			this.targetRoleLogic=null;
 		}
 
 		__class(EffectItemInfo,'com.gamepark.casino.game.arena.model.EffectItemInfo');
@@ -1154,102 +1885,92 @@ window.Laya=(function(window,document){
 	})()
 
 
-	//class com.gamepark.casino.game.arena.model.PlayerInfo
-	var PlayerInfo=(function(){
-		function PlayerInfo(){
-			this.id=0;
-			this.name=null;
-			this.roleVO=null;
-			this.isMe=false;
-			this.status=0;
-		}
-
-		__class(PlayerInfo,'com.gamepark.casino.game.arena.model.PlayerInfo');
-		var __proto=PlayerInfo.prototype;
-		__proto.doEnter=function(){
-			var roleItemView;
-			var roleInfo;
-			var i=0;
-			for(i=0;i < this.roleVO.roleInfoList.length;i++){
-				roleInfo=this.roleVO.roleInfoList[i];
-				roleItemView=roleInfo.roleItemView;
-				roleItemView.doEnter();
-			}
-		}
-
-		__proto.doIdle=function(){
-			var roleItemView;
-			var roleInfo;
-			var i=0;
-			for(i=0;i < this.roleVO.roleInfoList.length;i++){
-				roleInfo=this.roleVO.roleInfoList[i];
-				roleItemView=roleInfo.roleItemView;
-				roleItemView.doIdle();
-			}
-		}
-
-		__proto.canShowResult=function(){
-			var roleItemView;
-			var roleInfo;
-			var i=0;
-			for(i=0;i < this.roleVO.roleInfoList.length;i++){
-				roleInfo=this.roleVO.roleInfoList[i];
-				roleItemView=roleInfo.roleItemView;
-				if((roleItemView.status !=2)&& (roleItemView.status !=7)){
-					return false;
-				}
-			}
-			return true;
-		}
-
-		return PlayerInfo;
-	})()
-
-
 	//class com.gamepark.casino.game.arena.model.RoleInfo
 	var RoleInfo=(function(){
-		function RoleInfo($roleVO,$isMe){
+		function RoleInfo($roleVO,$playerInfo,$group){
 			this.roleVO=null;
 			this.isMe=false;
+			this.playerInfo=null;
+			this.group=0;
 			this.id=0;
 			this.meta=null;
 			this.hp=0;
+			this.hpMax=0;
 			this.mp=0;
+			this.attack=0;
+			this.defense=0;
+			this.attackRate=NaN;
+			this.defenseRate=NaN;
+			this.damageRate=NaN;
+			this.undamageRate=NaN;
+			this.crit=NaN;
+			this.uncrit=NaN;
+			this.critDeepen=NaN;
+			this.block=NaN;
+			this.unblock=NaN;
+			this.blockDeepen=NaN;
+			this.skillRate=NaN;
+			this.firstAttack=0;
+			this.quality=0;
+			this.star=0;
 			this.position=0;
-			this.firstStatus=0;
-			this.secondStatus=0;
-			this.thirdStatus=0;
-			this.fourthStatusList=[];
-			this.roleItemView=null;
-			this.currentTargetRoleInfoList=[];
+			this.status=0;
+			this.roleItemLogic=null;
 			this.actionInfo=null;
 			this.roleVO=$roleVO;
-			this.isMe=$isMe;
+			this.isMe=$playerInfo.isMe;
+			this.playerInfo=$playerInfo;
+			this.group=$group;
 		}
 
 		__class(RoleInfo,'com.gamepark.casino.game.arena.model.RoleInfo');
 		var __proto=RoleInfo.prototype;
 		__proto.initialize=function(){
-			this.hp=this.meta.hpMax;
+			this.hp=this.meta.hp;
+			this.hpMax=this.meta.hp;
 			this.mp=0;
-			console.log(1,"init position is : ",this.position);
+			this.attack=this.meta.attack;
+			this.defense=this.meta.defense;
+			this.attackRate=this.meta.attackRate;
+			this.defenseRate=this.meta.defenseRate;
+			this.damageRate=this.meta.damageRate;
+			this.undamageRate=this.meta.undamageRate;
+			this.crit=this.meta.crit;
+			this.uncrit=this.meta.uncrit;
+			this.critDeepen=this.meta.critDeepen;
+			this.block=this.meta.block;
+			this.unblock=this.meta.unblock;
+			this.blockDeepen=this.meta.blockDeepen;
+			this.skillRate=this.meta.skillRate;
+			this.firstAttack=this.meta.firstAttack;
+			this.quality=Math.ceil(Math.random()*23);
+			this.star=Math.ceil(Math.random()*7);
+			this.status=1;
 		}
 
 		// }
-		__proto.changeStatusToFirstEnter=function(){
-			this.firstStatus=1;
-			this.secondStatus=1;
-			this.fourthStatusList=[];
+		__proto.turnToAttack=function(){
+			this.addMp(0);
 		}
 
-		__proto.turnToAttack=function(){
-			this.addMp(20);
+		__proto.addHp=function($value){
+			this.hp+=$value;
+			if(this.hp > this.meta.hp){
+				this.hp=this.meta.hp;
+			}
+		}
+
+		__proto.reduceHp=function($value){
+			this.hp-=$value;
+			if(this.hp < 0){
+				this.hp=0;
+			}
 		}
 
 		__proto.addMp=function($value){
 			this.mp+=$value;
-			if(this.mp > 100){
-				this.mp=100;
+			if(this.mp > 1000){
+				this.mp=1000;
 			}
 		}
 
@@ -1261,8 +1982,8 @@ window.Laya=(function(window,document){
 		}
 
 		__proto.canSuperUniqueSkill=function(){
-			if(this.roleItemView.status !=7){
-				if(this.mp >=100){
+			if(this.status !=4){
+				if(this.mp >=1000){
 					return true;
 				}
 			}
@@ -1270,27 +1991,566 @@ window.Laya=(function(window,document){
 		}
 
 		__proto.canAttack=function(){
-			if(this.roleItemView.status !=7){
+			if(this.status !=4){
 				return true;
 			}
 			return false;
 		}
 
 		__proto.canBeAttack=function(){
-			if(this.roleItemView.status !=7){
+			if(this.status !=4){
 				return true;
 			}
 			return false;
 		}
 
 		__proto.isDie=function(){
-			if(this.roleItemView.status==7){
+			if(this.status==4){
 				return true;
 			}
 			return false;
 		}
 
 		return RoleInfo;
+	})()
+
+
+	//class com.gamepark.casino.game.arena.model.RoleItemLogic
+	var RoleItemLogic=(function(){
+		function RoleItemLogic($view){
+			this.view=null;
+			this.roleInfo=null;
+			this.group=0;
+			this.roleHp=0;
+			this.roleMp=0;
+			this.roleStatus=0;
+			this.firstStatus=0;
+			this.secondStatus=0;
+			this.actionRoleInfo=null;
+			this.attackerRoleInfo=null;
+			this.animationIndex=0;
+			this.view=$view;
+			this.view.logic=this;
+			this.group=this.view.group;
+		}
+
+		__class(RoleItemLogic,'com.gamepark.casino.game.arena.model.RoleItemLogic');
+		var __proto=RoleItemLogic.prototype;
+		__proto.initialize=function(){
+			this.roleHp=this.roleInfo.hp;
+			this.roleMp=this.roleInfo.mp;
+			this.roleStatus=1;
+		}
+
+		__proto.update=function(){
+			this.enterFrameHandler();
+		}
+
+		__proto.enterFrameHandler=function(){
+			var targetRoleInfo;
+			var targetView;
+			var distanceX=NaN;
+			var distanceY=NaN;
+			var wayRadians=NaN;
+			var unitDistanceX=NaN;
+			var unitDistanceY=NaN;
+			switch(this.firstStatus){
+				case 1:
+				switch(this.secondStatus){
+					case 101:
+						this.secondStatus=102;
+						this.view.playRun();
+						break ;
+					case 102:
+						if(this.view.group==0){
+							this.view.aniContainer.x+=18;
+							if(this.view.aniContainer.x >=0){
+								this.view.aniContainer.x=0;
+								this.secondStatus=103;
+							}
+						}
+						else{
+							this.view.aniContainer.x-=18;
+							if(this.view.aniContainer.x <=0){
+								this.view.aniContainer.x=0;
+								this.secondStatus=103;
+							}
+						}
+						break ;
+					case 103:
+						this.view.playIdle();
+						break ;
+					}
+				break ;
+				case 4:
+				case 5:
+				switch(this.secondStatus){
+					case 504:
+						targetRoleInfo=this.actionRoleInfo.targetRoleInfoList[0];
+						targetView=targetRoleInfo.logic.view;
+						distanceX=targetView.x-this.view.x;
+						distanceY=targetView.y-this.view.y;
+						if(this.view.group==0){
+							distanceX-=130;
+							wayRadians=Math.atan2(distanceY,distanceX);
+						}
+						else{
+							distanceX+=130;
+							wayRadians=Math.atan2(distanceY,distanceX);
+						}
+						unitDistanceX=18 *Math.cos(wayRadians);
+						unitDistanceY=18 *Math.sin(wayRadians);
+						if(this.firstStatus==4){
+							console.log("run to distanceX : ",distanceX);
+						}
+						if(this.view.group==0){
+							this.view.aniContainer.x+=unitDistanceX;
+							this.view.aniContainer.y+=unitDistanceY;
+							if(this.view.aniContainer.x >=distanceX){
+								this.view.aniContainer.x=distanceX;
+								this.view.aniContainer.y=distanceY;
+								this.secondStatus=507;
+								this.doAttacking();
+							}
+						}
+						else{
+							this.view.aniContainer.x+=unitDistanceX;
+							this.view.aniContainer.y+=unitDistanceY;
+							if(this.view.aniContainer.x <=distanceX){
+								this.view.aniContainer.x=distanceX;
+								this.view.aniContainer.y=distanceY;
+								this.secondStatus=507;
+								this.doAttacking();
+							}
+						}
+						break ;
+					case 507:
+						break ;
+					case 509:
+						targetRoleInfo=this.actionRoleInfo.targetRoleInfoList[0];
+						targetView=targetRoleInfo.logic.view;
+						distanceX=this.view.x-targetView.x;
+						distanceY=this.view.y-targetView.y;
+						if(this.group==0){
+							distanceX+=130;
+							wayRadians=Math.atan2(distanceY,distanceX);
+						}
+						else{
+							distanceX-=130;
+							wayRadians=Math.atan2(distanceY,distanceX);
+						}
+						unitDistanceX=18 *Math.cos(wayRadians);
+						unitDistanceY=18 *Math.sin(wayRadians);
+						if(this.firstStatus==4){
+							console.log("run back distanceX : ",distanceX);
+						}
+						if(this.group==0){
+							this.view.aniContainer.x+=unitDistanceX;
+							this.view.aniContainer.y+=unitDistanceY;
+							if(this.view.aniContainer.x <=0){
+								this.view.aniContainer.x=0;
+								this.view.aniContainer.y=0;
+								this.view.turnFace();
+								this.doIdle();
+							}
+						}
+						else{
+							this.view.aniContainer.x+=unitDistanceX;
+							this.view.aniContainer.y+=unitDistanceY;
+							if(this.view.aniContainer.x >=0){
+								this.view.aniContainer.x=0;
+								this.view.aniContainer.y=0;
+								this.view.turnFace();
+								this.doIdle();
+							}
+						}
+						break ;
+					}
+				break ;
+				case 6:
+				switch(this.secondStatus){
+					case 601:
+						this.secondStatus=602;
+						this.view.playHurt();
+						break ;
+					case 602:
+						break ;
+					case 603:
+						this.secondStatus=604;
+						this.view.playFall();
+						break ;
+					case 604:
+						break ;
+					case 605:
+						unitDistanceX=18;
+						if(this.firstStatus==4){
+							console.log("run back distanceX : ",distanceX);
+						}
+						if(this.group==0){
+							this.view.aniContainer.x+=unitDistanceX;
+							if(this.view.aniContainer.x >=0){
+								this.view.aniContainer.x=0;
+								this.view.aniContainer.y=0;
+								this.doIdle();
+							}
+						}
+						else{
+							this.view.aniContainer.x-=unitDistanceX;
+							if(this.view.aniContainer.x <=0){
+								this.view.aniContainer.x=0;
+								this.view.aniContainer.y=0;
+								this.doIdle();
+							}
+						}
+						break ;
+					case 607:
+						this.secondStatus=608;
+						this.view.playFullFall();
+						break ;
+					case 608:
+						break ;
+					}
+				break ;
+				case 9:
+				switch(this.secondStatus){
+					case 901:
+						this.secondStatus=902;
+						break ;
+					case 902:
+						console.log("dying!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+						Tween.to(this.view.aniContainer,{alpha :0},1000);
+						this.secondStatus=903;
+						break ;
+					case 903:
+						break ;
+					}
+				break ;
+				case 10:
+				switch(this.secondStatus){
+					case 1001:
+						this.view.playResult();
+						this.secondStatus=1002;
+						break ;
+					}
+				break ;
+			}
+		}
+
+		__proto.doEnter=function(){
+			this.firstStatus=1;
+			this.secondStatus=101;
+			this.view.initEnterPos();
+		}
+
+		__proto.isCompleteEntering=function(){
+			if(this.firstStatus==1){
+				if(this.secondStatus==103){
+					return true;
+				}
+			}
+			return false;
+		}
+
+		__proto.doIdle=function(){
+			this.firstStatus=2;
+			this.secondStatus=201;
+			this.view.playIdle();
+		}
+
+		__proto.doSuperUniqueSkill=function($battleAttackRoleInfo){
+			this.actionRoleInfo=$battleAttackRoleInfo;
+			this.firstStatus=4;
+			this.secondStatus=504;
+		}
+
+		__proto.doAttack=function($battleAttackRoleInfo){
+			this.actionRoleInfo=$battleAttackRoleInfo;
+			this.firstStatus=5;
+			this.secondStatus=504;
+		}
+
+		// trace(1,"enter function do attack");
+		__proto.doRunToAttack=function(){
+			this.secondStatus=504;
+			this.view.playRun();
+		}
+
+		// trace(1,"role item view secondStatus : ",this.secondStatus);
+		__proto.doAttacking=function(){
+			var actionInfo=new ActionInfo();
+			actionInfo.attackType=1;
+			actionInfo.sourceRoleInfo=this.roleInfo;
+			this.roleInfo.actionInfo=actionInfo;
+			var updateRoleInfo=ArenaUtil.getBattleUpdateRoleInfoById(this.actionRoleInfo.roleId,this.actionRoleInfo.roleInfo.playerInfo.id,this.actionRoleInfo.updateRoleInfoList);
+			if(updateRoleInfo){
+				var changePropertyInfo=ArenaUtil.getBattleChangePropertyByKey("mp",updateRoleInfo);
+				if(changePropertyInfo !=null){
+					this.roleMp=changePropertyInfo.value;
+				}
+			};
+			var targetRoleInfo;
+			var battleTargetRoleInfo;
+			var i=0;
+			for(i=0;i < this.actionRoleInfo.targetRoleInfoList.length;i++){
+				battleTargetRoleInfo=this.actionRoleInfo.targetRoleInfoList[i];
+				actionInfo=new ActionInfo();
+				actionInfo.damage=battleTargetRoleInfo.damage;
+				actionInfo.damageType=battleTargetRoleInfo.damageType;
+				actionInfo.attackType=this.actionRoleInfo.attackType;
+				actionInfo.sourceRoleInfo=this.roleInfo;
+				targetRoleInfo=battleTargetRoleInfo.logic.roleInfo;
+				targetRoleInfo.actionInfo=actionInfo;
+				updateRoleInfo=ArenaUtil.getBattleUpdateRoleInfoById(battleTargetRoleInfo.roleId,battleTargetRoleInfo.playerId,this.actionRoleInfo.updateRoleInfoList);
+				if(updateRoleInfo){
+					changePropertyInfo=ArenaUtil.getBattleChangePropertyByKey("hp",updateRoleInfo);
+					if(changePropertyInfo !=null){
+						battleTargetRoleInfo.logic.roleHp=changePropertyInfo.value;
+					}
+					changePropertyInfo=ArenaUtil.getBattleChangePropertyByKey("mp",updateRoleInfo);
+					if(changePropertyInfo !=null){
+						battleTargetRoleInfo.logic.roleMp=changePropertyInfo.value;
+					}
+					changePropertyInfo=ArenaUtil.getBattleChangePropertyByKey("status",updateRoleInfo);
+					if(changePropertyInfo !=null){
+						battleTargetRoleInfo.logic.roleStatus=changePropertyInfo.value;
+					}
+				}
+			}
+			this.secondStatus=507;
+			this.view.playAttack();
+			this.view.parent.setChildIndex(this.view,this.view.parent.numChildren-1);
+		}
+
+		__proto.doRunBackAttack=function(){
+			this.secondStatus=509;
+			this.view.playRun();
+			this.view.turnFace();
+		}
+
+		// this.view.roleAni.scaleX=0-this.view.roleAni.scaleX;
+		__proto.isFinishAttacking=function(){
+			return (this.secondStatus==509);
+		}
+
+		__proto.isFinishLastAttacking=function(){
+			return (this.firstStatus==2);
+		}
+
+		__proto.isFinishSuperUniqueSkill=function(){
+			return (this.firstStatus==2);
+		}
+
+		__proto.doHurt=function($attackerRoleInfo,$animationIndex){
+			this.firstStatus=6;
+			this.secondStatus=601;
+			this.attackerRoleInfo=$attackerRoleInfo;
+			this.animationIndex=$animationIndex;
+		}
+
+		__proto.doHurtIdle=function($hurtIdleType){
+			this.firstStatus=8;
+			switch($hurtIdleType){
+				case 1:
+					this.secondStatus=801;
+					break ;
+				case 2:
+					this.secondStatus=802;
+					break ;
+				}
+			this.view.playHurtIdle();
+		}
+
+		__proto.doFall=function(){
+			this.secondStatus=603;
+		}
+
+		__proto.doRunBackHurt=function(){
+			this.secondStatus=605;
+		}
+
+		// this.view.playRun();
+		__proto.doFullFall=function(){
+			this.firstStatus=6;
+			this.secondStatus=607;
+		}
+
+		__proto.doDie=function(){
+			this.firstStatus=9;
+			this.secondStatus=901;
+		}
+
+		// this.attackerRoleInfo=$attackerRoleInfo;
+		__proto.doResult=function(){
+			this.firstStatus=10;
+			this.secondStatus=1001;
+		}
+
+		__proto.pause=function(){
+			this.view.pause();
+		}
+
+		__proto.resume=function(){
+			this.view.resume();
+		}
+
+		__proto.isDie=function(){
+			if(this.roleStatus==4){
+				return true;
+			}
+			return false;
+		}
+
+		return RoleItemLogic;
+	})()
+
+
+	//class com.gamepark.casino.game.arena.model.RoleListLogic
+	var RoleListLogic=(function(){
+		function RoleListLogic($view){
+			this.view=null;
+			this.roleItemLogicList=[];
+			this.attackPlayer=null;
+			this.defensePlayer=null;
+			this.view=$view;
+			this.view.logic=this;
+			var roleItemLogic;
+			var roleItemView;
+			var i=0;
+			for(i=0;i < 12;i++){
+				roleItemView=this.view.roleItemViewList[i];
+				roleItemLogic=new RoleItemLogic(roleItemView);
+				this.roleItemLogicList[i]=roleItemLogic;
+			}
+		}
+
+		__class(RoleListLogic,'com.gamepark.casino.game.arena.model.RoleListLogic');
+		var __proto=RoleListLogic.prototype;
+		__proto.showRoleListByPlayer=function($playerInfo,$group){
+			var roleItemLogic;
+			var roleInfo;
+			var i=0;
+			for(i=0;i < $playerInfo.roleVO.roleInfoList.length;i++){
+				roleInfo=$playerInfo.roleVO.roleInfoList[i];
+				roleItemLogic=this.roleItemLogicList[$group *6+roleInfo.position];
+				roleInfo.roleItemLogic=roleItemLogic;
+				roleItemLogic.view.roleInfo=roleInfo;
+				roleItemLogic.roleInfo=roleInfo;
+				roleItemLogic.roleInfo.roleItemLogic=roleItemLogic;
+				roleItemLogic.initialize();
+				roleItemLogic.view.showRoleView();
+			}
+		}
+
+		__proto.update=function(){
+			var roleItemLogic;
+			var i=0;
+			for(i=0;i < 12;i++){
+				roleItemLogic=this.roleItemLogicList[i];
+				roleItemLogic.update();
+			}
+		}
+
+		__proto.doEnter=function(){
+			var roleItemLogic;
+			var i=0;
+			for(i=0;i < this.roleItemLogicList.length;i++){
+				roleItemLogic=this.roleItemLogicList[i];
+				roleItemLogic.doEnter();
+			}
+		}
+
+		// roleItemView.showRoleView();
+		__proto.isCompleteEntering=function(){
+			var isCompleteEntering=true;
+			var roleItemLogic;
+			var i=0;
+			for(i=0;i < this.roleItemLogicList.length;i++){
+				roleItemLogic=this.roleItemLogicList[i];
+				if(!roleItemLogic.isCompleteEntering()){
+					isCompleteEntering=false;
+					break ;
+				}
+			}
+			return isCompleteEntering;
+		}
+
+		__proto.doIdle=function(){
+			var roleItemLogic;
+			var i=0;
+			for(i=0;i < this.roleItemLogicList.length;i++){
+				roleItemLogic=this.roleItemLogicList[i];
+				roleItemLogic.doIdle();
+			}
+		}
+
+		__proto.canSuperUniqueSkill=function(){
+			return this.attackPlayer.roleVO.canSuperUniqueSkill();
+		}
+
+		__proto.getSuperUniqueSkillRolePositionList=function(){
+			return this.attackPlayer.roleVO.getSuperUniqueSkillRolePositionList();
+		}
+
+		__proto.preUniqueSkill=function(){
+			this.attackPlayer.roleVO.preUniqueSkill();
+		}
+
+		// }
+		__proto.isFinishSuperUniqueSkill=function(){
+			if(this.attackPlayer.roleVO.actionRoleInfo.roleItemLogic.isFinishSuperUniqueSkill()){
+				console.log("skill finish on position : ",this.attackPlayer.roleVO.actionRoleInfo.position);
+				return true;
+			}
+			return false;
+		}
+
+		__proto.canAttack=function(){
+			return this.attackPlayer.roleVO.canAttack();
+		}
+
+		__proto.preAttack=function(){
+			this.attackPlayer.roleVO.preAttack();
+		}
+
+		// }
+		__proto.isFinishLastAttacking=function(){
+			if(this.attackPlayer.roleVO.actionRoleInfo.roleItemLogic.isFinishLastAttacking()){
+				return true;
+			}
+			return false;
+		}
+
+		__proto.showResult=function(){
+			this.attackPlayer.roleVO.showReulst();
+		}
+
+		__proto.getAutoAttackDefenceRolePosition=function(){
+			return this.defensePlayer.roleVO.getAutoAttackDefenceRolePosition();
+		}
+
+		__proto.getAttackRoleAmount=function(){
+			return this.attackPlayer.roleVO.getAttackRoleAmount();
+		}
+
+		__proto.pause=function(){
+			var roleItemLogic;
+			var i=0;
+			for(i=0;i < this.roleItemLogicList.length;i++){
+				roleItemLogic=this.roleItemLogicList[i];
+				roleItemLogic.pause();
+			}
+		}
+
+		__proto.resume=function(){
+			var roleItemLogic;
+			var i=0;
+			for(i=0;i < this.roleItemLogicList.length;i++){
+				roleItemLogic=this.roleItemLogicList[i];
+				roleItemLogic.resume();
+			}
+		}
+
+		return RoleListLogic;
 	})()
 
 
@@ -1330,6 +2590,7 @@ window.Laya=(function(window,document){
 			this.firstAttack=0;
 			this.status=0;
 			this.roleInfoList=[];
+			this.position=0;
 			this.actionIndex=0;
 			this.actionRoleInfo=null;
 			this.hasAttackAmount=0;
@@ -1340,23 +2601,25 @@ window.Laya=(function(window,document){
 
 		__class(RoleVO,'com.gamepark.casino.game.arena.model.RoleVO');
 		var __proto=RoleVO.prototype;
-		__proto.buildTestData=function($isMe){
+		__proto.buildTestData=function($playerInfo){
 			this.roleInfoList=[];
 			var roleInfo;
 			var roleMeta;
 			var i=0;
 			for(i=0;i < 6;i++){
-				roleInfo=new RoleInfo(this,$isMe);
-				roleInfo.position=i;
-				if($isMe){
+				if($playerInfo.isMe){
+					roleInfo=new RoleInfo(this,$playerInfo,0);
+					roleInfo.position=i;
 					roleInfo.id=i+1;
-					roleMeta=GameContext.i.arenaContext.data.roleMetaList[Math.floor(Math.random()*GameContext.i.arenaContext.data.roleMetaList.length)];
+					roleMeta=GameContext.i.data.metaData.heroBaseMetaList[Math.floor(Math.random()*GameContext.i.data.metaData.heroBaseMetaList.length)];
 					roleInfo.meta=roleMeta;
 					roleInfo.initialize();
 				}
 				else{
+					roleInfo=new RoleInfo(this,$playerInfo,1);
+					roleInfo.position=i;
 					roleInfo.id=i+1+10;
-					roleMeta=GameContext.i.arenaContext.data.roleMetaList[Math.floor(Math.random()*GameContext.i.arenaContext.data.roleMetaList.length)];
+					roleMeta=GameContext.i.data.metaData.heroBaseMetaList[Math.floor(Math.random()*GameContext.i.data.metaData.heroBaseMetaList.length)];
 					roleInfo.meta=roleMeta;
 					roleInfo.initialize();
 				}
@@ -1366,6 +2629,12 @@ window.Laya=(function(window,document){
 			for(i=0;i < this.roleInfoList.length;i++){
 				roleInfo=this.roleInfoList[i];
 				this.firstAttack+=roleInfo.meta.firstAttack;
+			}
+			if($playerInfo.isMe){
+				this.position=0;
+			}
+			else{
+				this.position=1;
 			}
 		}
 
@@ -1380,7 +2649,7 @@ window.Laya=(function(window,document){
 					attackRoleInfo.turnToAttack();
 					effectInfo=new EffectItemInfo();
 					effectInfo.type=4;
-					effectInfo.sourceRoleInfo=attackRoleInfo;
+					effectInfo.sourceRoleLogic=attackRoleInfo.roleItemLogic;
 					GameContext.i.arenaContext.gameView.effectView.addEffect(effectInfo);
 				}
 			}
@@ -1389,33 +2658,39 @@ window.Laya=(function(window,document){
 		__proto.canSuperUniqueSkill=function(){
 			var attackRoleInfo;
 			var i=0;
+			console.log("calc unique skill from index : ",this.actionIndex);
 			for(i=this.actionIndex;i < this.roleInfoList.length;i++){
 				attackRoleInfo=this.roleInfoList[i];
 				if(attackRoleInfo.canSuperUniqueSkill()){
+					console.log("skill ready on position : ",attackRoleInfo.position);
 					return true;
 				}
 			}
 			return false;
 		}
 
-		__proto.calcSuperUniqueSkillRoleAndTarget=function($defenseRoleVO){
+		__proto.getSuperUniqueSkillRolePositionList=function(){
+			var rolePositionList=[];
 			var attackRoleInfo;
-			var defenceRoleInfo;
 			var i=0;
-			console.log(1,"enter function calcSuperUniqueSkillRoleAndTarget, actionIndex is",this.actionIndex);
-			for(i=this.actionIndex;i < this.roleInfoList.length;i++){
+			for(i=0;i < this.roleInfoList.length;i++){
 				attackRoleInfo=this.roleInfoList[i];
 				if(attackRoleInfo.canSuperUniqueSkill()){
-					attackRoleInfo.currentTargetRoleInfoList=ArenaUtil.getUniqueSkillTargetListByAttaker(attackRoleInfo,$defenseRoleVO);
-					attackRoleInfo.roleItemView.doSuperUniqueSkill();
-					this.actionIndex=i+1;
-					this.actionRoleInfo=attackRoleInfo;
-					console.log(1,"enter function calcSuperUniqueSkillRoleAndTarget, actionIndex is",this.actionIndex);
-					break ;
+					rolePositionList.push(i);
 				}
 			}
+			return rolePositionList;
 		}
 
+		__proto.preUniqueSkill=function(){
+			this.hasAttackAmount=0;
+			this.actionIndex=0;
+			this.attackMulti=1;
+			this.comboEffect=1;
+			this.totalDamage=0;
+		}
+
+		// }
 		__proto.getUniqueSkillTargetByAttaker=function($attackRoleInfo){
 			return null;
 		}
@@ -1438,24 +2713,6 @@ window.Laya=(function(window,document){
 			this.attackMulti=1;
 			this.comboEffect=1;
 			this.totalDamage=0;
-		}
-
-		__proto.calcAttackRoleAndTarget=function($defenseRoleVO){
-			var attackRoleInfo;
-			var defenceRoleInfo;
-			var i=0;
-			console.log(1,"enter function calcAttackRoleAndTarget, actionIndex is",this.actionIndex);
-			for(i=this.actionIndex;i < this.roleInfoList.length;i++){
-				attackRoleInfo=this.roleInfoList[i];
-				if(attackRoleInfo.canAttack()){
-					attackRoleInfo.currentTargetRoleInfoList=$defenseRoleVO.getAttackTarget();
-					attackRoleInfo.roleItemView.doAttack();
-					this.actionIndex=i+1;
-					this.actionRoleInfo=attackRoleInfo;
-					console.log(1,"enter function calcAttackRoleAndTarget, actionIndex is",this.actionIndex);
-					break ;
-				}
-			}
 		}
 
 		__proto.getAttackTarget=function(){
@@ -1490,12 +2747,63 @@ window.Laya=(function(window,document){
 			for(i=0;i < this.roleInfoList.length;i++){
 				roleInfo=this.roleInfoList[i];
 				if(!roleInfo.isDie()){
-					roleInfo.roleItemView.doResult();
+					roleInfo.roleItemLogic.doResult();
 				}
 			}
 		}
 
+		__proto.getAutoAttackDefenceRolePosition=function(){
+			var attackRoleInfo;
+			var i=0;
+			for(i=0;i < this.roleInfoList.length;i++){
+				attackRoleInfo=this.roleInfoList[i];
+				if(!attackRoleInfo.isDie()){
+					return i;
+				}
+			}
+			return-1;
+		}
+
+		__proto.getAttackRoleAmount=function(){
+			var attackRoleAmount=0;
+			var attackRoleInfo;
+			var i=0;
+			for(i=0;i < this.roleInfoList.length;i++){
+				attackRoleInfo=this.roleInfoList[i];
+				if(attackRoleInfo.canAttack()){
+					attackRoleAmount++;
+				}
+			}
+			return attackRoleAmount;
+		}
+
+		__proto.getAttackRoleInfoList=function(){
+			var attackRoleInfoList=[];
+			var attackRoleInfo;
+			var i=0;
+			for(i=0;i < this.roleInfoList.length;i++){
+				attackRoleInfo=this.roleInfoList[i];
+				if(attackRoleInfo.canAttack()){
+					attackRoleInfoList.push(attackRoleInfo);
+				}
+			}
+			return attackRoleInfoList;
+		}
+
 		return RoleVO;
+	})()
+
+
+	//class com.gamepark.casino.game.arena.model.SkillMeta
+	var SkillMeta=(function(){
+		function SkillMeta(){
+			this.id=0;
+			this.resAniData=null;
+			this.resAniTexture=null;
+		}
+
+		__class(SkillMeta,'com.gamepark.casino.game.arena.model.SkillMeta');
+		return SkillMeta;
 	})()
 
 
@@ -1503,13 +2811,15 @@ window.Laya=(function(window,document){
 	var ArenaUtil=(function(){
 		function ArenaUtil(){}
 		__class(ArenaUtil,'com.gamepark.casino.game.arena.util.ArenaUtil');
-		ArenaUtil.getUniqueSkillTargetListByAttaker=function($attackRoleInfo,$defenceRoleVO){
+		ArenaUtil.getSuperUniqueSkillTargetListByAttakerAndDefencePosition=function($attackRoleInfo,$defenceRoleVO,$defencePosition){
 			var skillSequnceList;
 			var defenceRoleInfo;
 			var targetList=[];
-			var i=0;
 			var j=0;
-			switch($attackRoleInfo.meta.skillType){
+			switch($attackRoleInfo.meta.superUniqueSkillMeta.getFirstEffectMeta().targetType){
+				case 1:
+					skillSequnceList=[0,1,2,3,4,5];
+					break ;
 				case 2:
 					skillSequnceList=[0,1,2,3,4,5];
 					break ;
@@ -1520,42 +2830,410 @@ window.Laya=(function(window,document){
 					skillSequnceList=[0,1,2,3,4,5];
 					break ;
 				}
-			for(i=0;i < $defenceRoleVO.roleInfoList.length;i++){
-				defenceRoleInfo=$defenceRoleVO.roleInfoList[skillSequnceList[i]];
-				console.log(1,"defenceRoleInfo.roleItemView.status : ",defenceRoleInfo.roleItemView.status);
-				console.log(1,"defenceRoleInfo.canBeAttack() : ",defenceRoleInfo.canBeAttack());
-				if(defenceRoleInfo.canBeAttack()){
-					targetList.push(defenceRoleInfo);
-					switch($attackRoleInfo.meta.skillType){
-						case 2:
-							for(j=(i+1);j < ((i < 3)? 3 :6);j++){
+			defenceRoleInfo=$defenceRoleVO.roleInfoList[$defencePosition];
+			console.log(1,"defenceRoleInfo.roleItemView.status : ",defenceRoleInfo.roleItemLogic.firstStatus);
+			console.log(1,"defenceRoleInfo.canBeAttack() : ",defenceRoleInfo.canBeAttack());
+			if(defenceRoleInfo.canBeAttack()){
+				targetList.push(defenceRoleInfo);
+				switch($attackRoleInfo.meta.superUniqueSkillMeta.getFirstEffectMeta().targetType){
+					case 2:
+						for(j=(($defencePosition < 3)? 0 :3);j < (($defencePosition < 3)? 3 :6);j++){
+							if(j !=$defencePosition){
 								defenceRoleInfo=$defenceRoleVO.roleInfoList[j];
 								if(defenceRoleInfo.canBeAttack()){
 									targetList.push(defenceRoleInfo);
 								}
 							}
-							break ;
-						case 3:
-							if(i < 3){
-								defenceRoleInfo=$defenceRoleVO.roleInfoList[i+3];
-								if(defenceRoleInfo.canBeAttack()){
-									targetList.push(defenceRoleInfo);
-								}
-							}
-							break ;
-						case 4:
-							for(j=(i+1);j < $defenceRoleVO.roleInfoList.length;j++){
-								defenceRoleInfo=$defenceRoleVO.roleInfoList[j];
-								if(defenceRoleInfo.canBeAttack()){
-									targetList.push(defenceRoleInfo);
-								}
-							}
-							break ;
 						}
-					return targetList;
-				}
+						break ;
+					case 3:
+						if($defencePosition < 3){
+							defenceRoleInfo=$defenceRoleVO.roleInfoList[$defencePosition+3];
+							if(defenceRoleInfo.canBeAttack()){
+								targetList.push(defenceRoleInfo);
+							}
+						}
+						break ;
+					case 4:
+						for(j=0;j < $defenceRoleVO.roleInfoList.length;j++){
+							if(j !=$defencePosition){
+								defenceRoleInfo=$defenceRoleVO.roleInfoList[j];
+								if(defenceRoleInfo.canBeAttack()){
+									targetList.push(defenceRoleInfo);
+								}
+							}
+						}
+						break ;
+					}
+				console.log(1,"skill targetList length : ",targetList.length);
+				return targetList;
 			}
 			console.log(" error !!!!!!!!!!!!!!!!!!!!!!!!!!!");
+			return null;
+		}
+
+		ArenaUtil.calcAutoBattleAttackInfo=function($isNewRound,$uniqueSkillRolePositionList,$comboList){
+			var arenaContext=ArenaContext.i;
+			var battleVO=arenaContext.data.battleVO;
+			var battleInfo;
+			var roundInfo;
+			var attackPlayerInfo;
+			var stepInfo;
+			var playerInfo;
+			var attackRoleInfo;
+			var uniqueSkillRolePosition=0;
+			var roleInfo;
+			var i=0;
+			var j=0;
+			var targetRoleInfoList;
+			var targetRoleInfo;
+			var battleTargetRoleInfo;
+			var isBattleFinish=false;
+			if($isNewRound){
+				battleInfo=new BattleInfo();
+				battleInfo.round=battleVO.roundInfoList.length;
+				battleVO.roundInfoList.push(battleInfo);
+				roundInfo=new BattleRoundInfo();
+				roundInfo.status=2;
+				battleInfo.battleRoundInfoList.push(roundInfo);
+			}
+			else{
+				battleInfo=battleVO.roundInfoList[battleVO.roundInfoList.length-1];
+				roundInfo=battleInfo.battleRoundInfoList[0];
+			}
+			attackPlayerInfo=new BattleAttackPlayerInfo();
+			roundInfo.attackPlayerInfoList.push(attackPlayerInfo);
+			if($uniqueSkillRolePositionList.length > 0){
+				stepInfo=new BattleStepInfo();
+				stepInfo.stepId=2;
+				for(i=0;i < $uniqueSkillRolePositionList.length;i++){
+					uniqueSkillRolePosition=$uniqueSkillRolePositionList[i];
+					roleInfo=arenaContext.manager.roleListLogic.attackPlayer.roleVO.roleInfoList[uniqueSkillRolePosition];
+					console.log("role ",roleInfo.position," super unique skill —— ");
+					targetRoleInfoList=com.gamepark.casino.game.arena.util.ArenaUtil.getSuperUniqueSkillTargetListByAttakerAndDefencePosition(roleInfo,arenaContext.manager.roleListLogic.defensePlayer.roleVO,arenaContext.data.attackDefenceRolePosition);
+					attackRoleInfo=new BattleAttackRoleInfo();
+					attackRoleInfo.roleId=roleInfo.id;
+					attackRoleInfo.roleInfo=roleInfo;
+					attackRoleInfo.logic=roleInfo.roleItemLogic;
+					for(j=0;j < targetRoleInfoList.length;j++){
+						targetRoleInfo=targetRoleInfoList[j];
+						battleTargetRoleInfo=new BattleTargetRoleInfo();
+						com.gamepark.casino.game.arena.util.ArenaUtil.caleSuperUniqueSkillDamageByAttackerAndDefenser(roleInfo,targetRoleInfo,attackRoleInfo,battleTargetRoleInfo);
+					}
+					stepInfo.attackRoleInfoList.push(attackRoleInfo);
+					if(arenaContext.manager.roleListLogic.defensePlayer.roleVO.isAllDie()){
+						isBattleFinish=true;
+						break ;
+					}
+					com.gamepark.casino.game.arena.util.ArenaUtil.calcNextAttackDefenceRole();
+				}
+				attackPlayerInfo.stepInfoList.push(stepInfo);
+			}
+			if(isBattleFinish){
+				return;
+			}
+			if($comboList.length > 0){
+				stepInfo=new BattleStepInfo();
+				stepInfo.stepId=3;
+				var combo=0;
+				var comboIndex=0;
+				var comboEffect=1.0;
+				var isNewAttackType=true;
+				var attackTypeList=GameContext.i.data.metaData.getFightAttackTypeList();
+				var attackTypeIndex=0;
+				var isUseSkill=false;
+				for(i=0;i < arenaContext.manager.roleListLogic.attackPlayer.roleVO.roleInfoList.length;i++){
+					roleInfo=arenaContext.manager.roleListLogic.attackPlayer.roleVO.roleInfoList[i];
+					if(roleInfo.canAttack()){
+						combo=$comboList[comboIndex];
+						comboEffect+=ArenaComboEnum.COMBO_EFFECT_LIST[combo];
+						comboIndex++;
+						console.log("role ",roleInfo.position," attack —— ");
+						targetRoleInfoList=[arenaContext.manager.roleListLogic.defensePlayer.roleVO.roleInfoList[arenaContext.data.attackDefenceRolePosition]];
+						attackRoleInfo=new BattleAttackRoleInfo();
+						attackRoleInfo.roleId=roleInfo.id;
+						attackRoleInfo.roleInfo=roleInfo;
+						attackRoleInfo.logic=roleInfo.roleItemLogic;
+						targetRoleInfo=targetRoleInfoList[0];
+						battleTargetRoleInfo=new BattleTargetRoleInfo();
+						isUseSkill=(Math.random()< roleInfo.meta.skillRate);
+						attackRoleInfo.useSkillFlag=(isUseSkill ? 1 :0);
+						attackRoleInfo.comboEffect=combo;
+						attackRoleInfo.attackType=attackTypeList[attackTypeIndex];
+						com.gamepark.casino.game.arena.util.ArenaUtil.caleAttackDamageByAttackerAndDefenser(roleInfo,targetRoleInfo,attackRoleInfo,battleTargetRoleInfo,isUseSkill,combo,comboEffect);
+						stepInfo.attackRoleInfoList.push(attackRoleInfo);
+						if(arenaContext.manager.roleListLogic.defensePlayer.roleVO.isAllDie()){
+							isBattleFinish=true;
+							break ;
+						}
+						if(targetRoleInfo.isDie()){
+							attackTypeList=GameContext.i.data.metaData.getFightAttackTypeList();;
+							attackTypeIndex=0;
+						}
+						else{
+							attackTypeIndex++;
+						}
+						com.gamepark.casino.game.arena.util.ArenaUtil.calcNextAttackDefenceRole();
+					}
+				}
+				attackPlayerInfo.stepInfoList.push(stepInfo);
+			}
+		}
+
+		ArenaUtil.caleSuperUniqueSkillDamageByAttackerAndDefenser=function($attackRoleInfo,$targetRoleInfo,$battleAttackRoleInfo,$battleTargetRoleInfo){
+			var targetRoleInfo=$targetRoleInfo;
+			var cuitPercent=Math.min(0.5,Math.max(($attackRoleInfo.meta.crit-targetRoleInfo.meta.uncrit),0));
+			var isCuit=Math.random()<=cuitPercent;
+			var parryPercent=Math.min(1,Math.max((targetRoleInfo.meta.block-$attackRoleInfo.meta.unblock),0));
+			var isParry=Math.random()<=parryPercent;
+			var factor1=$attackRoleInfo.meta.superUniqueSkillMeta.getFirstEffectMeta().factor1;
+			var factor2=$attackRoleInfo.meta.superUniqueSkillMeta.getFirstEffectMeta().factor2;
+			var factor3=$attackRoleInfo.meta.superUniqueSkillMeta.getFirstEffectMeta().factor3;
+			var damage=Math.max(($attackRoleInfo.attack *factor1 *$attackRoleInfo.attackRate-targetRoleInfo.defense *targetRoleInfo.defenseRate),($attackRoleInfo.attack *0.05+5))*factor2 *(1+$attackRoleInfo.damageRate-targetRoleInfo.undamageRate)+factor3;
+			console.log("base damage : ",damage," attack : ",$attackRoleInfo.meta.attack," targetRoleInfo.meta.deffence : ",targetRoleInfo.meta.defense);
+			var damageType=1;
+			if(isCuit){
+				damage=damage *(1+0.5+$attackRoleInfo.critDeepen);
+				damageType=2;
+			}
+			if(isParry){
+				damage=damage *(1-0.3-targetRoleInfo.blockDeepen);
+				damageType=3;
+			};
+			var randomDamageParam=0.8+Math.random()*0.4;
+			damage=Math.round(damage *randomDamageParam);
+			$battleTargetRoleInfo.roleId=$targetRoleInfo.id;
+			$battleTargetRoleInfo.playerId=$targetRoleInfo.playerInfo.id;
+			$battleTargetRoleInfo.damage=0-damage;
+			$battleTargetRoleInfo.damageType=damageType;
+			$battleTargetRoleInfo.logic=$targetRoleInfo.roleItemLogic;
+			$battleAttackRoleInfo.targetRoleInfoList.push($battleTargetRoleInfo);
+			var targetHpOld=targetRoleInfo.hp;
+			targetRoleInfo.reduceHp(damage);
+			var targetMpOld=targetRoleInfo.mp;
+			targetRoleInfo.addMp(30+Math.round(damage / targetRoleInfo.hpMax *700));
+			if(targetRoleInfo.hp <=0){
+				targetRoleInfo.hp=0;
+				targetRoleInfo.status=4;
+			};
+			var attackMpOld=$attackRoleInfo.mp;
+			$attackRoleInfo.reduceMp(1000);
+			if(targetRoleInfo.isDie()){
+				$attackRoleInfo.addMp(200);
+			};
+			var updateRoleInfo;
+			var changePropertyInfo;
+			if((attackMpOld !=$attackRoleInfo.mp)){
+				updateRoleInfo=new BattleUpdateRoleInfo();
+				updateRoleInfo.roleId=$attackRoleInfo.id;
+				updateRoleInfo.roleInfo=$attackRoleInfo;
+				updateRoleInfo.playerId=$attackRoleInfo.playerInfo.id;
+				updateRoleInfo.playerInfo=$attackRoleInfo.playerInfo;
+				updateRoleInfo.logic=$attackRoleInfo.roleItemLogic;
+				changePropertyInfo=new BattleChangePropertyInfo();
+				changePropertyInfo.key="mp";
+				changePropertyInfo.value=$attackRoleInfo.mp;
+				updateRoleInfo.changePropertyInfoList.push(changePropertyInfo);
+				$battleAttackRoleInfo.updateRoleInfoList.push(updateRoleInfo);
+			}
+			if((targetHpOld !=targetRoleInfo.hp)|| (targetMpOld !=targetRoleInfo.mp)){
+				updateRoleInfo=new BattleUpdateRoleInfo();
+				updateRoleInfo.roleId=$targetRoleInfo.id;
+				updateRoleInfo.roleInfo=$targetRoleInfo;
+				updateRoleInfo.playerId=$targetRoleInfo.playerInfo.id;
+				updateRoleInfo.playerInfo=$targetRoleInfo.playerInfo;
+				updateRoleInfo.logic=$targetRoleInfo.roleItemLogic;
+				if(targetHpOld !=targetRoleInfo.hp){
+					changePropertyInfo=new BattleChangePropertyInfo();
+					changePropertyInfo.key="hp";
+					changePropertyInfo.value=$targetRoleInfo.hp;
+					updateRoleInfo.changePropertyInfoList.push(changePropertyInfo);
+				}
+				if(targetMpOld !=targetRoleInfo.mp){
+					changePropertyInfo=new BattleChangePropertyInfo();
+					changePropertyInfo.key="mp";
+					changePropertyInfo.value=$targetRoleInfo.mp;
+					updateRoleInfo.changePropertyInfoList.push(changePropertyInfo);
+				}
+				if(targetRoleInfo.isDie()){
+					changePropertyInfo=new BattleChangePropertyInfo();
+					changePropertyInfo.key="status";
+					changePropertyInfo.value=4;
+					updateRoleInfo.changePropertyInfoList.push(changePropertyInfo);
+				}
+				$battleAttackRoleInfo.updateRoleInfoList.push(updateRoleInfo);
+			}
+			console.log("target role ",$targetRoleInfo.position," damage : ",damage," hp : ",$targetRoleInfo.hp," mp : ",$targetRoleInfo.mp," status : ",$targetRoleInfo.status);
+		}
+
+		ArenaUtil.calcNextAttackDefenceRole=function(){
+			var arenaContext=ArenaContext.i;
+			var targetRoleInfo=arenaContext.manager.roleListLogic.defensePlayer.roleVO.roleInfoList[arenaContext.data.attackDefenceRolePosition];
+			if(targetRoleInfo.isDie()){
+				var i=0;
+				for(i=0;i < arenaContext.manager.roleListLogic.defensePlayer.roleVO.roleInfoList.length;i++){
+					targetRoleInfo=arenaContext.manager.roleListLogic.defensePlayer.roleVO.roleInfoList[i];
+					if(!targetRoleInfo.isDie()){
+						arenaContext.data.attackDefenceRolePosition=i;
+						break ;
+					}
+				}
+			}
+		}
+
+		ArenaUtil.caleAttackDamageByAttackerAndDefenser=function($attackRoleInfo,$targetRoleInfo,$battleAttackRoleInfo,$battleTargetRoleInfo,$isUseSkill,$combo,$comboEffect){
+			var targetRoleInfo=$targetRoleInfo;
+			var cuitPercent=Math.min(0.5,Math.max(($attackRoleInfo.meta.crit-targetRoleInfo.meta.uncrit),0));
+			var isCuit=Math.random()<=cuitPercent;
+			var parryPercent=Math.min(1,Math.max((targetRoleInfo.meta.block-$attackRoleInfo.meta.unblock),0));
+			var isParry=Math.random()<=parryPercent;
+			var factor1=1.0;
+			var factor2=1.0;
+			var factor3=0;
+			if($isUseSkill){
+				factor1=$attackRoleInfo.meta.skillMeta.getFirstEffectMeta().factor1;
+				factor2=$attackRoleInfo.meta.skillMeta.getFirstEffectMeta().factor2;
+				factor3=$attackRoleInfo.meta.skillMeta.getFirstEffectMeta().factor3;
+			};
+			var damage=Math.max(($attackRoleInfo.attack *factor1 *$attackRoleInfo.attackRate-targetRoleInfo.defense *targetRoleInfo.defenseRate),($attackRoleInfo.attack *0.05+5))*factor2 *(1+$attackRoleInfo.damageRate-targetRoleInfo.undamageRate)+factor3;
+			console.log("attack : ",$attackRoleInfo.attack);
+			console.log("defense : ",targetRoleInfo.defense);
+			console.log("$isUseSkill : ",$isUseSkill);
+			console.log("base damage : ",damage," attack : ",$attackRoleInfo.meta.attack," targetRoleInfo.meta.deffence : ",targetRoleInfo.meta.defense);
+			var damageType=1;
+			if(isCuit){
+				damage=damage *(1+0.5+$attackRoleInfo.critDeepen);
+				damageType=2;
+			}
+			if(isParry){
+				damage=damage *(1-0.3-targetRoleInfo.blockDeepen);
+				damageType=3;
+			};
+			var randomDamageParam=0.8+Math.random()*0.4;
+			damage=damage *randomDamageParam;
+			damage=Math.round(damage *$comboEffect);
+			$battleTargetRoleInfo.roleId=$targetRoleInfo.id;
+			$battleTargetRoleInfo.playerId=$targetRoleInfo.playerInfo.id;
+			$battleTargetRoleInfo.damage=0-damage;
+			$battleTargetRoleInfo.damageType=damageType;
+			$battleTargetRoleInfo.logic=$targetRoleInfo.roleItemLogic;
+			$battleAttackRoleInfo.targetRoleInfoList.push($battleTargetRoleInfo);
+			var targetHpOld=targetRoleInfo.hp;
+			targetRoleInfo.reduceHp(damage);
+			var targetMpOld=targetRoleInfo.mp;
+			targetRoleInfo.addMp(30+Math.round(damage / targetRoleInfo.hpMax *700));
+			if(targetRoleInfo.mp > 1000){
+				targetRoleInfo.mp=1000;
+			}
+			if(targetRoleInfo.hp <=0){
+				targetRoleInfo.hp=0;
+				targetRoleInfo.status=4;
+			};
+			var attackMpOld=$attackRoleInfo.mp;
+			$attackRoleInfo.addMp(150);
+			if(targetRoleInfo.isDie()){
+				$attackRoleInfo.addMp(200);
+			};
+			var updateRoleInfo;
+			var changePropertyInfo;
+			if((attackMpOld !=$attackRoleInfo.mp)){
+				updateRoleInfo=new BattleUpdateRoleInfo();
+				updateRoleInfo.roleId=$attackRoleInfo.id;
+				updateRoleInfo.roleInfo=$attackRoleInfo;
+				updateRoleInfo.playerId=$attackRoleInfo.playerInfo.id;
+				updateRoleInfo.playerInfo=$attackRoleInfo.playerInfo;
+				updateRoleInfo.logic=$attackRoleInfo.roleItemLogic;
+				changePropertyInfo=new BattleChangePropertyInfo();
+				changePropertyInfo.key="mp";
+				changePropertyInfo.value=$attackRoleInfo.mp;
+				updateRoleInfo.changePropertyInfoList.push(changePropertyInfo);
+				$battleAttackRoleInfo.updateRoleInfoList.push(updateRoleInfo);
+			}
+			if((targetHpOld !=targetRoleInfo.hp)|| (targetMpOld !=targetRoleInfo.mp)){
+				updateRoleInfo=new BattleUpdateRoleInfo();
+				updateRoleInfo.roleId=$targetRoleInfo.id;
+				updateRoleInfo.roleInfo=$targetRoleInfo;
+				updateRoleInfo.playerId=$targetRoleInfo.playerInfo.id;
+				updateRoleInfo.playerInfo=$targetRoleInfo.playerInfo;
+				updateRoleInfo.logic=$targetRoleInfo.roleItemLogic;
+				if(targetHpOld !=targetRoleInfo.hp){
+					changePropertyInfo=new BattleChangePropertyInfo();
+					changePropertyInfo.key="hp";
+					changePropertyInfo.value=$targetRoleInfo.hp;
+					updateRoleInfo.changePropertyInfoList.push(changePropertyInfo);
+				}
+				if(targetMpOld !=targetRoleInfo.mp){
+					changePropertyInfo=new BattleChangePropertyInfo();
+					changePropertyInfo.key="mp";
+					changePropertyInfo.value=$targetRoleInfo.mp;
+					updateRoleInfo.changePropertyInfoList.push(changePropertyInfo);
+				}
+				if(targetRoleInfo.isDie()){
+					changePropertyInfo=new BattleChangePropertyInfo();
+					changePropertyInfo.key="status";
+					changePropertyInfo.value=4;
+					updateRoleInfo.changePropertyInfoList.push(changePropertyInfo);
+				}
+				$battleAttackRoleInfo.updateRoleInfoList.push(updateRoleInfo);
+			}
+			console.log("target role ",$targetRoleInfo.position," damage : ",damage," hp : ",$targetRoleInfo.hp," mp : ",$targetRoleInfo.mp," status : ",$targetRoleInfo.status," comboEffect : ",$comboEffect);
+		}
+
+		ArenaUtil.getBattleUpdateRoleInfoById=function($roleId,$playerId,$updateRoleInfoList){
+			var i=0;
+			var updateRoleInfo;
+			for(i=0;i < $updateRoleInfoList.length;i++){
+				updateRoleInfo=$updateRoleInfoList[i];
+				if(updateRoleInfo.roleId==$roleId){
+					if(updateRoleInfo.playerId==$playerId){
+						return updateRoleInfo;
+					}
+				}
+			}
+			return null;
+		}
+
+		ArenaUtil.getBattleChangePropertyByKey=function($key,$updateRoleInfo){
+			var i=0;
+			var changePropertyInfo;
+			var changePropertyValue=0;
+			for(i=0;i < $updateRoleInfo.changePropertyInfoList.length;i++){
+				changePropertyInfo=$updateRoleInfo.changePropertyInfoList[i];
+				if(changePropertyInfo.key==$key){
+					return changePropertyInfo;
+				}
+			}
+			return null;
+		}
+
+		ArenaUtil.getNextBattleAttackRoleInfo=function($actionRoleInfo,$roleId){
+			var arenaContext=ArenaContext.i;
+			var i=0;
+			var battleInfo=arenaContext.data.battleVO.roundInfoList[arenaContext.data.battleVO.roundInfoList.length-1];
+			var roundInfo=battleInfo.battleRoundInfoList[battleInfo.battleRoundInfoList.length-1];
+			var attackPlayerInfo=roundInfo.attackPlayerInfoList[roundInfo.attackPlayerInfoList.length-1];
+			var stepInfo=attackPlayerInfo.stepInfoList[attackPlayerInfo.stepInfoList.length-1];
+			var attackRoleInfo;
+			var nextBattleAttackRoleInfo;
+			var nextTargetRoleInfo;
+			for(i=0;i < stepInfo.attackRoleInfoList.length;i++){
+				attackRoleInfo=stepInfo.attackRoleInfoList[i];
+				if(attackRoleInfo.roleId==$actionRoleInfo.roleId){
+					if(i==(stepInfo.attackRoleInfoList.length-1)){
+						return null;
+					}
+					else{
+						nextBattleAttackRoleInfo=stepInfo.attackRoleInfoList[i+1];
+						nextTargetRoleInfo=nextBattleAttackRoleInfo.targetRoleInfoList[0];
+						if(nextTargetRoleInfo.roleId==$roleId){
+							return stepInfo.attackRoleInfoList[i+1];
+						}
+						else{
+							return null;
+						}
+					}
+				}
+			}
 			return null;
 		}
 
@@ -1647,210 +3325,97 @@ window.Laya=(function(window,document){
 	})()
 
 
-	//class com.gamepark.casino.model.CardVO
-	var CardVO=(function(){
-		function CardVO(){
-			this._value=0;
-			this._type=0;
-			this._number=0;
-			this._index=0;
-			this._view=null;
+	//class com.gamepark.casino.meta.MetaBase
+	var MetaBase=(function(){
+		function MetaBase($metaObj){
+			this.metaData=GameContext.i.data.metaData;
+			for(var key in $metaObj){
+				this[key]=$metaObj[key];
+			}
 		}
 
-		__class(CardVO,'com.gamepark.casino.model.CardVO');
-		var __proto=CardVO.prototype;
-		__proto.toString=function(){
-			var huase;
-			switch(this._type){
-				case 0:
-					huase="黑桃";
-					break ;
-				case 1:
-					huase="红桃";
-					break ;
-				case 2:
-					huase="梅花";
-					break ;
-				case 3:
-					huase="方片";
-					break ;
-				};
-			var dianshu;
-			switch(this._number){
-				case 0:
-					dianshu="A";
-					break ;
-				case 1:
-				case 2:
-				case 3:
-				case 4:
-				case 5:
-				case 6:
-				case 7:
-				case 8:
-				case 9:
-					dianshu=(this._number+1)+"";
-					break ;
-				case 10:
-					dianshu="J";
-					break ;
-				case 11:
-					dianshu="Q";
-					break ;
-				case 12:
-					dianshu="K";
-					break ;
-				}
-			return "花色："+huase+" 点数："+dianshu;
+		__class(MetaBase,'com.gamepark.casino.meta.MetaBase');
+		return MetaBase;
+	})()
+
+
+	//class com.gamepark.casino.meta.MetaData
+	var MetaData=(function(){
+		function MetaData(){
+			this.fightAttackTypeMetaList=[];
+			this.heroBaseMetaList=[];
+			this.fightSkillMetaList=[];
+			this.fightSkillEffectMetaList=[];
+			this.heroResourceMetaList=[];
+			this.fightAttackTypeMetaDict=new Dictionary();
+			this.heroBaseMetaDict=new Dictionary();
+			this.fightSkillMetaDict=new Dictionary();
+			this.fightSkillEffectMetaDict=new Dictionary();
+			this.heroResourceMetaDict=new Dictionary();
 		}
 
-		__getset(0,__proto,'index',function(){
-			return this._index;
-		});
-
-		__getset(0,__proto,'landlordNumber',function(){
-			var landlordValue=0;
-			if(this._type==5){
-				landlordValue=16;
+		__class(MetaData,'com.gamepark.casino.meta.MetaData');
+		var __proto=MetaData.prototype;
+		__proto.initialize=function($metaData){
+			console.log($metaData);
+			var i=0;
+			var metaObjList;
+			var metaObj;
+			metaObjList=$metaData["Fight_combo"];
+			this.fightAttackTypeMetaList=[];
+			var fightAttackTypeMeta;
+			for(i=0;i < metaObjList.length;i++){
+				metaObj=metaObjList[i];
+				fightAttackTypeMeta=new FightAttackTypeMeta(metaObj);
+				this.fightAttackTypeMetaList.push(fightAttackTypeMeta);
+				this.fightAttackTypeMetaDict.set(fightAttackTypeMeta.id,fightAttackTypeMeta);
 			}
-			else if(this._type==4){
-				landlordValue=15;
+			metaObjList=$metaData["Herobase_demo"];
+			this.heroBaseMetaList=[];
+			var heroBaseMeta;
+			for(i=0;i < metaObjList.length;i++){
+				metaObj=metaObjList[i];
+				heroBaseMeta=new HeroBaseMeta(metaObj);
+				this.heroBaseMetaList.push(heroBaseMeta);
+				this.heroBaseMetaDict.set(heroBaseMeta.id,heroBaseMeta);
 			}
-			else{
-				switch(this._number){
-					case 0:
-						landlordValue=13;
-						break ;
-					case 1:
-						landlordValue=14;
-						break ;
-					case 2:
-					case 3:
-					case 4:
-					case 5:
-					case 6:
-					case 7:
-					case 8:
-					case 9:
-					case 10:
-					case 11:
-					case 12:
-						landlordValue=this._number;
-						break ;
-					}
+			metaObjList=$metaData["HeroResource"];
+			this.heroResourceMetaList=[];
+			var heroResourceMeta;
+			for(i=0;i < metaObjList.length;i++){
+				metaObj=metaObjList[i];
+				heroResourceMeta=new HeroResourceMeta(metaObj);
+				this.heroResourceMetaList.push(heroResourceMeta);
+				this.heroResourceMetaDict.set(heroResourceMeta.id,heroResourceMeta);
+				heroResourceMeta.name="qingqizhuqiang";
 			}
-			return landlordValue;
-		});
-
-		__getset(0,__proto,'value',function(){
-			return this._value;
-			},function(value){
-			this._value=value;
-			if(this._value >-1){
-				this._type=(this._value & 0xFF0000)>> 16;
-				this._number=(this._value & 0x00FF00)>> 8;
-				this._index=(this._value & 0x0000FF);
+			metaObjList=$metaData["FightingSkill_demo"];
+			this.fightSkillMetaList=[];
+			var fightSkillMeta;
+			for(i=0;i < metaObjList.length;i++){
+				metaObj=metaObjList[i];
+				fightSkillMeta=new FightSkillMeta(metaObj);
+				this.fightSkillMetaList.push(fightSkillMeta);
+				this.fightSkillMetaDict.set(fightSkillMeta.id,fightSkillMeta);
 			}
-		});
-
-		__getset(0,__proto,'type',function(){
-			return this._type;
-		});
-
-		__getset(0,__proto,'landlordCardIndex',function(){
-			var landlordValue=0;
-			if(this._type==5){
-				landlordValue=16 *4;
+			metaObjList=$metaData["FightingEffect_demo"];
+			this.fightSkillEffectMetaList=[];
+			var fightSkillEffectMeta;
+			for(i=0;i < metaObjList.length;i++){
+				metaObj=metaObjList[i];
+				fightSkillEffectMeta=new FightSkillEffectMeta(metaObj);
+				this.fightSkillEffectMetaList.push(fightSkillEffectMeta);
+				this.fightSkillEffectMetaDict.set(fightSkillEffectMeta.id,fightSkillEffectMeta);
 			}
-			else if(this._type==4){
-				landlordValue=15 *4;
-			}
-			else{
-				switch(this._number){
-					case 0:
-						landlordValue=13 *4+this._type;
-						break ;
-					case 1:
-						landlordValue=14 *4+this._type;
-						break ;
-					case 2:
-					case 3:
-					case 4:
-					case 5:
-					case 6:
-					case 7:
-					case 8:
-					case 9:
-					case 10:
-					case 11:
-					case 12:
-						landlordValue=this._number *4+this._type;
-						break ;
-					}
-			}
-			return landlordValue;
-		});
+		}
 
-		__getset(0,__proto,'number',function(){
-			return this._number;
-		});
+		// trace("i : ",i," fightSkillEffectMetaList : ",fightSkillEffectMetaList);
+		__proto.getFightAttackTypeList=function(){
+			var fightAttackTypeMeta=this.fightAttackTypeMetaList[Math.floor(Math.random()*this.fightAttackTypeMetaList.length)];
+			return fightAttackTypeMeta.attackTypeList;
+		}
 
-		__getset(0,__proto,'niuniuNumber',function(){
-			var niuniuValue=0;
-			switch(this._number){
-				case 0:
-				case 1:
-				case 2:
-				case 3:
-				case 4:
-				case 5:
-				case 6:
-				case 7:
-				case 8:
-				case 9:
-					niuniuValue=this._number+1;
-					break ;
-				case 10:
-				case 11:
-				case 12:
-					niuniuValue=10;
-					break ;
-				}
-			return niuniuValue;
-		});
-
-		__getset(0,__proto,'baccaratNumber',function(){
-			var baccaratValue=0;
-			switch(this._number){
-				case 0:
-				case 1:
-				case 2:
-				case 3:
-				case 4:
-				case 5:
-				case 6:
-				case 7:
-				case 8:
-					baccaratValue=this._number+1;
-					break ;
-				case 9:
-				case 10:
-				case 11:
-				case 12:
-					baccaratValue=0;
-					break ;
-				}
-			return baccaratValue;
-		});
-
-		__getset(0,__proto,'view',function(){
-			return this._view;
-			},function(value){
-			this._view=value;
-			this._view.cardVO=this;
-		});
-
-		return CardVO;
+		return MetaData;
 	})()
 
 
@@ -2066,7 +3631,9 @@ window.Laya=(function(window,document){
 	var GameData=(function(){
 		function GameData(){
 			this.me=null;
+			this.metaData=null;
 			this.me=new PlayerInfo1();
+			this.metaData=new MetaData();
 		}
 
 		__class(GameData,'com.gamepark.casino.model.GameData');
@@ -2335,7 +3902,7 @@ window.Laya=(function(window,document){
 		__proto.showGameInfoContent=function(){
 			this._gameInfoItemView.setText(this._gameInfoList[0]);
 			Tween.to(this.gameInfoView,
-			{y :60,onComplete :__bind(this,this.gameInfoViewShowComplete)},200);
+			{y :60,onComplete :this.gameInfoViewShowComplete},200);
 		}
 
 		__proto.gameInfoViewShowComplete=function(){
@@ -2344,7 +3911,7 @@ window.Laya=(function(window,document){
 
 		__proto.hideGameInfoView=function(){
 			Tween.to(this.gameInfoView,
-			{y :(0-this.gameInfoView.height),onComplete :__bind(this,this.gameInfoViewHideComplete)},200);
+			{y :(0-this.gameInfoView.height),onComplete :this.gameInfoViewHideComplete},200);
 		}
 
 		__proto.gameInfoViewHideComplete=function(){
@@ -2473,6 +4040,16 @@ window.Laya=(function(window,document){
 			this.multyBitmapFont=null;
 			this.comboBSBitmapFont=null;
 			this.comboSHBitmapFont=null;
+			this.comboEBitmapFont=null;
+			this.comboFBitmapFont=null;
+			this.comboGBitmapFont=null;
+			this.comboABitmapFont=null;
+			this.comboBBitmapFont=null;
+			this.comboCBitmapFont=null;
+			this.comboDBitmapFont=null;
+			this.comboHBitmapFont=null;
+			this.comboIBitmapFont=null;
+			this.comboRBitmapFont=null;
 			Laya.init(1136,640,WebGL);
 			Laya.stage.screenMode="horizontal";
 			Laya.stage.alignH="center";
@@ -2481,12 +4058,13 @@ window.Laya=(function(window,document){
 			Stat.show();
 			GameContext.i.initialize(new DefaultPlatformDelegate());
 			console.log(1,Laya.stage.width,Laya.stage.height);
-			Laya.loader.load([{url:"res/atlas/comp.json",type:"atlas"},{url:"res/atlas/loading.json",type:"atlas"}],Handler.create(this,this.onLoaded));
+			Laya.loader.load([{url:"res/atlas/comp.json",type:"atlas"},{url:"res/atlas/loading.json",type:"atlas"},{url :"res/config/configJson.json",type :"json"}],Handler.create(this,this.onLoaded));
 		}
 
 		__class(Sanguo,'Sanguo');
 		var __proto=Sanguo.prototype;
 		__proto.onLoaded=function(){
+			GameContext.i.data.metaData.initialize(Laya.loader.getRes("res/config/configJson.json"));
 			this.sixBitmapFont=new BitmapFont();
 			this.sixBitmapFont.loadFont("bmfont/SH.fnt",Handler.create(this,this.onLoadBmFontSixHandler));
 		}
@@ -2517,7 +4095,68 @@ window.Laya=(function(window,document){
 		}
 
 		__proto.onLoadBmFontComboSHHandler=function(){
-			Text.registerBitmapFont("comboSH",this.comboSHBitmapFont);
+			Text.registerBitmapFont("comboSH",this.comboBSBitmapFont);
+			this.comboEBitmapFont=new BitmapFont();
+			this.comboEBitmapFont.loadFont("bmfont/E.fnt",Handler.create(this,this.onLoadBmFontEHandler));
+		}
+
+		__proto.onLoadBmFontEHandler=function(){
+			Text.registerBitmapFont("E",this.comboEBitmapFont);
+			this.comboFBitmapFont=new BitmapFont();
+			this.comboFBitmapFont.loadFont("bmfont/F.fnt",Handler.create(this,this.onLoadBmFontGHandler));
+		}
+
+		__proto.onLoadBmFontGHandler=function(){
+			Text.registerBitmapFont("F",this.comboFBitmapFont);
+			this.comboGBitmapFont=new BitmapFont();
+			this.comboGBitmapFont.loadFont("bmfont/G.fnt",Handler.create(this,this.onLoadBmGontFHandler));
+		}
+
+		__proto.onLoadBmGontFHandler=function(){
+			Text.registerBitmapFont("G",this.comboGBitmapFont);
+			this.comboABitmapFont=new BitmapFont();
+			this.comboABitmapFont.loadFont("bmfont/A.fnt",Handler.create(this,this.onLoadBmFontAHandler))
+		}
+
+		//GameContext.i.loadingService.initialize();
+		__proto.onLoadBmFontAHandler=function(){
+			Text.registerBitmapFont("A",this.comboABitmapFont);
+			this.comboBBitmapFont=new BitmapFont();
+			this.comboBBitmapFont.loadFont("bmfont/B.fnt",Handler.create(this,this.onLoadBmFontBHandler));
+		}
+
+		__proto.onLoadBmFontBHandler=function(){
+			Text.registerBitmapFont("B",this.comboBBitmapFont);
+			this.comboCBitmapFont=new BitmapFont();
+			this.comboCBitmapFont.loadFont("bmfont/C.fnt",Handler.create(this,this.onLoadBmFontCHandler));
+		}
+
+		__proto.onLoadBmFontCHandler=function(){
+			Text.registerBitmapFont("C",this.comboCBitmapFont);
+			this.comboDBitmapFont=new BitmapFont();
+			this.comboDBitmapFont.loadFont("bmfont/D.fnt",Handler.create(this,this.onLoadBmFontDHandler));
+		}
+
+		__proto.onLoadBmFontDHandler=function(){
+			Text.registerBitmapFont("D",this.comboDBitmapFont);
+			this.comboHBitmapFont=new BitmapFont();
+			this.comboHBitmapFont.loadFont("bmfont/H.fnt",Handler.create(this,this.onLoadBmFontHHandler));
+		}
+
+		__proto.onLoadBmFontHHandler=function(){
+			Text.registerBitmapFont("H",this.comboHBitmapFont);
+			this.comboIBitmapFont=new BitmapFont();
+			this.comboIBitmapFont.loadFont("bmfont/I.fnt",Handler.create(this,this.onLoadBmFontRHandler));
+		}
+
+		__proto.onLoadBmFontRHandler=function(){
+			Text.registerBitmapFont("I",this.comboIBitmapFont);
+			this.comboRBitmapFont=new BitmapFont();
+			this.comboRBitmapFont.loadFont("bmfont/R.fnt",Handler.create(this,this.onLoadBmFontRIHandler));
+		}
+
+		__proto.onLoadBmFontRIHandler=function(){
+			Text.registerBitmapFont("R",this.comboRBitmapFont);
 			GameContext.i.loadingService=new LoadingService();
 			GameContext.i.loadingService.initialize();
 		}
@@ -2539,7 +4178,7 @@ window.Laya=(function(window,document){
 		Config.CPUMemoryLimit=120 *1024 *1024;
 		Config.GPUMemoryLimit=160 *1024 *1024;
 		Config.animationInterval=30;
-		Config.isAntialias=false;
+		Config.isAntialias=true;
 		return Config;
 	})()
 
@@ -2559,6 +4198,93 @@ window.Laya=(function(window,document){
 
 
 	/**
+	*...
+	*@author
+	*/
+	//class laya.ani.bone.Bone
+	var Bone=(function(){
+		function Bone(){
+			this.name=null;
+			this._parent=null;
+			this.length=10;
+			this.transform=null;
+			this.sprite=null;
+			this._children=[];
+			this.resultTransform=new Transform();
+			this.resultMatrix=new Matrix();
+		}
+
+		__class(Bone,'laya.ani.bone.Bone');
+		var __proto=Bone.prototype;
+		__proto.update=function(pMatrix){
+			var tResultMatrix;
+			if (pMatrix){
+				tResultMatrix=this.resultTransform.getMatrix();
+				Matrix.mul(tResultMatrix,pMatrix,this.resultMatrix);
+				}else {
+				if (this._parent){
+					tResultMatrix=this.resultTransform.getMatrix();
+					Matrix.mul(tResultMatrix,this._parent.resultMatrix,this.resultMatrix);
+					}else {
+					tResultMatrix=this.resultTransform.getMatrix();
+					tResultMatrix.copyTo(this.resultMatrix);
+				}
+			};
+			var i=0,n=0;
+			var tBone;
+			for (i=0,n=this._children.length;i < n;i++){
+				tBone=this._children[i];
+				tBone.update();
+			}
+		}
+
+		__proto.updateDraw=function(x,y){
+			if (this.sprite){
+				this.sprite.x=x+this.resultMatrix.tx;
+				this.sprite.y=y+this.resultMatrix.ty;
+				}else {
+				this.sprite=new Sprite();
+				this.sprite.graphics.drawCircle(0,0,5,"#ff0000");
+				Laya.stage.addChild(this.sprite);
+				this.sprite.x=x+this.resultMatrix.tx;
+				this.sprite.y=y+this.resultMatrix.ty;
+			};
+			var i=0,n=0;
+			var tBone;
+			for (i=0,n=this._children.length;i < n;i++){
+				tBone=this._children[i];
+				tBone.updateDraw(x,y);
+			}
+		}
+
+		__proto.addChild=function(bone){
+			this._children.push(bone);
+			bone._parent=this;
+		}
+
+		__proto.findBone=function(boneName){
+			if (this.name==boneName){
+				return this;
+				}else {
+				var i=0,n=0;
+				var tBone;
+				var tResult;
+				for (i=0,n=this._children.length;i < n;i++){
+					tBone=this._children[i];
+					tResult=tBone.findBone(boneName);
+					if (tResult){
+						return tResult;
+					}
+				}
+			}
+			return null;
+		}
+
+		return Bone;
+	})()
+
+
+	/**
 	*@private
 	*/
 	//class laya.ani.bone.BoneSlot
@@ -2566,6 +4292,7 @@ window.Laya=(function(window,document){
 		function BoneSlot(){
 			this.name=null;
 			this.parent=null;
+			this.attachmentName=null;
 			this.srcDisplayIndex=-1;
 			this.type="src";
 			this.templet=null;
@@ -2593,6 +4320,14 @@ window.Laya=(function(window,document){
 		}
 
 		/**
+		*通过名字显示指定对象
+		*@param name
+		*/
+		__proto.showDisplayByName=function(name){
+			this.showDisplayByIndex(this.currSlotData.getDisplayByName(name));
+		}
+
+		/**
 		*指定显示对象
 		*@param index
 		*/
@@ -2601,19 +4336,10 @@ window.Laya=(function(window,document){
 				this.displayIndex=index;
 				this.currDisplayData=this.currSlotData.displayArr[index];
 				if (this.currDisplayData){
-					this.currTexture=this.templet.getTexture(this.currDisplayData.name);
-					if (this.currTexture){
-						switch (this.currDisplayData.type){
-							case 0:
-								if (this.currDisplayData.uvs){
-									this.currTexture=new Texture(this.currTexture.bitmap,this.currDisplayData.uvs);
-								}
-								break ;
-							case 1:
-								break ;
-							case 2:
-								break ;
-							}
+					var tName=this.currDisplayData.name;
+					this.currTexture=this.templet.getTexture(tName);
+					if (this.currTexture && Render.isWebGL && this.currDisplayData.type==0 && this.currDisplayData.uvs){
+						this.currTexture=new Texture(this.currTexture.bitmap,this.currDisplayData.uvs);
 					}
 				}
 				}else {
@@ -2644,16 +4370,22 @@ window.Laya=(function(window,document){
 		*@param graphics
 		*@param noUseSave
 		*/
-		__proto.draw=function(graphics,boneMatrixArray,noUseSave){
+		__proto.draw=function(graphics,boneMatrixArray,sprite,noUseSave){
 			(noUseSave===void 0)&& (noUseSave=false);
-			if ((this._diyTexture==null && this.currTexture==null)|| this.currDisplayData==null)return;
+			if ((this._diyTexture==null && this.currTexture==null)|| this.currDisplayData==null){
+				if (!(this.currDisplayData && this.currDisplayData.type==3)){
+					return;
+				}
+			};
 			var tTexture=this.currTexture;
 			if (this._diyTexture)tTexture=this._diyTexture;
+			var tSkinSprite;
 			switch (this.currDisplayData.type){
 				case 0:
 					if (graphics){
 						var tCurrentMatrix=this.getDisplayMatrix();
 						if (this._parentMatrix){
+							var tRotateKey=false;
 							if (tCurrentMatrix){
 								Matrix.mul(tCurrentMatrix,this._parentMatrix,Matrix.TEMP);
 								var tResultMatrix;
@@ -2663,17 +4395,199 @@ window.Laya=(function(window,document){
 									}else {
 									tResultMatrix=new Matrix();
 								}
-								Matrix.TEMP.copyTo(tResultMatrix);
-								graphics.drawTexture(tTexture,-this.currDisplayData.width / 2,-this.currDisplayData.height / 2,this.currDisplayData.width,this.currDisplayData.height,tResultMatrix);
+								if (!Render.isWebGL && this.currDisplayData.uvs){
+									var tTestMatrix=new Matrix(1,0,0,1);
+									if (this.currDisplayData.uvs[1] > this.currDisplayData.uvs[5]){
+										tTestMatrix.d=-1;
+									}
+									if (this.currDisplayData.uvs[0] > this.currDisplayData.uvs[4]
+										&& this.currDisplayData.uvs[1] > this.currDisplayData.uvs[5]){
+										tRotateKey=true;
+										tTestMatrix.rotate(-Math.PI/2);
+									}
+									Matrix.mul(tTestMatrix,Matrix.TEMP,tResultMatrix);
+									}else {
+									Matrix.TEMP.copyTo(tResultMatrix);
+								}
+								if (tRotateKey){
+									graphics.drawTexture(tTexture,-this.currDisplayData.height / 2,-this.currDisplayData.width / 2,this.currDisplayData.height,this.currDisplayData.width,tResultMatrix);
+									}else {
+									graphics.drawTexture(tTexture,-this.currDisplayData.width / 2,-this.currDisplayData.height / 2,this.currDisplayData.width,this.currDisplayData.height,tResultMatrix);
+								}
 							}
 						}
 					}
 					break ;
 				case 1:
+					tSkinSprite=RunDriver.skinAniSprite();
+					if (tSkinSprite==null){
+						return;
+					}
+					graphics.drawSkin(tSkinSprite);
+					var tVBArray=[];
+					var tIBArray=[];
+					var tRed=1;
+					var tGreed=1;
+					var tBlue=1;
+					var tAlpha=1;
+					if (this.currDisplayData.bones==null){
+						for (var i=0,ii=0;i < this.currDisplayData.weights.length && ii< this.currDisplayData.uvs.length;){
+							var tX=this.currDisplayData.weights[i++];
+							var tY=this.currDisplayData.weights[i++];
+							tVBArray.push(tX,tY,this.currDisplayData.uvs[ii++],this.currDisplayData.uvs[ii++],tRed,tGreed,tBlue,tAlpha);
+						};
+						var tTriangleNum=this.currDisplayData.triangles.length / 3;
+						for (i=0;i < tTriangleNum;i++){
+							tIBArray.push(this.currDisplayData.triangles[i *3]);
+							tIBArray.push(this.currDisplayData.triangles[i *3+1]);
+							tIBArray.push(this.currDisplayData.triangles[i *3+2]);
+						}
+						tSkinSprite.init(this.currTexture,tVBArray,tIBArray);
+						var tCurrentMatrix2=this.getDisplayMatrix();
+						if (this._parentMatrix){
+							if (tCurrentMatrix2){
+								Matrix.mul(tCurrentMatrix2,this._parentMatrix,Matrix.TEMP);
+								var tResultMatrix2;
+								if (noUseSave){
+									if (this._resultMatrix==null)this._resultMatrix=new Matrix();
+									tResultMatrix2=this._resultMatrix;
+									}else {
+									tResultMatrix2=new Matrix();
+								}
+								Matrix.TEMP.copyTo(tResultMatrix2);
+								tSkinSprite.transform=tResultMatrix2;
+							}
+						}
+						}else {
+						this.skinMesh(boneMatrixArray,tSkinSprite);
+					}
 					break ;
 				case 2:
+					tSkinSprite=RunDriver.skinAniSprite();
+					if (tSkinSprite==null){
+						return;
+					}
+					graphics.drawSkin(tSkinSprite);
+					this.skinMesh(boneMatrixArray,tSkinSprite);
+					break ;
+				case 3:
 					break ;
 				}
+		}
+
+		/**
+		*画路径
+		*@param boneMatrixArray
+		*@param graphics
+		*/
+		__proto.drawPath=function(boneMatrixArray,graphics){
+			var tBones=this.currDisplayData.bones;
+			var tWeights=this.currDisplayData.weights;
+			var tTriangles=this.currDisplayData.triangles;
+			var tVBArray=[];
+			var tIBArray=[];
+			var tRx=0;
+			var tRy=0;
+			var nn=0;
+			var tMatrix;
+			var tX=NaN;
+			var tY=NaN;
+			var tB=0;
+			var tWeight=0;
+			var tVertices=[];
+			var i=0,j=0,n=0;
+			var tRed=1;
+			var tGreed=1;
+			var tBlue=1;
+			var tAlpha=1;
+			for (i=0,n=tBones.length;i < n;){
+				nn=tBones[i++]+i;
+				tRx=0,tRy=0;
+				for (;i < nn;i++){
+					tMatrix=boneMatrixArray[tBones[i]]
+					tX=tWeights[tB];
+					tY=tWeights[tB+1];
+					tWeight=tWeights[tB+2];
+					tRx+=(tX *tMatrix.a+tY *tMatrix.c+tMatrix.tx)*tWeight;
+					tRy+=(tX *tMatrix.b+tY *tMatrix.d+tMatrix.ty)*tWeight;
+					tB+=3;
+				}
+				tVertices.push(tRx,tRy);
+			}
+			for (i=0;i < tVertices.length;){
+				tRx=tVertices[i++];
+				tRy=tVertices[i++];
+				graphics.drawCircle(tRx,tRy,2.5,"#ff0000");
+				tVBArray.push(tRx,tRy);
+			};
+			var tNum=10;
+			var tOut=[];
+			for (var i=0;i < tNum;i++){
+				this.addCurvePosition(i / tNum,tVertices[0],tVertices[1],tVertices[2],tVertices[3],tVertices[4],tVertices[5],tVertices[6],tVertices[7],tOut,i *3,true);
+			}
+			for (i=0;i < tNum;i++){
+				graphics.drawCircle(tOut[i *3],tOut[i*3+1],2.5,"#00ff00");
+			}
+		}
+
+		__proto.addCurvePosition=function(p,x1,y1,cx1,cy1,cx2,cy2,x2,y2,out,o,tangents){
+			if (p==0)p=0.0001;
+			var tt=p *p,ttt=tt *p,u=1-p,uu=u *u,uuu=uu *u;
+			var ut=u *p,ut3=ut *3,uut3=u *ut3,utt3=ut3 *p;
+			var x=x1 *uuu+cx1 *uut3+cx2 *utt3+x2 *ttt,y=y1 *uuu+cy1 *uut3+cy2 *utt3+y2 *ttt;
+			out[o]=x;
+			out[o+1]=y;
+			if (tangents)out[o+2]=Math.atan2(y-(y1 *uu+cy1 *ut *2+cy2 *tt),x-(x1 *uu+cx1 *ut *2+cx2 *tt));
+		}
+
+		/**
+		*显示蒙皮动画
+		*@param boneMatrixArray 当前帧的骨骼矩阵
+		*/
+		__proto.skinMesh=function(boneMatrixArray,skinSprite){
+			var tBones=this.currDisplayData.bones;
+			var tUvs=this.currDisplayData.uvs;
+			var tWeights=this.currDisplayData.weights;
+			var tTriangles=this.currDisplayData.triangles;
+			var tVBArray=[];
+			var tIBArray=[];
+			var tRx=0;
+			var tRy=0;
+			var nn=0;
+			var tMatrix;
+			var tX=NaN;
+			var tY=NaN;
+			var tB=0;
+			var tWeight=0;
+			var tVertices=[];
+			var i=0,j=0,n=0;
+			var tRed=1;
+			var tGreed=1;
+			var tBlue=1;
+			var tAlpha=1;
+			for (i=0,n=tBones.length;i < n;){
+				nn=tBones[i++]+i;
+				tRx=0,tRy=0;
+				for (;i < nn;i++){
+					tMatrix=boneMatrixArray[tBones[i]]
+					tX=tWeights[tB];
+					tY=tWeights[tB+1];
+					tWeight=tWeights[tB+2];
+					tRx+=(tX *tMatrix.a+tY *tMatrix.c+tMatrix.tx)*tWeight;
+					tRy+=(tX *tMatrix.b+tY *tMatrix.d+tMatrix.ty)*tWeight;
+					tB+=3;
+				}
+				tVertices.push(tRx,tRy);
+			}
+			for (i=0,j=0;i < tVertices.length && j < tUvs.length;){
+				tRx=tVertices[i++];
+				tRy=tVertices[i++];
+				tVBArray.push(tRx,tRy,tUvs[j++],tUvs[j++],tRed,tGreed,tBlue,tAlpha);
+			}
+			for (i=0,n=tTriangles.length;i < n;i++){
+				tIBArray.push(tTriangles[i]);
+			}
+			skinSprite.init(this.currTexture,tVBArray,tIBArray);
 		}
 
 		/**
@@ -2713,6 +4627,7 @@ window.Laya=(function(window,document){
 			var tBoneSlot=new BoneSlot();
 			tBoneSlot.type="copy";
 			tBoneSlot.name=this.name;
+			tBoneSlot.attachmentName=this.attachmentName;
 			tBoneSlot.srcDisplayIndex=this.srcDisplayIndex;
 			tBoneSlot.parent=this.parent;
 			tBoneSlot.displayIndex=this.displayIndex;
@@ -2724,6 +4639,39 @@ window.Laya=(function(window,document){
 		}
 
 		return BoneSlot;
+	})()
+
+
+	/**
+	*...
+	*@author
+	*/
+	//class laya.ani.bone.IkConstraintData
+	var IkConstraintData=(function(){
+		function IkConstraintData(){
+			this.name=null;
+			this.targetBoneName=null;
+			this.bendDirection=1;
+			this.mix=1;
+			this.targetBoneIndex=-1;
+			this.boneNames=[];
+			this.boneIndexs=[];
+		}
+
+		__class(IkConstraintData,'laya.ani.bone.IkConstraintData');
+		return IkConstraintData;
+	})()
+
+
+	/**
+	*...
+	*@author laya
+	*/
+	//class laya.webgl.shader.ShaderValue
+	var ShaderValue=(function(){
+		function ShaderValue(){}
+		__class(ShaderValue,'laya.webgl.shader.ShaderValue');
+		return ShaderValue;
 	})()
 
 
@@ -2749,6 +4697,7 @@ window.Laya=(function(window,document){
 	var SkinSlotDisplayData=(function(){
 		function SkinSlotDisplayData(){
 			this.name=null;
+			this.attachmentName=null;
 			this.type=0;
 			this.transform=null;
 			this.width=NaN;
@@ -2757,6 +4706,7 @@ window.Laya=(function(window,document){
 			this.uvs=null;
 			this.weights=null;
 			this.triangles=null;
+			this.vertices=null;
 		}
 
 		__class(SkinSlotDisplayData,'laya.ani.bone.SkinSlotDisplayData');
@@ -2775,6 +4725,18 @@ window.Laya=(function(window,document){
 		}
 
 		__class(SlotData,'laya.ani.bone.SlotData');
+		var __proto=SlotData.prototype;
+		__proto.getDisplayByName=function(name){
+			var tDisplay;
+			for (var i=0,n=this.displayArr.length;i < n;i++){
+				tDisplay=this.displayArr[i];
+				if (tDisplay.attachmentName==name){
+					return i;
+				}
+			}
+			return-1;
+		}
+
 		return SlotData;
 	})()
 
@@ -2836,6 +4798,857 @@ window.Laya=(function(window,document){
 		}
 
 		return Transform;
+	})()
+
+
+	/**
+	*<code>Graphics</code> 类用于创建绘图显示对象。
+	*@see laya.display.Sprite#graphics
+	*/
+	//class laya.display.Graphics
+	var Graphics=(function(){
+		function Graphics(){
+			//this._sp=null;
+			this._one=null;
+			this._cmds=null;
+			//this._temp=null;
+			//this._bounds=null;
+			//this._rstBoundPoints=null;
+			//this._vectorgraphArray=null;
+			this._render=this._renderEmpty;
+			this._render=this._renderEmpty;
+			if (Render.isConchNode){
+				this._nativeObj=new _conchGraphics();;
+				this.id=this._nativeObj.conchID;;
+			}
+		}
+
+		__class(Graphics,'laya.display.Graphics');
+		var __proto=Graphics.prototype;
+		/**
+		*<p>销毁此对象。</p>
+		*/
+		__proto.destroy=function(){
+			this.clear();
+			this._temp=null;
+			this._bounds=null;
+			this._rstBoundPoints=null;
+			this._sp && (this._sp._renderType=0);
+			this._sp=null;
+		}
+
+		/**
+		*<p>清空绘制命令。</p>
+		*/
+		__proto.clear=function(){
+			this._one=null;
+			this._render=this._renderEmpty;
+			this._cmds=null;
+			this._temp && (this._temp.length=0);
+			this._sp && (this._sp._renderType &=~0x01);
+			this._sp && (this._sp._renderType &=~0x100);
+			this._repaint();
+			if (this._vectorgraphArray){
+				for (var i=0,n=this._vectorgraphArray.length;i < n;i++){
+					VectorGraphManager.getInstance().deleteShape(this._vectorgraphArray[i]);
+				}
+				this._vectorgraphArray.length=0;
+			}
+		}
+
+		/**
+		*@private
+		*重绘此对象。
+		*/
+		__proto._repaint=function(){
+			this._temp && (this._temp.length=0);
+			this._sp && this._sp.repaint();
+		}
+
+		/**@private */
+		__proto._isOnlyOne=function(){
+			return !this._cmds || this._cmds.length===0;
+		}
+
+		/**
+		*获取位置及宽高信息矩阵(比较耗，尽量少用)。
+		*@return 位置与宽高组成的 一个 Rectangle 对象。
+		*/
+		__proto.getBounds=function(){
+			if (!this._bounds || !this._temp || this._temp.length < 1){
+				this._bounds=Rectangle._getWrapRec(this.getBoundPoints(),this._bounds)
+			}
+			return this._bounds;
+		}
+
+		/**
+		*@private
+		*获取端点列表。
+		*/
+		__proto.getBoundPoints=function(){
+			if (!this._temp || this._temp.length < 1)
+				this._temp=this._getCmdPoints();
+			return this._rstBoundPoints=Utils.copyArray(this._rstBoundPoints,this._temp);
+		}
+
+		__proto._addCmd=function(a){
+			this._cmds=this._cmds || [];
+			a.callee=a.shift();
+			this._cmds.push(a);
+		}
+
+		__proto._getCmdPoints=function(){
+			var context=Render._context;
+			var cmds=this._cmds;
+			var rst;
+			rst=this._temp || (this._temp=[]);
+			rst.length=0;
+			if (!cmds && this._one !=null){
+				Graphics._tempCmds.length=0;
+				Graphics._tempCmds.push(this._one);
+				cmds=Graphics._tempCmds;
+			}
+			if (!cmds)
+				return rst;
+			var matrixs;
+			matrixs=Graphics._tempMatrixArrays;
+			matrixs.length=0;
+			var tMatrix=Graphics._initMatrix;
+			tMatrix.identity();
+			var tempMatrix=Graphics._tempMatrix;
+			var cmd;
+			for (var i=0,n=cmds.length;i < n;i++){
+				cmd=cmds[i];
+				switch (cmd.callee){
+					case context.save:
+					case 7:
+						matrixs.push(tMatrix);
+						tMatrix=tMatrix.clone();
+						break ;
+					case context.restore:
+					case 8:
+						tMatrix=matrixs.pop();
+						break ;
+					case context._scale:
+					case 5:
+						tempMatrix.identity();
+						tempMatrix.translate(-cmd[2],-cmd[3]);
+						tempMatrix.scale(cmd[0],cmd[1]);
+						tempMatrix.translate(cmd[2],cmd[3]);
+						this._switchMatrix(tMatrix,tempMatrix);
+						break ;
+					case context._rotate:
+					case 3:
+						tempMatrix.identity();
+						tempMatrix.translate(-cmd[1],-cmd[2]);
+						tempMatrix.rotate(cmd[0]);
+						tempMatrix.translate(cmd[1],cmd[2]);
+						this._switchMatrix(tMatrix,tempMatrix);
+						break ;
+					case context._translate:
+					case 6:
+						tempMatrix.identity();
+						tempMatrix.translate(cmd[0],cmd[1]);
+						this._switchMatrix(tMatrix,tempMatrix);
+						break ;
+					case context._transform:
+					case 4:
+						tempMatrix.identity();
+						tempMatrix.translate(-cmd[1],-cmd[2]);
+						tempMatrix.concat(cmd[0]);
+						tempMatrix.translate(cmd[1],cmd[2]);
+						this._switchMatrix(tMatrix,tempMatrix);
+						break ;
+					case 16:
+					case 24:
+						Graphics._addPointArrToRst(rst,Rectangle._getBoundPointS(cmd[0],cmd[1],cmd[2],cmd[3]),tMatrix);
+						break ;
+					case 17:
+						tMatrix.copyTo(tempMatrix);
+						tempMatrix.concat(cmd[4]);
+						Graphics._addPointArrToRst(rst,Rectangle._getBoundPointS(cmd[0],cmd[1],cmd[2],cmd[3]),tempMatrix);
+						break ;
+					case context._drawTexture:
+					case context._fillTexture:
+						if (cmd[3] && cmd[4]){
+							Graphics._addPointArrToRst(rst,Rectangle._getBoundPointS(cmd[1],cmd[2],cmd[3],cmd[4]),tMatrix);
+							}else {
+							var tex=cmd[0];
+							Graphics._addPointArrToRst(rst,Rectangle._getBoundPointS(cmd[1],cmd[2],tex.width,tex.height),tMatrix);
+						}
+						break ;
+					case context._drawTextureWithTransform:
+						tMatrix.copyTo(tempMatrix);
+						tempMatrix.concat(cmd[5]);
+						if (cmd[3] && cmd[4]){
+							Graphics._addPointArrToRst(rst,Rectangle._getBoundPointS(cmd[1],cmd[2],cmd[3],cmd[4]),tempMatrix);
+							}else {
+							tex=cmd[0];
+							Graphics._addPointArrToRst(rst,Rectangle._getBoundPointS(cmd[1],cmd[2],tex.width,tex.height),tempMatrix);
+						}
+						break ;
+					case context._drawRect:
+					case 13:
+						Graphics._addPointArrToRst(rst,Rectangle._getBoundPointS(cmd[0],cmd[1],cmd[2],cmd[3]),tMatrix);
+						break ;
+					case context._drawCircle:
+					case context._fillCircle:
+					case 14:
+						Graphics._addPointArrToRst(rst,Rectangle._getBoundPointS(cmd[0]-cmd[2],cmd[1]-cmd[2],cmd[2]+cmd[2],cmd[2]+cmd[2]),tMatrix);
+						break ;
+					case context._drawLine:
+					case 20:
+						Graphics._tempPoints.length=0;
+						var lineWidth=NaN;
+						lineWidth=cmd[5] *0.5;
+						if (cmd[0]==cmd[2]){
+							Graphics._tempPoints.push(cmd[0]+lineWidth,cmd[1],cmd[2]+lineWidth,cmd[3],cmd[0]-lineWidth,cmd[1],cmd[2]-lineWidth,cmd[3]);
+							}else if (cmd[1]==cmd[3]){
+							Graphics._tempPoints.push(cmd[0],cmd[1]+lineWidth,cmd[2],cmd[3]+lineWidth,cmd[0],cmd[1]-lineWidth,cmd[2],cmd[3]-lineWidth);
+							}else {
+							Graphics._tempPoints.push(cmd[0],cmd[1],cmd[2],cmd[3]);
+						}
+						Graphics._addPointArrToRst(rst,Graphics._tempPoints,tMatrix);
+						break ;
+					case context._drawCurves:
+					case 22:
+						Graphics._addPointArrToRst(rst,Bezier.I.getBezierPoints(cmd[2]),tMatrix,cmd[0],cmd[1]);
+						break ;
+					case context._drawPoly:
+					case context._drawLines:
+					case 18:
+						Graphics._addPointArrToRst(rst,cmd[2],tMatrix,cmd[0],cmd[1]);
+						break ;
+					case context._drawPath:
+					case 19:
+						Graphics._addPointArrToRst(rst,this._getPathPoints(cmd[2]),tMatrix,cmd[0],cmd[1]);
+						break ;
+					case context._drawPie:
+					case 15:
+						Graphics._addPointArrToRst(rst,this._getPiePoints(cmd[0],cmd[1],cmd[2],cmd[3],cmd[4]),tMatrix);
+						break ;
+					}
+			}
+			if (rst.length > 200){
+				rst=Utils.copyArray(rst,Rectangle._getWrapRec(rst)._getBoundPoints());
+			}else if (rst.length > 8)
+			rst=GrahamScan.scanPList(rst);
+			return rst;
+		}
+
+		__proto._switchMatrix=function(tMatix,tempMatrix){
+			tempMatrix.concat(tMatix);
+			tempMatrix.copyTo(tMatix);
+		}
+
+		/**
+		*绘制纹理。
+		*@param tex 纹理。
+		*@param x X 轴偏移量。
+		*@param y Y 轴偏移量。
+		*@param width 宽度。
+		*@param height 高度。
+		*@param m 矩阵信息。
+		*/
+		__proto.drawTexture=function(tex,x,y,width,height,m){
+			(width===void 0)&& (width=0);
+			(height===void 0)&& (height=0);
+			if (!tex)return;
+			if (!width)width=tex.sourceWidth;
+			if (!height)height=tex.sourceHeight;
+			width=width-tex.sourceWidth+tex.width;
+			height=height-tex.sourceHeight+tex.height;
+			if (tex.loaded && (width <=0 || height <=0))return;
+			x+=tex.offsetX;
+			y+=tex.offsetY;
+			this._sp && (this._sp._renderType |=0x100);
+			var args=[tex,x,y,width,height,m];
+			args.callee=m ? Render._context._drawTextureWithTransform :Render._context._drawTexture;
+			if (this._one==null && !m){
+				this._one=args;
+				this._render=this._renderOneImg;
+				}else {
+				this._saveToCmd(args.callee,args);
+			}
+			if (!tex.loaded){
+				tex.once("loaded",this,this._textureLoaded,[tex,args]);
+			}
+			this._repaint();
+		}
+
+		/**
+		*用texture填充
+		*@param tex 纹理。
+		*@param x X 轴偏移量。
+		*@param y Y 轴偏移量。
+		*@param width 宽度。
+		*@param height 高度。
+		*@param type 填充类型 repeat|repeat-x|repeat-y|no-repeat
+		*@param offset 贴图纹理偏移
+		*
+		*/
+		__proto.fillTexture=function(tex,x,y,width,height,type,offset){
+			(width===void 0)&& (width=0);
+			(height===void 0)&& (height=0);
+			(type===void 0)&& (type="repeat");
+			if (!tex)return;
+			var args=[tex,x,y,width,height,type,offset];
+			if (!tex.loaded){
+				tex.once("loaded",this,this._textureLoaded,[tex,args]);
+			}
+			if (Render.isWebGL){
+				var tFillTextureSprite=RunDriver.fillTextureShader(tex,x,y,width,height);
+				args.push(tFillTextureSprite);
+			}
+			this._saveToCmd(Render._context._fillTexture,args);
+		}
+
+		__proto._textureLoaded=function(tex,param){
+			param[3]=param[3] || tex.width;
+			param[4]=param[4] || tex.height;
+			this._repaint();
+		}
+
+		/**
+		*@private
+		*保存到命令流。
+		*/
+		__proto._saveToCmd=function(fun,args){
+			this._sp && (this._sp._renderType |=0x100);
+			if (this._one==null){
+				this._one=args;
+				this._render=this._renderOne;
+				}else {
+				this._sp && (this._sp._renderType &=~0x01);
+				this._render=this._renderAll;
+				(this._cmds || (this._cmds=[])).length===0 && this._cmds.push(this._one);
+				this._cmds.push(args);
+			}
+			args.callee=fun;
+			this._temp && (this._temp.length=0);
+			this._repaint();
+			return args;
+		}
+
+		/**
+		*设置剪裁区域，超出剪裁区域的坐标不显示。
+		*@param x X 轴偏移量。
+		*@param y Y 轴偏移量。
+		*@param width 宽度。
+		*@param height 高度。
+		*/
+		__proto.clipRect=function(x,y,width,height){
+			this._saveToCmd(Render._context._clipRect,[x,y,width,height]);
+		}
+
+		/**
+		*在画布上绘制文本。
+		*@param text 在画布上输出的文本。
+		*@param x 开始绘制文本的 x 坐标位置（相对于画布）。
+		*@param y 开始绘制文本的 y 坐标位置（相对于画布）。
+		*@param font 定义字号和字体，比如"20px Arial"。
+		*@param color 定义文本颜色，比如"#ff0000"。
+		*@param textAlign 文本对齐方式，可选值："left"，"center"，"right"。
+		*/
+		__proto.fillText=function(text,x,y,font,color,textAlign){
+			this._saveToCmd(Render._context._fillText,[text,x,y,font || Font.defaultFont,color,textAlign]);
+		}
+
+		/**
+		*在画布上绘制“被填充且镶边的”文本。
+		*@param text 在画布上输出的文本。
+		*@param x 开始绘制文本的 x 坐标位置（相对于画布）。
+		*@param y 开始绘制文本的 y 坐标位置（相对于画布）。
+		*@param font 定义字体和字号，比如"20px Arial"。
+		*@param fillColor 定义文本颜色，比如"#ff0000"。
+		*@param borderColor 定义镶边文本颜色。
+		*@param lineWidth 镶边线条宽度。
+		*@param textAlign 文本对齐方式，可选值："left"，"center"，"right"。
+		*/
+		__proto.fillBorderText=function(text,x,y,font,fillColor,borderColor,lineWidth,textAlign){
+			this._saveToCmd(Render._context._fillBorderText,[text,x,y,font || Font.defaultFont,fillColor,borderColor,lineWidth,textAlign]);
+		}
+
+		/**
+		*在画布上绘制文本（没有填色）。文本的默认颜色是黑色。
+		*@param text 在画布上输出的文本。
+		*@param x 开始绘制文本的 x 坐标位置（相对于画布）。
+		*@param y 开始绘制文本的 y 坐标位置（相对于画布）。
+		*@param font 定义字体和字号，比如"20px Arial"。
+		*@param color 定义文本颜色，比如"#ff0000"。
+		*@param lineWidth 线条宽度。
+		*@param textAlign 文本对齐方式，可选值："left"，"center"，"right"。
+		*/
+		__proto.strokeText=function(text,x,y,font,color,lineWidth,textAlign){
+			this._saveToCmd(Render._context._strokeText,[text,x,y,font || Font.defaultFont,color,lineWidth,textAlign]);
+		}
+
+		/**
+		*设置透明度。
+		*@param value 透明度。
+		*/
+		__proto.alpha=function(value){
+			this._saveToCmd(Render._context._alpha,[value]);
+		}
+
+		/**
+		*替换绘图的当前转换矩阵。
+		*@param mat 矩阵。
+		*@param pivotX 水平方向轴心点坐标。
+		*@param pivotY 垂直方向轴心点坐标。
+		*/
+		__proto.transform=function(matrix,pivotX,pivotY){
+			(pivotX===void 0)&& (pivotX=0);
+			(pivotY===void 0)&& (pivotY=0);
+			this._saveToCmd(Render._context._transform,[matrix,pivotX,pivotY]);
+		}
+
+		/**
+		*旋转当前绘图。
+		*@param angle 旋转角度，以弧度计。
+		*@param pivotX 水平方向轴心点坐标。
+		*@param pivotY 垂直方向轴心点坐标。
+		*/
+		__proto.rotate=function(angle,pivotX,pivotY){
+			(pivotX===void 0)&& (pivotX=0);
+			(pivotY===void 0)&& (pivotY=0);
+			this._saveToCmd(Render._context._rotate,[angle,pivotX,pivotY]);
+		}
+
+		/**
+		*缩放当前绘图至更大或更小。
+		*@param scaleX 水平方向缩放值。
+		*@param scaleY 垂直方向缩放值。
+		*@param pivotX 水平方向轴心点坐标。
+		*@param pivotY 垂直方向轴心点坐标。
+		*/
+		__proto.scale=function(scaleX,scaleY,pivotX,pivotY){
+			(pivotX===void 0)&& (pivotX=0);
+			(pivotY===void 0)&& (pivotY=0);
+			this._saveToCmd(Render._context._scale,[scaleX,scaleY,pivotX,pivotY]);
+		}
+
+		/**
+		*重新映射画布上的 (0,0)位置。
+		*@param x 添加到水平坐标（x）上的值。
+		*@param y 添加到垂直坐标（y）上的值。
+		*/
+		__proto.translate=function(x,y){
+			this._saveToCmd(Render._context._translate,[x,y]);
+		}
+
+		/**
+		*保存当前环境的状态。
+		*/
+		__proto.save=function(){
+			this._saveToCmd(Render._context._save,[]);
+		}
+
+		/**
+		*返回之前保存过的路径状态和属性。
+		*/
+		__proto.restore=function(){
+			this._saveToCmd(Render._context._restore,[]);
+		}
+
+		/**
+		*@private
+		*替换文本内容。
+		*@param text 文本内容。
+		*@return 替换成功则值为true，否则值为flase。
+		*/
+		__proto.replaceText=function(text){
+			this._repaint();
+			var cmds=this._cmds;
+			if (!cmds){
+				if (this._one && this._isTextCmd(this._one.callee)){
+					if (this._one[0].toUpperCase)this._one[0]=text;
+					else this._one[0].setText(text);
+					return true;
+				}
+				}else {
+				for (var i=cmds.length-1;i >-1;i--){
+					if (this._isTextCmd(cmds[i].callee)){
+						if (cmds[i][0].toUpperCase)cmds[i][0]=text;
+						else cmds[i][0].setText(text);
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
+		/**@private */
+		__proto._isTextCmd=function(fun){
+			return fun===Render._context._fillText || fun===Render._context._fillBorderText || fun===Render._context._strokeText;
+		}
+
+		/**
+		*@private
+		*替换文本颜色。
+		*@param color 颜色。
+		*/
+		__proto.replaceTextColor=function(color){
+			this._repaint();
+			var cmds=this._cmds;
+			if (!cmds){
+				if (this._one && this._isTextCmd(this._one.callee)){
+					this._one[4]=color;
+					if (!this._one[0].toUpperCase)this._one[0].changed=true;
+				}
+				}else {
+				for (var i=cmds.length-1;i >-1;i--){
+					if (this._isTextCmd(cmds[i].callee)){
+						cmds[i][4]=color;
+						if (!cmds[i][0].toUpperCase)cmds[i][0].changed=true;
+					}
+				}
+			}
+		}
+
+		/**
+		*加载并显示一个图片。
+		*@param url 图片地址。
+		*@param x 显示图片的x位置。
+		*@param y 显示图片的y位置。
+		*@param width 显示图片的宽度，设置为0表示使用图片默认宽度。
+		*@param height 显示图片的高度，设置为0表示使用图片默认高度。
+		*@param complete 加载完成回调。
+		*/
+		__proto.loadImage=function(url,x,y,width,height,complete){
+			var _$this=this;
+			(x===void 0)&& (x=0);
+			(y===void 0)&& (y=0);
+			(width===void 0)&& (width=0);
+			(height===void 0)&& (height=0);
+			var tex=Loader.getRes(url);
+			if (tex)onloaded(tex);
+			else Laya.loader.load(url,Handler.create(null,onloaded),null,"image");
+			function onloaded (tex){
+				if (tex){
+					_$this.drawTexture(tex,x,y,width,height);
+					if (complete !=null)complete.call(_$this._sp,tex);
+				}
+			}
+		}
+
+		/**
+		*@private
+		*/
+		__proto._renderEmpty=function(sprite,context,x,y){}
+		/**
+		*@private
+		*/
+		__proto._renderAll=function(sprite,context,x,y){
+			var cmds=this._cmds,cmd;
+			for (var i=0,n=cmds.length;i < n;i++){
+				(cmd=cmds[i]).callee.call(context,x,y,cmd);
+			}
+		}
+
+		/**
+		*@private
+		*/
+		__proto._renderOne=function(sprite,context,x,y){
+			this._one.callee.call(context,x,y,this._one);
+		}
+
+		/**
+		*@private
+		*/
+		__proto._renderOneImg=function(sprite,context,x,y){
+			this._one.callee.call(context,x,y,this._one);
+			if (sprite._renderType!==2305){
+				sprite._renderType |=0x01;
+			}
+		}
+
+		/**
+		*绘制一条线。
+		*@param fromX X 轴开始位置。
+		*@param fromY Y 轴开始位置。
+		*@param toX X 轴结束位置。
+		*@param toY Y 轴结束位置。
+		*@param lineColor 颜色。
+		*@param lineWidth 线条宽度。
+		*/
+		__proto.drawLine=function(fromX,fromY,toX,toY,lineColor,lineWidth){
+			(lineWidth===void 0)&& (lineWidth=1);
+			var tId=0;
+			if (Render.isWebGL){
+				tId=VectorGraphManager.getInstance().getId();
+				if (this._vectorgraphArray==null)this._vectorgraphArray=[];
+				this._vectorgraphArray.push(tId);
+			};
+			var arr=[fromX+0.5,fromY+0.5,toX+0.5,toY+0.5,lineColor,lineWidth,tId];
+			this._saveToCmd(Render._context._drawLine,arr);
+		}
+
+		/**
+		*绘制一系列线段。
+		*@param x 开始绘制的 X 轴位置。
+		*@param y 开始绘制的 Y 轴位置。
+		*@param points 线段的点集合。格式:[x1,y1,x2,y2,x3,y3...]。
+		*@param lineColor 线段颜色，或者填充绘图的渐变对象。
+		*@param lineWidth 线段宽度。
+		*/
+		__proto.drawLines=function(x,y,points,lineColor,lineWidth){
+			(lineWidth===void 0)&& (lineWidth=1);
+			var tId=0;
+			if (Render.isWebGL){
+				tId=VectorGraphManager.getInstance().getId();
+				if (this._vectorgraphArray==null)this._vectorgraphArray=[];
+				this._vectorgraphArray.push(tId);
+			};
+			var arr=[x+0.5,y+0.5,points,lineColor,lineWidth,tId];
+			this._saveToCmd(Render._context._drawLines,arr);
+		}
+
+		/**
+		*绘制一系列曲线。
+		*@param x 开始绘制的 X 轴位置。
+		*@param y 开始绘制的 Y 轴位置。
+		*@param points 线段的点集合，格式[startx,starty,ctrx,ctry,startx,starty...]。
+		*@param lineColor 线段颜色，或者填充绘图的渐变对象。
+		*@param lineWidth 线段宽度。
+		*/
+		__proto.drawCurves=function(x,y,points,lineColor,lineWidth){
+			(lineWidth===void 0)&& (lineWidth=1);
+			var arr=[x+0.5,y+0.5,points,lineColor,lineWidth];
+			this._saveToCmd(Render._context._drawCurves,arr);
+		}
+
+		/**
+		*绘制矩形。
+		*@param x 开始绘制的 X 轴位置。
+		*@param y 开始绘制的 Y 轴位置。
+		*@param width 矩形宽度。
+		*@param height 矩形高度。
+		*@param fillColor 填充颜色，或者填充绘图的渐变对象。
+		*@param lineColor 边框颜色，或者填充绘图的渐变对象。
+		*@param lineWidth 边框宽度。
+		*/
+		__proto.drawRect=function(x,y,width,height,fillColor,lineColor,lineWidth){
+			(lineWidth===void 0)&& (lineWidth=1);
+			var offset=lineColor ? 0.5 :0;
+			var arr=[x+offset,y+offset,width,height,fillColor,lineColor,lineWidth];
+			this._saveToCmd(Render._context._drawRect,arr);
+		}
+
+		/**
+		*绘制圆形。
+		*@param x 圆点X 轴位置。
+		*@param y 圆点Y 轴位置。
+		*@param radius 半径。
+		*@param fillColor 填充颜色，或者填充绘图的渐变对象。
+		*@param lineColor 边框颜色，或者填充绘图的渐变对象。
+		*@param lineWidth 边框宽度。
+		*/
+		__proto.drawCircle=function(x,y,radius,fillColor,lineColor,lineWidth){
+			(lineWidth===void 0)&& (lineWidth=1);
+			var offset=lineColor ? 0.5 :0;
+			var tId=0;
+			if (Render.isWebGL){
+				tId=VectorGraphManager.getInstance().getId();
+				if (this._vectorgraphArray==null)this._vectorgraphArray=[];
+				this._vectorgraphArray.push(tId);
+			};
+			var arr=[x+offset,y+offset,radius,fillColor,lineColor,lineWidth,tId];
+			this._saveToCmd(Render._context._drawCircle,arr);
+		}
+
+		/**
+		*绘制扇形。
+		*@param x 开始绘制的 X 轴位置。
+		*@param y 开始绘制的 Y 轴位置。
+		*@param radius 扇形半径。
+		*@param startAngle 开始角度。
+		*@param endAngle 结束角度。
+		*@param fillColor 填充颜色，或者填充绘图的渐变对象。
+		*@param lineColor 边框颜色，或者填充绘图的渐变对象。
+		*@param lineWidth 边框宽度。
+		*/
+		__proto.drawPie=function(x,y,radius,startAngle,endAngle,fillColor,lineColor,lineWidth){
+			(lineWidth===void 0)&& (lineWidth=1);
+			var offset=lineColor ? 0.5 :0;
+			var tId=0;
+			if (Render.isWebGL){
+				tId=VectorGraphManager.getInstance().getId();
+				if (this._vectorgraphArray==null)this._vectorgraphArray=[];
+				this._vectorgraphArray.push(tId);
+			};
+			var arr=[x+offset,y+offset,radius,startAngle,endAngle,fillColor,lineColor,lineWidth,tId];
+			arr[3]=Utils.toRadian(startAngle);
+			arr[4]=Utils.toRadian(endAngle);
+			this._saveToCmd(Render._context._drawPie,arr);
+		}
+
+		__proto._getPiePoints=function(x,y,radius,startAngle,endAngle){
+			var rst=Graphics._tempPoints;
+			Graphics._tempPoints.length=0;
+			rst.push(x,y);
+			var dP=Math.PI / 10;
+			var i=NaN;
+			for (i=startAngle;i < endAngle;i+=dP){
+				rst.push(x+radius *Math.cos(i),y+radius *Math.sin(i));
+			}
+			if (endAngle !=i){
+				rst.push(x+radius *Math.cos(endAngle),y+radius *Math.sin(endAngle));
+			}
+			return rst;
+		}
+
+		/**
+		*绘制多边形。
+		*@param x 开始绘制的 X 轴位置。
+		*@param y 开始绘制的 Y 轴位置。
+		*@param points 多边形的点集合。
+		*@param fillColor 填充颜色，或者填充绘图的渐变对象。
+		*@param lineColor 边框颜色，或者填充绘图的渐变对象。
+		*@param lineWidth 边框宽度。
+		*/
+		__proto.drawPoly=function(x,y,points,fillColor,lineColor,lineWidth){
+			(lineWidth===void 0)&& (lineWidth=1);
+			var offset=lineColor ? 0.5 :0;
+			var tId=0;
+			if (Render.isWebGL){
+				tId=VectorGraphManager.getInstance().getId();
+				if (this._vectorgraphArray==null)this._vectorgraphArray=[];
+				this._vectorgraphArray.push(tId);
+				var tIsConvexPolygon=false;
+				if (points.length > 6){
+					tIsConvexPolygon=false;
+					}else {
+					tIsConvexPolygon=true;
+				}
+			};
+			var arr=[x+offset,y+offset,points,fillColor,lineColor,lineWidth,tId,tIsConvexPolygon];
+			this._saveToCmd(Render._context._drawPoly,arr);
+		}
+
+		__proto._getPathPoints=function(paths){
+			var i=0,len=0;
+			var rst=Graphics._tempPoints;
+			rst.length=0;
+			len=paths.length;
+			var tCMD;
+			for (i=0;i < len;i++){
+				tCMD=paths[i];
+				if (tCMD.length > 1){
+					rst.push(tCMD[1],tCMD[2]);
+					if (tCMD.length > 3){
+						rst.push(tCMD[3],tCMD[4]);
+					}
+				}
+			}
+			return rst;
+		}
+
+		/**
+		*绘制路径。
+		*@param x 开始绘制的 X 轴位置。
+		*@param y 开始绘制的 Y 轴位置。
+		*@param paths 路径集合，路径支持以下格式：[["moveTo",x,y],["lineTo",x,y,x,y,x,y],["arcTo",x1,y1,x2,y2,r],["closePath"]]。
+		*@param brush 刷子定义，支持以下设置{fillStyle}。
+		*@param pen 画笔定义，支持以下设置{strokeStyle,lineWidth,lineJoin,lineCap,miterLimit}。
+		*/
+		__proto.drawPath=function(x,y,paths,brush,pen){
+			var arr=[x+0.5,y+0.5,paths,brush,pen];
+			this._saveToCmd(Render._context._drawPath,arr);
+		}
+
+		/**@private */
+		/**
+		*@private
+		*命令流。
+		*/
+		__getset(0,__proto,'cmds',function(){
+			return this._cmds;
+			},function(value){
+			this._sp && (this._sp._renderType |=0x100);
+			this._cmds=value;
+			this._render=this._renderAll;
+			this._repaint();
+		});
+
+		Graphics.__init__=function(){
+			if (Render.isConchNode){
+				var from=laya.display.Graphics.prototype;
+				var to=ConchGraphics.prototype;
+				var list=["clear","destroy","alpha","rotate","transform","scale","translate","save","restore","clipRect","blendMode","fillText","fillBorderText","_fands","drawRect","drawCircle","drawPie","drawPoly","drawPath","drawImageM","drawLine","drawLines","_drawPs","drawCurves","replaceText","replaceTextColor","_fillImage","fillTexture"];
+				for (var i=0,len=list.length;i <=len;i++){
+					var temp=list[i];
+					from[temp]=to[temp];
+				}
+				from._saveToCmd=null;
+				from.drawTexture=function (tex,x,y,width,height,m){
+					(x===void 0)&& (x=0);
+					(y===void 0)&& (y=0);
+					(width===void 0)&& (width=0);
+					(height===void 0)&& (height=0);
+					if (!(tex.loaded && tex.bitmap && tex.source)){
+						return;
+					}
+					if (!width)width=tex.sourceWidth;
+					if (!height)height=tex.sourceHeight;
+					width=width-tex.sourceWidth+tex.width;
+					height=height-tex.sourceHeight+tex.height;
+					if (width <=0 || height <=0)return;
+					x+=tex.offsetX;
+					y+=tex.offsetY;
+					var uv=tex.uv,w=tex.bitmap.width,h=tex.bitmap.height;
+					this.drawImageM(tex.bitmap.source,uv[0] *w,uv[1] *h,(uv[2]-uv[0])*w,(uv[5]-uv[3])*h,x,y,width,height,m);
+				}
+				from.fillTexture=function (tex,x,y,width,height,type,offset){
+					(width===void 0)&& (width=0);
+					(height===void 0)&& (height=0);
+					(type===void 0)&& (type="repeat");
+					if (tex.loaded){
+						var ctxi=Render._context.ctx;
+						var w=tex.bitmap.width,h=tex.bitmap.height,uv=tex.uv;
+						var pat;
+						if (tex.uv !=Texture.DEF_UV){
+							pat=ctxi.createPattern(tex.bitmap.source,type,uv[0] *w,uv[1] *h,(uv[2]-uv[0])*w,(uv[5]-uv[3])*h);
+							}else {
+							pat=ctxi.createPattern(tex.bitmap.source,type);
+						};
+						var sX=0,sY=0;
+						if (offset){
+							x+=offset.x % tex.width;
+							y+=offset.y % tex.height;
+							sX-=offset.x % tex.width;
+							sY-=offset.y % tex.height;
+						}
+						this._fillImage(pat,x,y,sX,sY,width,height);
+					}
+				}
+			}
+		}
+
+		Graphics._addPointArrToRst=function(rst,points,matrix,dx,dy){
+			(dx===void 0)&& (dx=0);
+			(dy===void 0)&& (dy=0);
+			var i=0,len=0;
+			len=points.length;
+			for (i=0;i < len;i+=2){
+				Graphics._addPointToRst(rst,points[i]+dx,points[i+1]+dy,matrix);
+			}
+		}
+
+		Graphics._addPointToRst=function(rst,x,y,matrix){
+			var _tempPoint=Point.TEMP;
+			_tempPoint.setTo(x ? x :0,y ? y :0);
+			matrix.transformPoint(_tempPoint);
+			rst.push(_tempPoint.x,_tempPoint.y);
+		}
+
+		Graphics._tempPoints=[];
+		Graphics._tempMatrixArrays=[];
+		Graphics._tempCmds=[];
+		__static(Graphics,
+		['_tempMatrix',function(){return this._tempMatrix=new Matrix();},'_initMatrix',function(){return this._initMatrix=new Matrix();}
+		]);
+		return Graphics;
 	})()
 
 
@@ -3132,26 +5945,26 @@ window.Laya=(function(window,document){
 			var tX=0;
 			var tScale=1;
 			var tInfo=xml.getElementsByTagName("info");
-			this.fontSize=Laya.__parseInt(tInfo[0].attributes["size"].nodeValue);
+			this.fontSize=parseInt(tInfo[0].attributes["size"].nodeValue);
 			var tPadding=tInfo[0].attributes["padding"].nodeValue;
 			var tPaddingArray=tPadding.split(",");
-			var tUpPadding=Laya.__parseInt(tPaddingArray[0]);
-			var tDownPadding=Laya.__parseInt(tPaddingArray[2]);
-			this._leftPadding=Laya.__parseInt(tPaddingArray[3]);
-			this._rightPadding=Laya.__parseInt(tPaddingArray[1]);
+			var tUpPadding=parseInt(tPaddingArray[0]);
+			var tDownPadding=parseInt(tPaddingArray[2]);
+			this._leftPadding=parseInt(tPaddingArray[3]);
+			this._rightPadding=parseInt(tPaddingArray[1]);
 			var chars=xml.getElementsByTagName("char");
 			var i=0;
 			for (i=0;i < chars.length;i++){
 				var tAttribute=chars[i].attributes;
-				var tId=Laya.__parseInt(tAttribute["id"].nodeValue);
-				var xOffset=Laya.__parseInt(tAttribute["xoffset"].nodeValue)/ tScale;
-				var yOffset=Laya.__parseInt(tAttribute["yoffset"].nodeValue)/ tScale;
-				var xAdvance=Laya.__parseInt(tAttribute["xadvance"].nodeValue)/ tScale;
+				var tId=parseInt(tAttribute["id"].nodeValue);
+				var xOffset=parseInt(tAttribute["xoffset"].nodeValue)/ tScale;
+				var yOffset=parseInt(tAttribute["yoffset"].nodeValue)/ tScale;
+				var xAdvance=parseInt(tAttribute["xadvance"].nodeValue)/ tScale;
 				var region=new Rectangle();
-				region.x=Laya.__parseInt(tAttribute["x"].nodeValue);
-				region.y=Laya.__parseInt(tAttribute["y"].nodeValue);
-				region.width=Laya.__parseInt(tAttribute["width"].nodeValue);
-				region.height=Laya.__parseInt(tAttribute["height"].nodeValue);
+				region.x=parseInt(tAttribute["x"].nodeValue);
+				region.y=parseInt(tAttribute["y"].nodeValue);
+				region.width=parseInt(tAttribute["width"].nodeValue);
+				region.height=parseInt(tAttribute["height"].nodeValue);
 				var tTexture=Texture.create(texture,region.x,region.y,region.width,region.height,xOffset,yOffset);
 				this._maxHeight=Math.max(this._maxHeight,tUpPadding+tDownPadding+tTexture.height);
 				this._maxWidth=Math.max(this._maxWidth,tTexture.width);
@@ -3472,7 +6285,7 @@ window.Laya=(function(window,document){
 						continue ;
 					}
 				if (str.indexOf('px')> 0){
-					this.size=Laya.__parseInt(str);
+					this.size=parseInt(str);
 					this.family=strs[i+1];
 					i++;
 					continue ;
@@ -3588,7 +6401,7 @@ window.Laya=(function(window,document){
 					weight=100;
 					break ;
 				default :
-					weight=Laya.__parseInt(value);
+					weight=parseInt(value);
 				}
 			this._weight=weight;
 			this._text=null;
@@ -3608,745 +6421,6 @@ window.Laya=(function(window,document){
 		Font._PASSWORD=0x400;
 		Font._BOLD=0x800;
 		return Font;
-	})()
-
-
-	/**
-	*<code>Graphics</code> 类用于创建绘图显示对象。
-	*@see laya.display.Sprite#graphics
-	*/
-	//class laya.display.Graphics
-	var Graphics=(function(){
-		function Graphics(){
-			//this._sp=null;
-			this._one=null;
-			this._cmds=null;
-			//this._temp=null;
-			//this._bounds=null;
-			//this._rstBoundPoints=null;
-			this._render=this._renderEmpty;
-			this._render=this._renderEmpty;
-			if (Render.isConchNode){
-				this._nativeObj=new _conchGraphics();;
-				this.id=this._nativeObj.conchID;;
-			}
-		}
-
-		__class(Graphics,'laya.display.Graphics');
-		var __proto=Graphics.prototype;
-		/**
-		*<p>销毁此对象。</p>
-		*/
-		__proto.destroy=function(){
-			this.clear();
-			this._temp=null;
-			this._bounds=null;
-			this._rstBoundPoints=null;
-			this._sp && (this._sp._renderType=0);
-			this._sp=null;
-		}
-
-		/**
-		*<p>清空绘制命令。</p>
-		*/
-		__proto.clear=function(){
-			this._one=null;
-			this._render=this._renderEmpty;
-			this._cmds=null;
-			this._temp && (this._temp.length=0);
-			this._sp && (this._sp._renderType &=~0x01);
-			this._sp && (this._sp._renderType &=~0x100);
-			this._repaint();
-		}
-
-		/**
-		*@private
-		*重绘此对象。
-		*/
-		__proto._repaint=function(){
-			this._temp && (this._temp.length=0);
-			this._sp && this._sp.repaint();
-		}
-
-		/**@private */
-		__proto._isOnlyOne=function(){
-			return !this._cmds || this._cmds.length===0;
-		}
-
-		/**
-		*获取位置及宽高信息矩阵(比较耗，尽量少用)。
-		*@return 位置与宽高组成的 一个 Rectangle 对象。
-		*/
-		__proto.getBounds=function(){
-			if (!this._bounds || !this._temp || this._temp.length < 1){
-				this._bounds=Rectangle._getWrapRec(this.getBoundPoints(),this._bounds)
-			}
-			return this._bounds;
-		}
-
-		/**
-		*@private
-		*获取端点列表。
-		*/
-		__proto.getBoundPoints=function(){
-			if (!this._temp || this._temp.length < 1)
-				this._temp=this._getCmdPoints();
-			return this._rstBoundPoints=Utils.copyArray(this._rstBoundPoints,this._temp);
-		}
-
-		__proto._addCmd=function(a){
-			this._cmds=this._cmds||[];
-			a.callee=a.shift();
-			this._cmds.push(a);
-		}
-
-		__proto._getCmdPoints=function(){
-			var context=Render._context;
-			var cmds=this._cmds;
-			var rst;
-			rst=this._temp || (this._temp=[]);
-			rst.length=0;
-			if (!cmds && this._one !=null){
-				Graphics._tempCmds.length=0;
-				Graphics._tempCmds.push(this._one);
-				cmds=Graphics._tempCmds;
-			}
-			if (!cmds)
-				return rst;
-			var matrixs;
-			matrixs=Graphics._tempMatrixArrays;
-			matrixs.length=0;
-			var tMatrix=Graphics._initMatrix;
-			tMatrix.identity();
-			var tempMatrix=Graphics._tempMatrix;
-			var cmd;
-			for (var i=0,n=cmds.length;i < n;i++){
-				cmd=cmds[i];
-				switch (cmd.callee){
-					case context.save:
-					case 7:
-						matrixs.push(tMatrix);
-						tMatrix=tMatrix.clone();
-						break ;
-					case context.restore:
-					case 8:
-						tMatrix=matrixs.pop();
-						break ;
-					case context._scale:
-					case 5:
-						tempMatrix.identity();
-						tempMatrix.translate(-cmd[2],-cmd[3]);
-						tempMatrix.scale(cmd[0],cmd[1]);
-						tempMatrix.translate(cmd[2],cmd[3]);
-						this._switchMatrix(tMatrix,tempMatrix);
-						break ;
-					case context._rotate:
-					case 3:
-						tempMatrix.identity();
-						tempMatrix.translate(-cmd[1],-cmd[2]);
-						tempMatrix.rotate(cmd[0]);
-						tempMatrix.translate(cmd[1],cmd[2]);
-						this._switchMatrix(tMatrix,tempMatrix);
-						break ;
-					case context._translate:
-					case 6:
-						tempMatrix.identity();
-						tempMatrix.translate(cmd[0],cmd[1]);
-						this._switchMatrix(tMatrix,tempMatrix);
-						break ;
-					case context._transform:
-					case 4:
-						tempMatrix.identity();
-						tempMatrix.translate(-cmd[1],-cmd[2]);
-						tempMatrix.concat(cmd[0]);
-						tempMatrix.translate(cmd[1],cmd[2]);
-						this._switchMatrix(tMatrix,tempMatrix);
-						break ;
-					case 16:
-						Graphics._addPointArrToRst(rst,Rectangle._getBoundPointS(cmd[0],cmd[1],cmd[2],cmd[3]),tMatrix);
-						break ;
-					case 17:
-						tMatrix.copyTo(tempMatrix);
-						tempMatrix.concat(cmd[4]);
-						Graphics._addPointArrToRst(rst,Rectangle._getBoundPointS(cmd[0],cmd[1],cmd[2],cmd[3]),tempMatrix);
-						break ;
-					case context._drawTexture:
-						if (cmd[3] && cmd[4]){
-							Graphics._addPointArrToRst(rst,Rectangle._getBoundPointS(cmd[1],cmd[2],cmd[3],cmd[4]),tMatrix);
-							}else {
-							var tex=cmd[0];
-							Graphics._addPointArrToRst(rst,Rectangle._getBoundPointS(cmd[1],cmd[2],tex.width,tex.height),tMatrix);
-						}
-						break ;
-					case context._drawTextureWithTransform:
-						tMatrix.copyTo(tempMatrix);
-						tempMatrix.concat(cmd[5]);
-						if (cmd[3] && cmd[4]){
-							Graphics._addPointArrToRst(rst,Rectangle._getBoundPointS(cmd[1],cmd[2],cmd[3],cmd[4]),tempMatrix);
-							}else {
-							tex=cmd[0];
-							Graphics._addPointArrToRst(rst,Rectangle._getBoundPointS(cmd[1],cmd[2],tex.width,tex.height),tempMatrix);
-						}
-						break ;
-					case context._drawRect:
-					case 13:
-						Graphics._addPointArrToRst(rst,Rectangle._getBoundPointS(cmd[0],cmd[1],cmd[2],cmd[3]),tMatrix);
-						break ;
-					case context._drawCircle:
-					case context._fillCircle:
-					case 14:
-						Graphics._addPointArrToRst(rst,Rectangle._getBoundPointS(cmd[0]-cmd[2],cmd[1]-cmd[2],cmd[2]+cmd[2],cmd[2]+cmd[2]),tMatrix);
-						break ;
-					case context._drawLine:
-					case 20:
-						Graphics._tempPoints.length=0;
-						Graphics._tempPoints.push(cmd[0],cmd[1],cmd[2],cmd[3]);
-						Graphics._addPointArrToRst(rst,Graphics._tempPoints,tMatrix);
-						break ;
-					case context._drawCurves:
-					case 22:
-						Graphics._addPointArrToRst(rst,Bezier.I.getBezierPoints(cmd[2]),tMatrix,cmd[0],cmd[1]);
-						break ;
-					case context._drawPoly:
-					case 18:
-						Graphics._addPointArrToRst(rst,cmd[2],tMatrix,cmd[0],cmd[1]);
-						break ;
-					case context._drawPath:
-					case 19:
-						Graphics._addPointArrToRst(rst,this._getPathPoints(cmd[2]),tMatrix,cmd[0],cmd[1]);
-						break ;
-					case context._drawPie:
-					case 15:
-						Graphics._addPointArrToRst(rst,this._getPiePoints(cmd[0],cmd[1],cmd[2],cmd[3],cmd[4]),tMatrix);
-						break ;
-					}
-			}
-			if (rst.length > 200){
-				rst=Utils.copyArray(rst,Rectangle._getWrapRec(rst)._getBoundPoints());
-			}else if (rst.length > 8)
-			rst=GrahamScan.scanPList(rst);
-			return rst;
-		}
-
-		__proto._switchMatrix=function(tMatix,tempMatrix){
-			tempMatrix.concat(tMatix);
-			tempMatrix.copyTo(tMatix);
-		}
-
-		/**
-		*绘制纹理。
-		*@param tex 纹理。
-		*@param x X 轴偏移量。
-		*@param y Y 轴偏移量。
-		*@param width 宽度。
-		*@param height 高度。
-		*@param m 矩阵信息。
-		*/
-		__proto.drawTexture=function(tex,x,y,width,height,m){
-			(width===void 0)&& (width=0);
-			(height===void 0)&& (height=0);
-			if (!width)width=tex.sourceWidth;
-			if (!height)height=tex.sourceHeight;
-			width=width-tex.sourceWidth+tex.width;
-			height=height-tex.sourceHeight+tex.height;
-			if (width <=0 || height <=0)return;
-			x+=tex.offsetX;
-			y+=tex.offsetY;
-			this._sp && (this._sp._renderType |=0x100);
-			var args=[tex,x,y,width,height,m];
-			args.callee=m ? Render._context._drawTextureWithTransform :Render._context._drawTexture;
-			if (this._one==null && !m){
-				this._one=args;
-				this._render=this._renderOneImg;
-				}else {
-				this._saveToCmd(args.callee,args);
-			}
-			this._repaint();
-		}
-
-		__proto._textureLoaded=function(tex,param){
-			tex.off("loaded",this,this._textureLoaded);
-			param[3]=tex.width;
-			param[4]=tex.height;
-			this._repaint();
-		}
-
-		/**
-		*@private
-		*保存到命令流。
-		*/
-		__proto._saveToCmd=function(fun,args){
-			this._sp && (this._sp._renderType |=0x100);
-			if (this._one==null){
-				this._one=args;
-				this._render=this._renderOne;
-				}else {
-				this._sp && (this._sp._renderType &=~0x01);
-				this._render=this._renderAll;
-				(this._cmds || (this._cmds=[])).length===0 && this._cmds.push(this._one);
-				this._cmds.push(args);
-			}
-			args.callee=fun;
-			this._temp && (this._temp.length=0);
-			this._repaint();
-			return args;
-		}
-
-		/**
-		*设置剪裁区域，超出剪裁区域的坐标不显示。
-		*@param x X 轴偏移量。
-		*@param y Y 轴偏移量。
-		*@param width 宽度。
-		*@param height 高度。
-		*/
-		__proto.clipRect=function(x,y,width,height){
-			this._saveToCmd(Render._context._clipRect,[x,y,width,height]);
-		}
-
-		/**
-		*在画布上绘制文本。
-		*@param text 在画布上输出的文本。
-		*@param x 开始绘制文本的 x 坐标位置（相对于画布）。
-		*@param y 开始绘制文本的 y 坐标位置（相对于画布）。
-		*@param font 定义字号和字体，比如"20px Arial"。
-		*@param color 定义文本颜色，比如"#ff0000"。
-		*@param textAlign 文本对齐方式，可选值："left"，"center"，"right"。
-		*/
-		__proto.fillText=function(text,x,y,font,color,textAlign){
-			this._saveToCmd(Render._context._fillText,[text,x,y,font || Font.defaultFont,color,textAlign]);
-		}
-
-		/**
-		*在画布上绘制“被填充且镶边的”文本。
-		*@param text 在画布上输出的文本。
-		*@param x 开始绘制文本的 x 坐标位置（相对于画布）。
-		*@param y 开始绘制文本的 y 坐标位置（相对于画布）。
-		*@param font 定义字体和字号，比如"20px Arial"。
-		*@param fillColor 定义文本颜色，比如"#ff0000"。
-		*@param borderColor 定义镶边文本颜色。
-		*@param lineWidth 镶边线条宽度。
-		*@param textAlign 文本对齐方式，可选值："left"，"center"，"right"。
-		*/
-		__proto.fillBorderText=function(text,x,y,font,fillColor,borderColor,lineWidth,textAlign){
-			this._saveToCmd(Render._context._fillBorderText,[text,x,y,font || Font.defaultFont,fillColor,borderColor,lineWidth,textAlign]);
-		}
-
-		/**
-		*在画布上绘制文本（没有填色）。文本的默认颜色是黑色。
-		*@param text 在画布上输出的文本。
-		*@param x 开始绘制文本的 x 坐标位置（相对于画布）。
-		*@param y 开始绘制文本的 y 坐标位置（相对于画布）。
-		*@param font 定义字体和字号，比如"20px Arial"。
-		*@param color 定义文本颜色，比如"#ff0000"。
-		*@param lineWidth 线条宽度。
-		*@param textAlign 文本对齐方式，可选值："left"，"center"，"right"。
-		*/
-		__proto.strokeText=function(text,x,y,font,color,lineWidth,textAlign){
-			this._saveToCmd(Render._context._strokeText,[text,x,y,font || Font.defaultFont,color,lineWidth,textAlign]);
-		}
-
-		/**
-		*设置透明度。
-		*@param value 透明度。
-		*/
-		__proto.alpha=function(value){
-			this._saveToCmd(Render._context._alpha,[value]);
-		}
-
-		/**
-		*替换绘图的当前转换矩阵。
-		*@param mat 矩阵。
-		*@param pivotX 水平方向轴心点坐标。
-		*@param pivotY 垂直方向轴心点坐标。
-		*/
-		__proto.transform=function(matrix,pivotX,pivotY){
-			(pivotX===void 0)&& (pivotX=0);
-			(pivotY===void 0)&& (pivotY=0);
-			this._saveToCmd(Render._context._transform,[matrix,pivotX,pivotY]);
-		}
-
-		/**
-		*旋转当前绘图。
-		*@param angle 旋转角度，以弧度计。
-		*@param pivotX 水平方向轴心点坐标。
-		*@param pivotY 垂直方向轴心点坐标。
-		*/
-		__proto.rotate=function(angle,pivotX,pivotY){
-			(pivotX===void 0)&& (pivotX=0);
-			(pivotY===void 0)&& (pivotY=0);
-			this._saveToCmd(Render._context._rotate,[angle,pivotX,pivotY]);
-		}
-
-		/**
-		*缩放当前绘图至更大或更小。
-		*@param scaleX 水平方向缩放值。
-		*@param scaleY 垂直方向缩放值。
-		*@param pivotX 水平方向轴心点坐标。
-		*@param pivotY 垂直方向轴心点坐标。
-		*/
-		__proto.scale=function(scaleX,scaleY,pivotX,pivotY){
-			(pivotX===void 0)&& (pivotX=0);
-			(pivotY===void 0)&& (pivotY=0);
-			this._saveToCmd(Render._context._scale,[scaleX,scaleY,pivotX,pivotY]);
-		}
-
-		/**
-		*重新映射画布上的 (0,0)位置。
-		*@param x 添加到水平坐标（x）上的值。
-		*@param y 添加到垂直坐标（y）上的值。
-		*/
-		__proto.translate=function(x,y){
-			this._saveToCmd(Render._context._translate,[x,y]);
-		}
-
-		/**
-		*保存当前环境的状态。
-		*/
-		__proto.save=function(){
-			this._saveToCmd(Render._context._save,[]);
-		}
-
-		/**
-		*返回之前保存过的路径状态和属性。
-		*/
-		__proto.restore=function(){
-			this._saveToCmd(Render._context._restore,[]);
-		}
-
-		/**
-		*@private
-		*替换文本内容。
-		*@param text 文本内容。
-		*@return 替换成功则值为true，否则值为flase。
-		*/
-		__proto.replaceText=function(text){
-			this._repaint();
-			var cmds=this._cmds;
-			if (!cmds){
-				if (this._one && this._isTextCmd(this._one.callee)){
-					if (this._one[0].toUpperCase)this._one[0]=text;
-					else this._one[0].setText(text);
-					return true;
-				}
-				}else {
-				for (var i=cmds.length-1;i >-1;i--){
-					if (this._isTextCmd(cmds[i].callee)){
-						if (cmds[i][0].toUpperCase)cmds[i][0]=text;
-						else cmds[i][0].setText(text);
-						return true;
-					}
-				}
-			}
-			return false;
-		}
-
-		/**@private */
-		__proto._isTextCmd=function(fun){
-			return fun===Render._context._fillText || fun===Render._context._fillBorderText || fun===Render._context._strokeText;
-		}
-
-		/**
-		*@private
-		*替换文本颜色。
-		*@param color 颜色。
-		*/
-		__proto.replaceTextColor=function(color){
-			this._repaint();
-			var cmds=this._cmds;
-			if (!cmds){
-				if (this._one && this._isTextCmd(this._one.callee)){
-					this._one[4]=color;
-					if (!this._one[0].toUpperCase)this._one[0].changed=true;
-				}
-				}else {
-				for (var i=cmds.length-1;i >-1;i--){
-					if (this._isTextCmd(cmds[i].callee)){
-						cmds[i][4]=color;
-						if (!cmds[i][0].toUpperCase)cmds[i][0].changed=true;
-					}
-				}
-			}
-		}
-
-		/**
-		*加载并显示一个图片。
-		*@param url 图片地址。
-		*@param x 显示图片的x位置。
-		*@param y 显示图片的y位置。
-		*@param width 显示图片的宽度，设置为0表示使用图片默认宽度。
-		*@param height 显示图片的高度，设置为0表示使用图片默认高度。
-		*@param complete 加载完成回调。
-		*/
-		__proto.loadImage=function(url,x,y,width,height,complete){
-			var _$this=this;
-			(x===void 0)&& (x=0);
-			(y===void 0)&& (y=0);
-			(width===void 0)&& (width=0);
-			(height===void 0)&& (height=0);
-			var tex=Loader.getRes(url);
-			if (tex)onloaded(tex);
-			else Laya.loader.load(url,Handler.create(null,onloaded),null,"image");
-			function onloaded (tex){
-				if (tex){
-					_$this.drawTexture(tex,x,y,width,height);
-					if (complete !=null)complete.call(_$this._sp,tex);
-				}
-			}
-		}
-
-		/**
-		*@private
-		*/
-		__proto._renderEmpty=function(sprite,context,x,y){}
-		/**
-		*@private
-		*/
-		__proto._renderAll=function(sprite,context,x,y){
-			var cmds=this._cmds,cmd;
-			for (var i=0,n=cmds.length;i < n;i++){
-				(cmd=cmds[i]).callee.call(context,x,y,cmd);
-			}
-		}
-
-		/**
-		*@private
-		*/
-		__proto._renderOne=function(sprite,context,x,y){
-			this._one.callee.call(context,x,y,this._one);
-		}
-
-		/**
-		*@private
-		*/
-		__proto._renderOneImg=function(sprite,context,x,y){
-			this._one.callee.call(context,x,y,this._one);
-			if (sprite._renderType!==2305){
-				sprite._renderType |=0x01;
-			}
-		}
-
-		/**
-		*绘制一条线。
-		*@param fromX X 轴开始位置。
-		*@param fromY Y 轴开始位置。
-		*@param toX X 轴结束位置。
-		*@param toY Y 轴结束位置。
-		*@param lineColor 颜色。
-		*@param lineWidth 线条宽度。
-		*/
-		__proto.drawLine=function(fromX,fromY,toX,toY,lineColor,lineWidth){
-			(lineWidth===void 0)&& (lineWidth=1);
-			var arr=[fromX+0.5,fromY+0.5,toX+0.5,toY+0.5,lineColor,lineWidth];
-			this._saveToCmd(Render._context._drawLine,arr);
-		}
-
-		/**
-		*绘制一系列线段。
-		*@param x 开始绘制的 X 轴位置。
-		*@param y 开始绘制的 Y 轴位置。
-		*@param points 线段的点集合。格式:[x1,y1,x2,y2,x3,y3...]。
-		*@param lineColor 线段颜色，或者填充绘图的渐变对象。
-		*@param lineWidth 线段宽度。
-		*/
-		__proto.drawLines=function(x,y,points,lineColor,lineWidth){
-			(lineWidth===void 0)&& (lineWidth=1);
-			var arr=[x+0.5,y+0.5,points,lineColor,lineWidth];
-			this._saveToCmd(Render._context._drawLines,arr);
-		}
-
-		/**
-		*绘制一系列曲线。
-		*@param x 开始绘制的 X 轴位置。
-		*@param y 开始绘制的 Y 轴位置。
-		*@param points 线段的点集合，格式[startx,starty,ctrx,ctry,startx,starty...]。
-		*@param lineColor 线段颜色，或者填充绘图的渐变对象。
-		*@param lineWidth 线段宽度。
-		*/
-		__proto.drawCurves=function(x,y,points,lineColor,lineWidth){
-			(lineWidth===void 0)&& (lineWidth=1);
-			var arr=[x+0.5,y+0.5,points,lineColor,lineWidth];
-			this._saveToCmd(Render._context._drawCurves,arr);
-		}
-
-		/**
-		*绘制矩形。
-		*@param x 开始绘制的 X 轴位置。
-		*@param y 开始绘制的 Y 轴位置。
-		*@param width 矩形宽度。
-		*@param height 矩形高度。
-		*@param fillColor 填充颜色，或者填充绘图的渐变对象。
-		*@param lineColor 边框颜色，或者填充绘图的渐变对象。
-		*@param lineWidth 边框宽度。
-		*/
-		__proto.drawRect=function(x,y,width,height,fillColor,lineColor,lineWidth){
-			(lineWidth===void 0)&& (lineWidth=1);
-			var offset=lineColor ? 0.5 :0;
-			var arr=[x+offset,y+offset,width,height,fillColor,lineColor,lineWidth];
-			this._saveToCmd(Render._context._drawRect,arr);
-		}
-
-		/**
-		*绘制圆形。
-		*@param x 圆点X 轴位置。
-		*@param y 圆点Y 轴位置。
-		*@param radius 半径。
-		*@param fillColor 填充颜色，或者填充绘图的渐变对象。
-		*@param lineColor 边框颜色，或者填充绘图的渐变对象。
-		*@param lineWidth 边框宽度。
-		*/
-		__proto.drawCircle=function(x,y,radius,fillColor,lineColor,lineWidth){
-			(lineWidth===void 0)&& (lineWidth=1);
-			var offset=lineColor ? 0.5 :0;
-			var arr=[x+offset,y+offset,radius,fillColor,lineColor,lineWidth];
-			this._saveToCmd(Render._context._drawCircle,arr);
-		}
-
-		/**
-		*绘制扇形。
-		*@param x 开始绘制的 X 轴位置。
-		*@param y 开始绘制的 Y 轴位置。
-		*@param radius 扇形半径。
-		*@param startAngle 开始角度。
-		*@param endAngle 结束角度。
-		*@param fillColor 填充颜色，或者填充绘图的渐变对象。
-		*@param lineColor 边框颜色，或者填充绘图的渐变对象。
-		*@param lineWidth 边框宽度。
-		*/
-		__proto.drawPie=function(x,y,radius,startAngle,endAngle,fillColor,lineColor,lineWidth){
-			(lineWidth===void 0)&& (lineWidth=1);
-			var offset=lineColor ? 0.5 :0;
-			var arr=[x+offset,y+offset,radius,startAngle,endAngle,fillColor,lineColor,lineWidth];
-			arr[3]=Utils.toRadian(startAngle);
-			arr[4]=Utils.toRadian(endAngle);
-			this._saveToCmd(Render._context._drawPie,arr);
-		}
-
-		__proto._getPiePoints=function(x,y,radius,startAngle,endAngle){
-			var rst=Graphics._tempPoints;
-			Graphics._tempPoints.length=0;
-			rst.push(x,y);
-			var dP=Math.PI / 10;
-			var i=NaN;
-			for (i=startAngle;i < endAngle;i+=dP){
-				rst.push(x+radius *Math.cos(i),y+radius *Math.sin(i));
-			}
-			if (endAngle !=i){
-				rst.push(x+radius *Math.cos(endAngle),y+radius *Math.sin(endAngle));
-			}
-			return rst;
-		}
-
-		/**
-		*绘制多边形。
-		*@param x 开始绘制的 X 轴位置。
-		*@param y 开始绘制的 Y 轴位置。
-		*@param points 多边形的点集合。
-		*@param fillColor 填充颜色，或者填充绘图的渐变对象。
-		*@param lineColor 边框颜色，或者填充绘图的渐变对象。
-		*@param lineWidth 边框宽度。
-		*/
-		__proto.drawPoly=function(x,y,points,fillColor,lineColor,lineWidth){
-			(lineWidth===void 0)&& (lineWidth=1);
-			var offset=lineColor ? 0.5 :0;
-			var arr=[x+offset,y+offset,points,fillColor,lineColor,lineWidth];
-			this._saveToCmd(Render._context._drawPoly,arr);
-		}
-
-		__proto._getPathPoints=function(paths){
-			var i=0,len=0;
-			var rst=Graphics._tempPoints;
-			rst.length=0;
-			len=paths.length;
-			var tCMD;
-			for (i=0;i < len;i++){
-				tCMD=paths[i];
-				if (tCMD.length > 1){
-					rst.push(tCMD[1],tCMD[2]);
-					if (tCMD.length > 3){
-						rst.push(tCMD[3],tCMD[4]);
-					}
-				}
-			}
-			return rst;
-		}
-
-		/**
-		*绘制路径。
-		*@param x 开始绘制的 X 轴位置。
-		*@param y 开始绘制的 Y 轴位置。
-		*@param paths 路径集合，路径支持以下格式：[["moveTo",x,y],["lineTo",x,y,x,y,x,y],["arcTo",x1,y1,x2,y2,r],["closePath"]]。
-		*@param brush 刷子定义，支持以下设置{fillStyle}。
-		*@param pen 画笔定义，支持以下设置{strokeStyle,lineWidth,lineJoin,lineCap,miterLimit}。
-		*/
-		__proto.drawPath=function(x,y,paths,brush,pen){
-			var arr=[x+0.5,y+0.5,paths,brush,pen];
-			this._saveToCmd(Render._context._drawPath,arr);
-		}
-
-		/**@private */
-		/**
-		*@private
-		*命令流。
-		*/
-		__getset(0,__proto,'cmds',function(){
-			return this._cmds;
-			},function(value){
-			this._sp && (this._sp._renderType |=0x100);
-			this._cmds=value;
-			this._render=this._renderAll;
-			this._repaint();
-		});
-
-		Graphics.__init__=function(){
-			if (Render.isConchNode){
-				var from=laya.display.Graphics.prototype;
-				var to=ConchGraphics.prototype;
-				var list=["clear","destroy","alpha","rotate","transform","scale","translate","save","restore","clipRect","blendMode","fillText","fillBorderText","_fands","drawRect","drawCircle","drawPie","drawPoly","drawPath","drawImageM","drawLine","drawLines","_drawPs","drawCurves","replaceText","replaceTextColor"];
-				for (var i=0,len=list.length;i <=len;i++){
-					var temp=list[i];
-					from[temp]=to[temp];
-				}
-				from._saveToCmd=null;
-				from.drawTexture=function (tex,x,y,width,height,m){
-					(width===void 0)&& (width=0);
-					(height===void 0)&& (height=0);
-					if (!width)width=tex.sourceWidth;
-					if (!height)height=tex.sourceHeight;
-					width=width-tex.sourceWidth+tex.width;
-					height=height-tex.sourceHeight+tex.height;
-					if (width <=0 || height <=0)return;
-					x+=tex.offsetX;
-					y+=tex.offsetY;
-					var uv=tex.uv,w=tex.bitmap.width,h=tex.bitmap.height;
-					this.drawImageM(tex.bitmap.source,uv[0] *w,uv[1] *h,(uv[2]-uv[0])*w,(uv[5]-uv[3])*h,x ,y ,width,height,m);
-				}
-			}
-		}
-
-		Graphics._addPointArrToRst=function(rst,points,matrix,dx,dy){
-			(dx===void 0)&& (dx=0);
-			(dy===void 0)&& (dy=0);
-			var i=0,len=0;
-			len=points.length;
-			for (i=0;i < len;i+=2){
-				Graphics._addPointToRst(rst,points[i]+dx,points[i+1]+dy,matrix);
-			}
-		}
-
-		Graphics._addPointToRst=function(rst,x,y,matrix){
-			var _tempPoint=Point.TEMP;
-			_tempPoint.setTo(x ? x :0,y ? y :0);
-			matrix.transformPoint(_tempPoint);
-			rst.push(_tempPoint.x,_tempPoint.y);
-		}
-
-		Graphics._tempPoints=[];
-		Graphics._tempMatrixArrays=[];
-		Graphics._tempCmds=[];
-		__static(Graphics,
-		['_tempMatrix',function(){return this._tempMatrix=new Matrix();},'_initMatrix',function(){return this._initMatrix=new Matrix();}
-		]);
-		return Graphics;
 	})()
 
 
@@ -4427,6 +6501,21 @@ window.Laya=(function(window,document){
 			return this.nativeEvent.ctrlKey;
 		});
 
+		/**
+		*表示键在键盘上的位置。这对于区分在键盘上多次出现的键非常有用。<br>
+		*例如，您可以根据此属性的值来区分左 Shift 键和右 Shift 键：左 Shift 键的值为 KeyLocation.LEFT，右 Shift 键的值为 KeyLocation.RIGHT。另一个示例是区分标准键盘 (KeyLocation.STANDARD)与数字键盘 (KeyLocation.NUM_PAD)上按下的数字键。
+		*/
+		__getset(0,__proto,'keyLocation',function(){
+			return this.nativeEvent.keyLocation;
+		});
+
+		/**
+		*包含按下或释放的键的字符代码值。字符代码值为英文键盘值。
+		*/
+		__getset(0,__proto,'charCode',function(){
+			return this.nativeEvent.charCode;
+		});
+
 		Event.EMPTY=new Event();
 		Event.MOUSE_DOWN="mousedown";
 		Event.MOUSE_UP="mouseup";
@@ -4486,117 +6575,11 @@ window.Laya=(function(window,document){
 		Event.LABEL="label";
 		Event.FULL_SCREEN_CHANGE="fullscreenchange";
 		Event.DEVICE_LOST="devicelost";
+		Event.MESH_CHANGED="meshchanged";
+		Event.MATERIAL_CHANGED="materialchanged";
+		Event.RENDERQUEUE_CHANGED="renderqueuechanged";
+		Event.WORLDMATRIX_NEEDCHANGE="worldmatrixneedchanged";
 		return Event;
-	})()
-
-
-	/**
-	*<code>Keyboard</code> 类的属性是一些常数，这些常数表示控制游戏时最常用的键。
-	*/
-	//class laya.events.Keyboard
-	var Keyboard=(function(){
-		function Keyboard(){};
-		__class(Keyboard,'laya.events.Keyboard');
-		Keyboard.NUMBER_0=48;
-		Keyboard.NUMBER_1=49;
-		Keyboard.NUMBER_2=50;
-		Keyboard.NUMBER_3=51;
-		Keyboard.NUMBER_4=52;
-		Keyboard.NUMBER_5=53;
-		Keyboard.NUMBER_6=54;
-		Keyboard.NUMBER_7=55;
-		Keyboard.NUMBER_8=56;
-		Keyboard.NUMBER_9=57;
-		Keyboard.A=65;
-		Keyboard.B=66;
-		Keyboard.C=67;
-		Keyboard.D=68;
-		Keyboard.E=69;
-		Keyboard.F=70;
-		Keyboard.G=71;
-		Keyboard.H=72;
-		Keyboard.I=73;
-		Keyboard.J=74;
-		Keyboard.K=75;
-		Keyboard.L=76;
-		Keyboard.M=77;
-		Keyboard.N=78;
-		Keyboard.O=79;
-		Keyboard.P=80;
-		Keyboard.Q=81;
-		Keyboard.R=82;
-		Keyboard.S=83;
-		Keyboard.T=84;
-		Keyboard.U=85;
-		Keyboard.V=86;
-		Keyboard.W=87;
-		Keyboard.X=88;
-		Keyboard.Y=89;
-		Keyboard.Z=90;
-		Keyboard.F1=112;
-		Keyboard.F2=113;
-		Keyboard.F3=114;
-		Keyboard.F4=115;
-		Keyboard.F5=116;
-		Keyboard.F6=117;
-		Keyboard.F7=118;
-		Keyboard.F8=119;
-		Keyboard.F9=120;
-		Keyboard.F10=121;
-		Keyboard.F11=122;
-		Keyboard.F12=123;
-		Keyboard.F13=124;
-		Keyboard.F14=125;
-		Keyboard.F15=126;
-		Keyboard.NUMPAD=21;
-		Keyboard.NUMPAD_0=96;
-		Keyboard.NUMPAD_1=97;
-		Keyboard.NUMPAD_2=98;
-		Keyboard.NUMPAD_3=99;
-		Keyboard.NUMPAD_4=100;
-		Keyboard.NUMPAD_5=101;
-		Keyboard.NUMPAD_6=102;
-		Keyboard.NUMPAD_7=103;
-		Keyboard.NUMPAD_8=104;
-		Keyboard.NUMPAD_9=105;
-		Keyboard.NUMPAD_ADD=107;
-		Keyboard.NUMPAD_DECIMAL=110;
-		Keyboard.NUMPAD_DIVIDE=111;
-		Keyboard.NUMPAD_ENTER=108;
-		Keyboard.NUMPAD_MULTIPLY=106;
-		Keyboard.NUMPAD_SUBTRACT=109;
-		Keyboard.SEMICOLON=186;
-		Keyboard.EQUAL=187;
-		Keyboard.COMMA=188;
-		Keyboard.MINUS=189;
-		Keyboard.PERIOD=190;
-		Keyboard.SLASH=191;
-		Keyboard.BACKQUOTE=192;
-		Keyboard.LEFTBRACKET=219;
-		Keyboard.BACKSLASH=220;
-		Keyboard.RIGHTBRACKET=221;
-		Keyboard.QUOTE=222;
-		Keyboard.ALTERNATE=18;
-		Keyboard.BACKSPACE=8;
-		Keyboard.CAPS_LOCK=20;
-		Keyboard.COMMAND=15;
-		Keyboard.CONTROL=17;
-		Keyboard.DELETE=46;
-		Keyboard.ENTER=13;
-		Keyboard.ESCAPE=27;
-		Keyboard.PAGE_UP=33;
-		Keyboard.PAGE_DOWN=34;
-		Keyboard.END=35;
-		Keyboard.HOME=36;
-		Keyboard.LEFT=37;
-		Keyboard.UP=38;
-		Keyboard.RIGHT=39;
-		Keyboard.DOWN=40;
-		Keyboard.SHIFT=16;
-		Keyboard.SPACE=32;
-		Keyboard.TAB=9;
-		Keyboard.INSERT=45;
-		return Keyboard;
 	})()
 
 
@@ -4626,13 +6609,16 @@ window.Laya=(function(window,document){
 
 		KeyBoardManager._dispatch=function(e,type){
 			if (!KeyBoardManager.enabled)return;
-			e.keyCode=e.keyCode || e.which || e.charCode;
-			if (type==="keydown")KeyBoardManager._pressKeys[e.keyCode]=true;
-			else if (type==="keyup")KeyBoardManager._pressKeys[e.keyCode]=null;
-			var tar=(Laya.stage.focus && (Laya.stage.focus.event !=null))? Laya.stage.focus :Laya.stage;
-			while (tar){
-				tar.event(type,e);
-				tar=tar.parent;
+			KeyBoardManager._event._stoped=false;
+			KeyBoardManager._event.nativeEvent=e;
+			KeyBoardManager._event.keyCode=e.keyCode || e.which || e.charCode;
+			if (type==="keydown")KeyBoardManager._pressKeys[KeyBoardManager._event.keyCode]=true;
+			else if (type==="keyup")KeyBoardManager._pressKeys[KeyBoardManager._event.keyCode]=null;
+			var target=(Laya.stage.focus && (Laya.stage.focus.event !=null))? Laya.stage.focus :Laya.stage;
+			var ct=target;
+			while (ct){
+				ct.event(type,KeyBoardManager._event.setTo(type,ct,target));
+				ct=ct.parent;
 			}
 		}
 
@@ -4642,6 +6628,9 @@ window.Laya=(function(window,document){
 
 		KeyBoardManager._pressKeys={};
 		KeyBoardManager.enabled=true;
+		__static(KeyBoardManager,
+		['_event',function(){return this._event=new Event();}
+		]);
 		return KeyBoardManager;
 	})()
 
@@ -4677,12 +6666,11 @@ window.Laya=(function(window,document){
 		*@private
 		*初始化。
 		*/
-		__proto.__init__=function(){
-			this._stage=Laya.stage;
+		__proto.__init__=function(stage,canvas){
+			this._stage=stage;
 			var _this=this;
-			var canvas=Render.canvas;
 			var list=this._eventList;
-			Browser.document.oncontextmenu=function (e){
+			canvas.oncontextmenu=function (e){
 				if (MouseManager.enabled)return false;
 			}
 			canvas.addEventListener('mousedown',function(e){
@@ -4716,14 +6704,14 @@ window.Laya=(function(window,document){
 			})
 			canvas.addEventListener("touchstart",function(e){
 				if (MouseManager.enabled){
-					e.preventDefault();
+					if(!Input.IOS_IFRAME)e.preventDefault();
 					list.push(e);
 					_this.mouseDownTime=Browser.now();
 				}
 			});
 			canvas.addEventListener("touchend",function(e){
 				if (MouseManager.enabled){
-					e.preventDefault();
+					if(!Input.IOS_IFRAME)e.preventDefault();
 					list.push(e);
 					_this.mouseDownTime=-Browser.now();
 				}
@@ -4743,7 +6731,7 @@ window.Laya=(function(window,document){
 		}
 
 		__proto.initEvent=function(e,nativeEvent){
-			var _this=laya.events.MouseManager.instance;
+			var _this=this;
 			_this._event._stoped=false;
 			_this._event.nativeEvent=nativeEvent || e;
 			_this._target=null;
@@ -4886,6 +6874,9 @@ window.Laya=(function(window,document){
 
 		__proto.hitTest=function(sp,mouseX,mouseY){
 			var isHit=false;
+			if ((sp.hitArea instanceof laya.utils.HitArea )){
+				return sp.hitArea.isHit(mouseX,mouseY);
+			}
 			if (sp.width > 0 && sp.height > 0 || sp.mouseThrough || sp.hitArea){
 				var hitRect=this._rect;
 				if (!sp.mouseThrough){
@@ -4911,9 +6902,13 @@ window.Laya=(function(window,document){
 				var evt=this._eventList[i];
 				switch (evt.type){
 					case 'mousedown':
-						_this._isLeftMouse=evt.button===0;
-						_this.initEvent(evt);
-						_this.check(_this._stage,_this.mouseX,_this.mouseY,_this.onMouseDown);
+						if (!MouseManager._isTouchRespond){
+							_this._isLeftMouse=evt.button===0;
+							_this.initEvent(evt);
+							_this.check(_this._stage,_this.mouseX,_this.mouseY,_this.onMouseDown);
+						}
+						else
+						MouseManager._isTouchRespond=false;
 						break ;
 					case 'mouseup':
 						_this._isLeftMouse=evt.button===0;
@@ -4929,6 +6924,7 @@ window.Laya=(function(window,document){
 						_this.checkMouseOut();
 						break ;
 					case "touchstart":
+						MouseManager._isTouchRespond=true;
 						_this._isLeftMouse=true;
 						var touches=evt.changedTouches;
 						for (var j=0,n=touches.length;j < n;j++){
@@ -4937,6 +6933,7 @@ window.Laya=(function(window,document){
 						}
 						break ;
 					case "touchend":
+						MouseManager._isTouchRespond=true;
 						_this._isLeftMouse=true;
 						now=Browser.now();
 						_this._isDoubleClick=(now-_this._lastClickTimer)< 300;
@@ -4973,6 +6970,7 @@ window.Laya=(function(window,document){
 		}
 
 		MouseManager.enabled=true;
+		MouseManager._isTouchRespond=false;
 		__static(MouseManager,
 		['instance',function(){return this.instance=new MouseManager();}
 		]);
@@ -5493,7 +7491,7 @@ window.Laya=(function(window,document){
 		}
 
 		MathUtil.getRotation=function(x0,y0,x1,y1){
-			return Math.atan2(x1-x0,y1-y0)/ Math.PI *180;
+			return Math.atan2(y1-y0,x1-x0)/ Math.PI *180;
 		}
 
 		MathUtil.sortBigFirst=function(a,b){
@@ -6308,6 +8306,9 @@ window.Laya=(function(window,document){
 			if (SoundManager._musicChannel){
 				if (!SoundManager._musicChannel.isStopped){
 					SoundManager._blurPaused=true;
+					SoundManager._musicLoops=SoundManager._musicChannel.loops;
+					SoundManager._musicCompleteHandler=SoundManager._musicChannel.completeHandler;
+					SoundManager._musicPosition=SoundManager._musicChannel.position;
 					SoundManager._musicChannel.stop();
 				}
 			}
@@ -6315,13 +8316,14 @@ window.Laya=(function(window,document){
 
 		SoundManager._stageOnFocus=function(){
 			if (SoundManager._blurPaused){
-				SoundManager.playMusic(SoundManager._tMusic);
+				SoundManager.playMusic(SoundManager._tMusic,SoundManager._musicLoops,SoundManager._musicCompleteHandler,SoundManager._musicPosition);
 				SoundManager._blurPaused=false;
 			}
 		}
 
-		SoundManager.playSound=function(url,loops,complete,soundClass){
+		SoundManager.playSound=function(url,loops,complete,soundClass,startTime){
 			(loops===void 0)&& (loops=1);
+			(startTime===void 0)&& (startTime=0);
 			if (SoundManager._muted)
 				return null;
 			if (url==SoundManager._tMusic){
@@ -6330,14 +8332,14 @@ window.Laya=(function(window,document){
 				if (SoundManager._soundMuted)return null;
 			};
 			var tSound=Laya.loader.getRes(url);
-			if (!soundClass)soundClass=Sound;
+			if (!soundClass)soundClass=SoundManager._soundClass;
 			if (!tSound){
 				tSound=new soundClass();
 				tSound.load(url);
 				Loader.cacheRes(url,tSound);
 			};
 			var channel;
-			channel=tSound.play(0,loops);
+			channel=tSound.play(startTime,loops);
 			channel.url=url;
 			channel.volume=(url==SoundManager._tMusic)? SoundManager.musicVolume :SoundManager.soundVolume;
 			channel.completeHandler=complete;
@@ -6352,12 +8354,13 @@ window.Laya=(function(window,document){
 			}
 		}
 
-		SoundManager.playMusic=function(url,loops,complete){
+		SoundManager.playMusic=function(url,loops,complete,startTime){
 			(loops===void 0)&& (loops=0);
+			(startTime===void 0)&& (startTime=0);
 			SoundManager._tMusic=url;
 			if (SoundManager._musicChannel)
 				SoundManager._musicChannel.stop();
-			return SoundManager._musicChannel=SoundManager.playSound(url,loops,complete,null);
+			return SoundManager._musicChannel=SoundManager.playSound(url,loops,complete,null,startTime);
 		}
 
 		SoundManager.stopSound=function(url){
@@ -6419,6 +8422,10 @@ window.Laya=(function(window,document){
 		SoundManager._channels=[];
 		SoundManager._autoStopMusic=false;
 		SoundManager._blurPaused=false;
+		SoundManager._musicLoops=0;
+		SoundManager._musicPosition=0;
+		SoundManager._musicCompleteHandler=null;
+		SoundManager._soundClass=null
 		return SoundManager;
 	})()
 
@@ -6492,18 +8499,6 @@ window.Laya=(function(window,document){
 		URL.rootPath="";
 		URL.customFormat=null
 		return URL;
-	})()
-
-
-	/**
-	*...
-	*@author laya
-	*/
-	//class laya.webgl.shader.ShaderValue
-	var ShaderValue=(function(){
-		function ShaderValue(){}
-		__class(ShaderValue,'laya.webgl.shader.ShaderValue');
-		return ShaderValue;
 	})()
 
 
@@ -6614,10 +8609,59 @@ window.Laya=(function(window,document){
 			//this.canvas=null;
 			//this.ctx=null;
 			this._drawTexture=function(x,y,args){
-				args[0].loaded ? this.ctx.drawTexture(args[0],args[1],args[2],args[3],args[4],x,y):(this.ctx._repaint=true);
+				if (args[0].loaded)this.ctx.drawTexture(args[0],args[1],args[2],args[3],args[4],x,y);
+			}
+			this._fillTexture=function(x,y,args){
+				if (args[0].loaded){
+					var texture=args[0];
+					var ctxi=this.ctx;
+					var pat;
+					if (Render.isWebGL){
+						var tSprite=args[7];
+						if (tSprite){
+							if (args[6]){
+								tSprite.initTexture(texture,args[1],args[2],args[3],args[4],args[6].x,args[6].y);
+								}else {
+								tSprite.initTexture(texture,args[1],args[2],args[3],args[4],0,0);
+							};
+							var ctx=this.ctx;
+							tSprite.render(ctx,x,y);
+						}
+						return;
+					}
+					if (!Render.isConchApp){
+						if (texture.uv !=Texture.DEF_UV){
+							var canvas=new HTMLCanvas("2D");
+							canvas.getContext('2d');
+							canvas.size(texture.width,texture.height);
+							canvas.context.drawTexture(texture,0,0,texture.width,texture.height,0,0);
+							args[0]=texture=new Texture(canvas);
+						}
+						pat=args[7] ? args[7] :args[7]=ctxi.createPattern(texture.bitmap.source,args[5]);
+						}else {
+						if (texture.uv !=Texture.DEF_UV){
+							var w=texture.bitmap.width,h=texture.bitmap.height,uv=texture.uv;
+							pat=args[7] ? args[7] :args[7]=ctxi.createPattern(texture.bitmap.source,args[5],uv[0] *w,uv[1] *h,(uv[2]-uv[0])*w,(uv[5]-uv[3])*h);
+							}else {
+							pat=args[7] ? args[7] :args[7]=ctxi.createPattern(texture.bitmap.source,args[5]);
+						}
+					};
+					var oX=x+args[1],oY=y+args[2];
+					var sX=0,sY=0;
+					if (args[6]){
+						oX+=args[6].x % texture.width;
+						oY+=args[6].y % texture.height;
+						sX-=args[6].x % texture.width;
+						sY-=args[6].y % texture.height;
+					}
+					ctxi.translate(oX,oY);
+					ctxi.fillStyle=pat;
+					ctxi.fillRect(sX,sY,args[3],args[4]);
+					ctxi.translate(-oX,-oY);
+				}else {}
 			}
 			this._drawTextureWithTransform=function(x,y,args){
-				args[0].loaded ? this.ctx.drawTextureWithTransform(args[0],args[1],args[2],args[3],args[4],args[5],x,y):(this.ctx._repaint=true);
+				if (args[0].loaded)this.ctx.drawTextureWithTransform(args[0],args[1],args[2],args[3],args[4],args[5],x,y);
 			}
 			this._fillQuadrangle=function(x,y,args){
 				this.ctx.fillQuadrangle(args[0],args[1],args[2],args[3],args[4]);
@@ -6636,8 +8680,14 @@ window.Laya=(function(window,document){
 			}
 			this._drawPie=function(x,y,args){
 				var ctx=this.ctx;
+				Render.isWebGL && ctx.setPathId(args[8]);
 				ctx.beginPath();
-				ctx.moveTo(x+args[0],y+args[1]);
+				if (Render.isWebGL){
+					ctx.movePath(args[0]+x,args[1]+y);
+					ctx.moveTo(0,0);
+					}else {
+					ctx.moveTo(x+args[0],y+args[1]);
+				}
 				ctx.arc(x+args[0],y+args[1],args[2],args[3],args[4]);
 				ctx.closePath();
 				this._fillAndStroke(args[5],args[6],args[7],true);
@@ -6649,9 +8699,11 @@ window.Laya=(function(window,document){
 				this.ctx.fillRect(x+args[0],y+args[1],args[2],args[3],args[4]);
 			}
 			this._drawCircle=function(x,y,args){
-				Stat.drawCall++;
 				var ctx=this.ctx;
+				Render.isWebGL && ctx.setPathId(args[6]);
+				Stat.drawCall++;
 				ctx.beginPath();
+				Render.isWebGL && ctx.movePath(args[0]+x,args[1]+y);
 				ctx.arc(args[0]+x,args[1]+y,args[2],0,RenderContext.PI2);
 				ctx.closePath();
 				this._fillAndStroke(args[3],args[4],args[5],true);
@@ -6669,24 +8721,40 @@ window.Laya=(function(window,document){
 			}
 			this._drawLine=function(x,y,args){
 				var ctx=this.ctx;
+				Render.isWebGL && ctx.setPathId(args[6]);
 				ctx.beginPath();
 				ctx.strokeStyle=args[4];
 				ctx.lineWidth=args[5];
-				ctx.moveTo(x+args[0],y+args[1]);
-				ctx.lineTo(x+args[2],y+args[3]);
+				if (Render.isWebGL){
+					ctx.movePath(x,y);
+					ctx.moveTo(args[0],args[1]);
+					ctx.lineTo(args[2],args[3]);
+					}else {
+					ctx.moveTo(x+args[0],y+args[1]);
+					ctx.lineTo(x+args[2],y+args[3]);
+				}
 				ctx.stroke();
 			}
 			this._drawLines=function(x,y,args){
 				var ctx=this.ctx;
+				Render.isWebGL && ctx.setPathId(args[5]);
 				ctx.beginPath();
+				x+=args[0],y+=args[1];
+				Render.isWebGL && ctx.movePath(x,y);
 				ctx.strokeStyle=args[3];
 				ctx.lineWidth=args[4];
 				var points=args[2];
-				x+=args[0],y+=args[1];
-				ctx.moveTo(x+points[0],y+points[1]);
 				var i=2,n=points.length;
-				while (i < n){
-					ctx.lineTo(x+points[i++],y+points[i++]);
+				if (Render.isWebGL){
+					ctx.moveTo(points[0],points[1]);
+					while (i < n){
+						ctx.lineTo(points[i++],points[i++]);
+					}
+					}else {
+					ctx.moveTo(x+points[0],y+points[1]);
+					while (i < n){
+						ctx.lineTo(x+points[i++],y+points[i++]);
+					}
 				}
 				ctx.stroke();
 			}
@@ -6695,6 +8763,7 @@ window.Laya=(function(window,document){
 			}
 			this._drawCurves=function(x,y,args){
 				var ctx=this.ctx;
+				Render.isWebGL && ctx.setPathId(-1);
 				ctx.beginPath();
 				ctx.strokeStyle=args[3];
 				ctx.lineWidth=args[4];
@@ -6773,6 +8842,7 @@ window.Laya=(function(window,document){
 			}
 			this._drawPath=function(x,y,args){
 				var ctx=this.ctx;
+				Render.isWebGL && ctx.setPathId(-1);
 				ctx.beginPath();
 				x+=args[0],y+=args[1];
 				var paths=args[2];
@@ -6813,16 +8883,34 @@ window.Laya=(function(window,document){
 			}
 			this._drawPoly=function(x,y,args){
 				var ctx=this.ctx;
-				ctx.beginPath();
 				var points=args[2];
-				x+=args[0],y+=args[1];
-				ctx.moveTo(x+points[0],y+points[1]);
 				var i=2,n=points.length;
-				while (i < n){
-					ctx.lineTo(x+points[i++],y+points[i++]);
+				if (Render.isWebGL){
+					ctx.setPathId(args[6]);
+					ctx.beginPath();
+					x+=args[0],y+=args[1];
+					ctx.movePath(x,y);
+					ctx.moveTo(points[0],points[1]);
+					while (i < n){
+						ctx.lineTo(points[i++],points[i++]);
+					}
+					}else {
+					ctx.beginPath();
+					x+=args[0],y+=args[1];
+					ctx.moveTo(x+points[0],y+points[1]);
+					while (i < n){
+						ctx.lineTo(x+points[i++],y+points[i++]);
+					}
 				}
 				ctx.closePath();
-				this._fillAndStroke(args[3],args[4],args[5]);
+				this._fillAndStroke(args[3],args[4],args[5],args[7]);
+			}
+			this._drawSkin=function(x,y,args){
+				var tSprite=args[0];
+				if (tSprite){
+					var ctx=this.ctx;
+					tSprite.render(ctx,x,y);
+				}
 			}
 			this._drawParticle=function(x,y,args){
 				this.ctx.drawParticle(x+this.x,y+this.y,args[0]);
@@ -6853,11 +8941,11 @@ window.Laya=(function(window,document){
 		}
 
 		__proto.drawTexture=function(tex,x,y,width,height){
-			tex.loaded ? this.ctx.drawTexture(tex,x,y,width,height,this.x,this.y):(this.ctx._repaint=true);
+			if (tex.loaded)this.ctx.drawTexture(tex,x,y,width,height,this.x,this.y);
 		}
 
 		__proto.drawTextureWithTransform=function(tex,x,y,width,height,m){
-			tex.loaded ? this.ctx.drawTextureWithTransform(tex,x,y,width,height,m,this.x,this.y):(this.ctx._repaint=true);
+			if (tex.loaded)this.ctx.drawTextureWithTransform(tex,x,y,width,height,m,this.x,this.y);
 		}
 
 		__proto.fillQuadrangle=function(tex,x,y,point4,m){
@@ -6887,7 +8975,7 @@ window.Laya=(function(window,document){
 					ctx.fill();
 				}
 			}
-			if (strokeColor !=null && lineWidth>0){
+			if (strokeColor !=null && lineWidth > 0){
 				ctx.strokeStyle=strokeColor;
 				ctx.lineWidth=lineWidth;
 				ctx.stroke();
@@ -7199,7 +9287,7 @@ window.Laya=(function(window,document){
 				return;
 			};
 			var tx=_cacheCanvas.ctx;
-			var _repaint=sprite._needRepaint()|| (!tx)|| tx.ctx._repaint;
+			var _repaint=sprite._needRepaint()|| (!tx);
 			var canvas;
 			var left;
 			var top;
@@ -7211,7 +9299,9 @@ window.Laya=(function(window,document){
 				var w,h;
 				tRec=sprite.getSelfBounds();
 				if (Render.isWebGL && _cacheCanvas.type==='bitmap' && (tRec.width > 2048 || tRec.height > 2048)){
-					throw new Error("cache bitmap size larger than 2048");
+					console.log("cache bitmap size larger than 2048,cache ignored");
+					_next._fun.call(_next,sprite,tx,x,y);
+					return;
 				}
 				tRec.x-=sprite.pivotX;
 				tRec.y-=sprite.pivotY;
@@ -7258,8 +9348,8 @@ window.Laya=(function(window,document){
 					ctx.save();
 					ctx.scale(scaleX,scaleY);
 					if (!Render.isConchWebGL&&Render.isConchApp){
-						t=sprite._$P.rgbg;
-						t&&ctx.setFilter(t[0],t[1],t[2],t[3]);
+						t=sprite._$P.cf;
+						t&&ctx.setFilterMatrix&&ctx.setFilterMatrix(t._mat,t._alpha);
 					}
 					_next._fun.call(_next,sprite,tx,-left,-top);
 					ctx.restore();
@@ -7267,8 +9357,8 @@ window.Laya=(function(window,document){
 					}else {
 					ctx=(tx).ctx;
 					if (!Render.isConchWebGL&&Render.isConchApp){
-						t=sprite._$P.rgbg;
-						t&&ctx.setFilter(t[0],t[1],t[2],t[3]);
+						t=sprite._$P.cf;
+						t&&ctx.setFilterMatrix&&ctx.setFilterMatrix(t._mat,t._alpha);
 					}
 					_next._fun.call(_next,sprite,tx,-left,-top);
 					if(!Render.isConchApp||Render.isConchWebGL)sprite._applyFilters();
@@ -7930,6 +10020,7 @@ window.Laya=(function(window,document){
 	})()
 
 
+	SoundManager;
 	/**
 	*<code>Browser</code> 是浏览器代理类。封装浏览器及原生 js 提供的一些功能。
 	*/
@@ -8024,6 +10115,7 @@ window.Laya=(function(window,document){
 			if (Browser.webAudioEnabled)WebAudioSound.initWebAudio();;
 			Browser.enableTouch=(('ontouchstart' in window)|| window.DocumentTouch && document instanceof DocumentTouch);
 			window.focus();
+			SoundManager._soundClass=Sound;;
 			Render._mainCanvas=Render._mainCanvas||HTMLCanvas.create('2D');
 			if (Browser.canvas)return;
 			Browser.canvas=HTMLCanvas.create('2D');
@@ -8445,6 +10537,7 @@ window.Laya=(function(window,document){
 		*/
 		__proto.readUTFBytes=function(len){
 			(len===void 0)&& (len=-1);
+			if(len==0)return "";
 			len=len > 0 ? len :this.bytesAvailable;
 			return this.rUTF(len);
 		}
@@ -8457,6 +10550,13 @@ window.Laya=(function(window,document){
 			this.ensureWrite(this._pos_+1);
 			this._d_.setInt8(this._pos_,value);
 			this._pos_+=1;
+		}
+
+		/**
+		*在字节流中读一个字节。
+		*/
+		__proto.readByte=function(){
+			return this._d_.getInt8(this._pos_++);
 		}
 
 		/**
@@ -8550,6 +10650,342 @@ window.Laya=(function(window,document){
 
 
 	/**
+	*对象缓存统一管理类
+	*/
+	//class laya.utils.CacheManger
+	var CacheManger=(function(){
+		function CacheManger(){}
+		__class(CacheManger,'laya.utils.CacheManger');
+		CacheManger.regCacheByFunction=function(disposeFunction,getCacheListFunction){
+			CacheManger.unRegCacheByFunction(disposeFunction,getCacheListFunction);
+			var cache;
+			cache={
+				tryDispose:disposeFunction,
+				getCacheList:getCacheListFunction
+			};
+			CacheManger._cacheList.push(cache);
+		}
+
+		CacheManger.unRegCacheByFunction=function(disposeFunction,getCacheListFunction){
+			var i=0,len=0;
+			len=CacheManger._cacheList.length;
+			for (i=0;i < len;i++){
+				if (CacheManger._cacheList[i].tryDispose==disposeFunction && CacheManger._cacheList[i].getCacheList==getCacheListFunction){
+					CacheManger._cacheList.splice(i,1);
+					return;
+				}
+			}
+		}
+
+		CacheManger.forceDispose=function(){
+			var i=0,len=CacheManger._cacheList.length;
+			for(i=0;i<len;i++){
+				CacheManger._cacheList[i].tryDispose(true);
+			}
+		}
+
+		CacheManger.beginCheck=function(waitTime){
+			(waitTime===void 0)&& (waitTime=15000);
+			Laya.timer.loop(waitTime,null,CacheManger._checkLoop);
+		}
+
+		CacheManger.stopCheck=function(){
+			Laya.timer.clear(null,CacheManger._checkLoop);
+		}
+
+		CacheManger._checkLoop=function(){
+			var cacheList=CacheManger._cacheList;
+			if (cacheList.length < 1)return;
+			var tTime=Browser.now();
+			var count=0;
+			var len=0;
+			len=count=cacheList.length;
+			while (count > 0){
+				CacheManger._index++;
+				CacheManger._index=CacheManger._index % len;
+				cacheList[CacheManger._index].tryDispose(false);
+				if (Browser.now()-tTime > CacheManger.loopTimeLimit)break ;
+				count--;
+			}
+		}
+
+		CacheManger.loopTimeLimit=2;
+		CacheManger._cacheList=[];
+		CacheManger._index=0;
+		return CacheManger;
+	})()
+
+
+	/**
+	*<code>ClassUtils</code> 是一个类工具类。
+	*/
+	//class laya.utils.ClassUtils
+	var ClassUtils=(function(){
+		function ClassUtils(){};
+		__class(ClassUtils,'laya.utils.ClassUtils');
+		ClassUtils.regClass=function(className,classDef){
+			ClassUtils._classMap[className]=classDef;
+		}
+
+		ClassUtils.getRegClass=function(className){
+			return ClassUtils._classMap[className];
+		}
+
+		ClassUtils.getInstance=function(className){
+			var compClass=ClassUtils.getClass(className);
+			if (compClass)return new compClass();
+			else console.log("[error] Undefined class:",className);
+			return null;
+		}
+
+		ClassUtils.createByJson=function(json,node,root,customHandler,instanceHandler){
+			if ((typeof json=='string'))json=JSON.parse(json);
+			var props=json.props;
+			if (!node){
+				node=instanceHandler ? instanceHandler.runWith(json.instanceParams):ClassUtils.getInstance(props.runtime || json.type);
+				if (!node)return null;
+			};
+			var child=json.child;
+			if (child){
+				for (var i=0,n=child.length;i < n;i++){
+					var data=child[i];
+					if (data.props.name==="render" && node["_$set_itemRender"])node.itemRender=data;
+					else{
+						if (data.type=="Graphic"){
+							ClassUtils.addGraphicsToSprite(data,node);
+						}else
+						if (ClassUtils.isDrawType(data.type)){
+							ClassUtils.addGraphicToSprite(data,node,true);
+							}else{
+							var tChild=ClassUtils.createByJson(data,null,root,customHandler,instanceHandler)
+							if (tChild.name=="mask"){
+								node.mask=tChild;
+								}else{
+								node.addChild(tChild);
+							}
+						}
+					}
+				}
+			}
+			if (props){
+				for (var prop in props){
+					var value=props[prop];
+					if (prop==="var" && root){
+						root[value]=node;
+						}else if ((value instanceof Array)&& (typeof (node[prop])=='function')){
+						node[prop].apply(node,value);
+						}else {
+						node[prop]=value;
+					}
+				}
+			};
+			var customProps=json.customProps;
+			if (customHandler && customProps){
+				for (prop in customProps){
+					value=customProps[prop];
+					customHandler.runWith([node,prop,value]);
+				}
+			}
+			if (node["created"])node.created();
+			return node;
+		}
+
+		ClassUtils.addGraphicsToSprite=function(graphicO,sprite){
+			var graphics;
+			graphics=graphicO.child;
+			if (!graphics || graphics.length < 1)return;
+			var g;
+			g=ClassUtils._getGraphicsFromSprite(graphicO,sprite);
+			var ox=0;
+			var oy=0;
+			if (graphicO.props){
+				ox=ClassUtils._getObjVar(graphicO.props,"x",0);
+				oy=ClassUtils._getObjVar(graphicO.props,"y",0);
+			}
+			if (ox !=0 && oy !=0){
+				g.translate(ox,oy);
+			};
+			var i=0,len=0;
+			len=graphics.length;
+			for (i=0;i < len;i++){
+				ClassUtils._addGraphicToGraphics(graphics[i],g);
+			}
+			if (ox !=0 && oy !=0){
+				g.translate(-ox,-oy);
+			}
+		}
+
+		ClassUtils.addGraphicToSprite=function(graphicO,sprite,isChild){
+			(isChild===void 0)&& (isChild=false);
+			var g;
+			g=isChild?ClassUtils._getGraphicsFromSprite(graphicO,sprite):sprite.graphics;
+			ClassUtils._addGraphicToGraphics(graphicO,g);
+		}
+
+		ClassUtils._getGraphicsFromSprite=function(dataO,sprite){
+			var g;
+			if(!dataO||!dataO.props)return sprite.graphics;
+			var propsName;
+			propsName=dataO.props.name;
+			switch(propsName){
+				case "hit":
+				case "unHit":;
+					var hitArea;
+					if (!sprite.hitArea){
+						sprite.hitArea=new HitArea();
+					}
+					hitArea=sprite.hitArea;
+					if (!hitArea[propsName]){
+						hitArea[propsName]=new Graphics();
+					}
+					g=hitArea[propsName];
+					break ;
+				default :
+				}
+			if (!g)g=sprite.graphics;
+			return g;
+		}
+
+		ClassUtils._addGraphicToGraphics=function(graphicO,graphic){
+			var propsO;
+			propsO=graphicO.props;
+			if (!propsO)return;
+			var drawConfig;
+			drawConfig=ClassUtils.DrawTypeDic[graphicO.type];
+			if(!drawConfig)return;
+			var g;
+			g=graphic;
+			if (graphicO.type=="Image"){
+				var tex;
+				tex=Loader.getRes(propsO.skin);
+				if (tex){
+					var param;
+					param=ClassUtils._getParams(propsO,drawConfig[1]);
+					var m;
+					if (propsO.hasOwnProperty("pivotX")||propsO.hasOwnProperty("pivotY")){
+						m=m || new Matrix();
+						m.translate(-ClassUtils._getObjVar(propsO,"pivotX",0),-ClassUtils._getObjVar(propsO,"pivotY",0));
+					};
+					var sx=ClassUtils._getObjVar(propsO,"scaleX",1),sy=ClassUtils._getObjVar(propsO,"scaleY",1);
+					var rotate=ClassUtils._getObjVar(propsO,"rotation",0);
+					var skewX=ClassUtils._getObjVar(propsO,"skewX",0);
+					var skewY=ClassUtils._getObjVar(propsO,"skewY",0);
+					if (sx !=1 || sy !=1 || rotate !=0){
+						m=m || new Matrix();
+						m.scale(sx,sy);
+						m.rotate(rotate *0.0174532922222222);
+					}
+					if (m){
+						m.translate(param[0],param[1]);
+						param[0]=param[1]=0;
+					}
+					g.drawTexture(tex,param[0],param[1],param[2],param[3],m);
+				}
+				}else{
+				g[drawConfig[0]].apply(g,ClassUtils._getParams(propsO,drawConfig[1],drawConfig[2]));
+			}
+		}
+
+		ClassUtils._adptLineData=function(params){
+			params[2]=parseFloat(params[0])+parseFloat(params[2]);
+			params[3]=parseFloat(params[1])+parseFloat(params[3]);
+			return params;
+		}
+
+		ClassUtils._adptTextureData=function(params){
+			params[0]=Loader.getRes(params[0]);
+			return params;
+		}
+
+		ClassUtils._adptLinesData=function(params){
+			params[2]=ClassUtils._getPointListByStr(params[2]);
+			return params;
+		}
+
+		ClassUtils.isDrawType=function(type){
+			if (type=="Image")return false;
+			return ClassUtils.DrawTypeDic.hasOwnProperty(type);
+		}
+
+		ClassUtils._getParams=function(obj,params,adptFun){
+			var rst;
+			rst=ClassUtils._temParam;
+			rst.length=params.length;
+			var i=0,len=0;
+			len=params.length;
+			for (i=0;i < len;i++){
+				rst[i]=ClassUtils._getObjVar(obj,params[i][0],params[i][1]);
+			}
+			if (adptFun && ClassUtils[adptFun]){
+				rst=ClassUtils[adptFun](rst);
+			}
+			return rst;
+		}
+
+		ClassUtils._getPointListByStr=function(str){
+			var pointArr;
+			pointArr=str.split(",");
+			var i=0,len=0;
+			len=pointArr.length;
+			for (i=0;i < len;i++){
+				pointArr[i]=parseFloat(pointArr[i]);
+			}
+			return pointArr;
+		}
+
+		ClassUtils._getObjVar=function(obj,key,noValue){
+			if (obj.hasOwnProperty(key)){
+				return obj[key];
+			}
+			return noValue;
+		}
+
+		ClassUtils._temParam=[];
+		ClassUtils._classMap={'Sprite':'laya.display.Sprite','Text':'laya.display.Text','Animation':'laya.display.Animation','Skeleton':'laya.ani.bone.Skeleton','Particle2D':'laya.particle.Particle2D','div':'laya.html.dom.HTMLDivElement','img':'laya.html.dom.HTMLImageElement','span':'laya.html.dom.HTMLElement','br':'laya.html.dom.HTMLBrElement','style':'laya.html.dom.HTMLStyleElement','font':'laya.html.dom.HTMLElement','a':'laya.html.dom.HTMLElement','#text':'laya.html.dom.HTMLElement'};
+		ClassUtils.getClass=function(className){
+			var classObject=ClassUtils._classMap[className] || className;
+			if ((typeof classObject=='string'))return Laya["__classmap"][classObject];
+			return classObject;
+		}
+
+		__static(ClassUtils,
+		['DrawTypeDic',function(){return this.DrawTypeDic={
+				"Rect":["drawRect",
+				[["x",0],["y",0],["width",0],["height",0],["fillColor",null],["lineColor",null],["lineWidth",1]]],
+				"Circle":["drawCircle",
+				[["x",0],["y",0],["radius",0],["fillColor",null],["lineColor",null],["lineWidth",1]]],
+				"Pie":["drawPie",
+				[["x",0],["y",0],["radius",0],["startAngle",0],["endAngle",0],["fillColor",null],["lineColor",null],["lineWidth",1]]],
+				"Image":["drawTexture",
+				[["x",0],["y",0],["width",0],["height",0]]],
+				"DrawTexture":["drawTexture",
+				[["skin",null],["x",0],["y",0],["width",0],["height",0]],
+				"_adptTextureData"],
+				"FillTexture":["fillTexture",
+				[["skin",null],["x",0],["y",0],["width",0],["height",0],["repeat",null]],
+				"_adptTextureData"],
+				"FillText":["fillText",
+				[["text",""],["x",0],["y",0],["font",null],["color",null],["textAlign",null]]],
+				"Line":["drawLine",
+				[["x",0],["y",0],["toX",0],["toY",0],["lineColor",null],["lineWidth",0]],
+				"_adptLineData"],
+				"Lines":["drawLines",
+				[["x",0],["y",0],["points",""],["lineColor",null],["lineWidth",0]],
+				"_adptLinesData"],
+				"Curves":["drawCurves",
+				[["x",0],["y",0],["points",""],["lineColor",null],["lineWidth",0]],
+				"_adptLinesData"],
+				"Poly":["drawPoly",
+				[["x",0],["y",0],["points",""],["fillColor",null],["lineColor",null],["lineWidth",1]],
+				"_adptLinesData"]
+		};}
+
+		]);
+		return ClassUtils;
+	})()
+
+
+	/**
 	*<code>Color</code> 是一个颜色值处理类。
 	*/
 	//class laya.utils.Color
@@ -8563,10 +10999,10 @@ window.Laya=(function(window,document){
 				this.strColor=str;
 				if (str===null)str="#000000";
 				str.charAt(0)=='#' && (str=str.substr(1));
-				var color=this.numColor=Laya.__parseInt(str,16);
+				var color=this.numColor=parseInt(str,16);
 				var flag=(str.length==8);
 				if (flag){
-					this._color=[Laya.__parseInt(str.substr(0,2),16)/ 255,((0x00FF0000 & color)>> 16)/ 255,((0x0000FF00 & color)>> 8)/ 255,(0x000000FF & color)/ 255];
+					this._color=[parseInt(str.substr(0,2),16)/ 255,((0x00FF0000 & color)>> 16)/ 255,((0x0000FF00 & color)>> 8)/ 255,(0x000000FF & color)/ 255];
 					return;
 				}
 				}else {
@@ -9140,6 +11576,126 @@ window.Laya=(function(window,document){
 
 
 	/**
+	*鼠标点击区域类
+	*/
+	//class laya.utils.HitArea
+	var HitArea=(function(){
+		function HitArea(){
+			this.hit=null;
+			this.unHit=null;
+		}
+
+		__class(HitArea,'laya.utils.HitArea');
+		var __proto=HitArea.prototype;
+		/**
+		*是否包含某个点
+		*@param x
+		*@param y
+		*@return
+		*
+		*/
+		__proto.isHit=function(x,y){
+			if (!HitArea.isHitGraphic(x,y,this.hit))return false;
+			return !HitArea.isHitGraphic(x,y,this.unHit);
+		}
+
+		HitArea.isHitGraphic=function(x,y,graphic){
+			if (!graphic)return false;
+			var cmds;
+			cmds=graphic.cmds;
+			if (!cmds&&graphic._one){
+				cmds=HitArea._tCmds;
+				cmds.length=1;
+				cmds[0]=graphic._one;
+			}
+			if (!cmds)return false;
+			var i=0,len=0;
+			len=cmds.length;
+			var cmd;
+			for (i=0;i < len;i++){
+				cmd=cmds[i];
+				if (!cmd)continue ;
+				var context=Render._context;
+				switch (cmd.callee){
+					case context._translate:
+					case 6:
+						x-=cmd[0];
+						y-=cmd[1];
+					default :
+					}
+				if (HitArea.isHitCmd(x,y,cmd))return true;
+			}
+			return false;
+		}
+
+		HitArea.isHitCmd=function(x,y,cmd){
+			if (!cmd)return false;
+			var context=Render._context;
+			switch (cmd.callee){
+				case context._drawRect:
+				case 13:
+					HitArea._rec.setTo(cmd[0],cmd[1],cmd[2],cmd[3]);
+					return HitArea._rec.contains(x,y);
+					break ;
+				case context._drawCircle:
+				case context._fillCircle:
+				case 14:;
+					var d=NaN;
+					x-=cmd[0];
+					y-=cmd[1];
+					d=x *x+y *y;
+					return d < cmd[2] *cmd[2];
+					break ;
+				case context._drawPoly:
+				case 18:
+					x-=cmd[0];
+					y-=cmd[1];
+					return HitArea.ptInPolygon(x,y,cmd[2]);
+					break ;
+				default :
+					return false;
+				}
+			return false;
+		}
+
+		HitArea.ptInPolygon=function(x,y,areaPoints){
+			var p;
+			p=HitArea._ptPoint;
+			p.setTo(x,y);
+			var nCross=0;
+			var p1x=NaN,p1y=NaN,p2x=NaN,p2y=NaN;
+			var len=0;
+			len=areaPoints.length;
+			for (var i=0;i < len;i+=2){
+				p1x=areaPoints[i];
+				p1y=areaPoints[i+1];
+				p2x=areaPoints[(i+2)% len];
+				p2y=areaPoints[(i+3)% len];
+				var p1=areaPoints[i];
+				var p2=areaPoints[(i+1)% areaPoints.length];
+				if (p1y==p2y)
+					continue ;
+				if (p.y < Math.min(p1y,p2y))
+					continue ;
+				if (p.y >=Math.max(p1y,p2y))
+					continue ;
+				var x=(p.y-p1y)*(p2x-p1x)/ (p2y-p1y)+p1x;
+				if (x > p.x){
+					nCross++;
+				}
+			}
+			return (nCross % 2==1);
+		}
+
+		HitArea._tCmds=[];
+		__static(HitArea,
+		['_rec',function(){return this._rec=new Rectangle();},'_ptPoint',function(){return this._ptPoint=new Point();}
+		]);
+		return HitArea;
+	})()
+
+
+	/**
 	*<code>HTMLChar</code> 是一个 HTML 字符类。
 	*/
 	//class laya.utils.HTMLChar
@@ -9309,6 +11865,10 @@ window.Laya=(function(window,document){
 		Stat.show=function(x,y){
 			(x===void 0)&& (x=0);
 			(y===void 0)&& (y=0);
+			if (Render.isConchApp){
+				conch.showFPS&&conch.showFPS(x,y);
+				return;
+			};
 			var pixel=Browser.pixelRatio;
 			Stat._width=pixel *120;
 			Stat._vx=pixel *70;
@@ -9370,7 +11930,7 @@ window.Laya=(function(window,document){
 			Stat.FPS=Math.round((count *1000)/ (timer-Stat._timer));
 			if (Stat._canvas){
 				Stat.trianglesFaces=Math.round(Stat.trianglesFaces / count);
-				Stat.drawCall=Math.round(Stat.drawCall / count);
+				Stat.drawCall=Math.round(Stat.drawCall / count)-2;
 				Stat.shaderCall=Math.round(Stat.shaderCall / count);
 				Stat.spriteCount=Math.round(Stat.spriteCount / count)-1;
 				Stat.canvasNormal=Math.round(Stat.canvasNormal / count);
@@ -9981,6 +12541,12 @@ window.Laya=(function(window,document){
 			this._beginLoop();
 		}
 
+		/**设置当前执行比例**/
+		__getset(0,__proto,'progress',null,function(v){
+			var uTime=v*this._duration;
+			this._startTimer=Browser.now()-this._delay-uTime;
+		});
+
 		Tween.to=function(target,props,duration,ease,complete,delay,coverBefore,autoRecover){
 			(delay===void 0)&& (delay=0);
 			(coverBefore===void 0)&& (coverBefore=false);
@@ -10091,7 +12657,7 @@ window.Laya=(function(window,document){
 		}
 
 		Utils.bind=function(fun,scope){
-			var rst;
+			var rst=fun;
 			rst=fun.bind(scope);;
 			return rst;
 		}
@@ -10167,6 +12733,143 @@ window.Laya=(function(window,document){
 		}
 
 		return Utils;
+	})()
+
+
+	/**
+	*...
+	*@author
+	*/
+	//class laya.utils.VectorGraphManager
+	var VectorGraphManager=(function(){
+		function VectorGraphManager(){
+			this.useDic={};
+			this.shapeDic={};
+			this.shapeLineDic={};
+			this._id=0;
+			this._checkKey=false;
+			this._freeIdArray=[];
+			if (Render.isWebGL){
+				CacheManger.regCacheByFunction(Utils.bind(this.startDispose,this),Utils.bind(this.getCacheList,this));
+			}
+		}
+
+		__class(VectorGraphManager,'laya.utils.VectorGraphManager');
+		var __proto=VectorGraphManager.prototype;
+		/**
+		*得到个空闲的ID
+		*@return
+		*/
+		__proto.getId=function(){
+			if (this._freeIdArray.length > 0){
+				return this._freeIdArray.pop();
+			}
+			return this._id++;
+		}
+
+		/**
+		*添加一个图形到列表中
+		*@param id
+		*@param shape
+		*/
+		__proto.addShape=function(id,shape){
+			this.shapeDic[id]=shape;
+			if (!this.useDic[id]){
+				this.useDic[id]=true;
+			}
+		}
+
+		/**
+		*添加一个线图形到列表中
+		*@param id
+		*@param Line
+		*/
+		__proto.addLine=function(id,Line){
+			this.shapeLineDic[id]=Line;
+			if (!this.shapeLineDic[id]){
+				this.shapeLineDic[id]=true;
+			}
+		}
+
+		/**
+		*检测一个对象是否在使用中
+		*@param id
+		*/
+		__proto.getShape=function(id){
+			if (this._checkKey){
+				if (this.useDic[id] !=null){
+					this.useDic[id]=true;
+				}
+			}
+		}
+
+		/**
+		*删除一个图形对象
+		*@param id
+		*/
+		__proto.deleteShape=function(id){
+			if (this.shapeDic[id]){
+				this.shapeDic[id]=null;
+				delete this.shapeDic[id];
+			}
+			if (this.shapeLineDic[id]){
+				this.shapeLineDic[id]=null;
+				delete this.shapeLineDic[id];
+			}
+			if (this.useDic[id] !=null){
+				delete this.useDic[id];
+			}
+			this._freeIdArray.push(id);
+		}
+
+		/**
+		*得到缓存列表
+		*@return
+		*/
+		__proto.getCacheList=function(){
+			var str;
+			var list=[];
+			for (str in this.shapeDic){
+				list.push(this.shapeDic[str]);
+			}
+			for (str in this.shapeLineDic){
+				list.push(this.shapeLineDic[str]);
+			}
+			return list;
+		}
+
+		/**
+		*开始清理状态，准备销毁
+		*/
+		__proto.startDispose=function(key){
+			var str;
+			for (str in this.useDic){
+				this.useDic[str]=false;
+			}
+			this._checkKey=true;
+		}
+
+		/**
+		*确认销毁
+		*/
+		__proto.endDispose=function(){
+			if (this._checkKey){
+				var str;
+				for (str in this.useDic){
+					if (!this.useDic[str]){
+						this.deleteShape(str);
+					}
+				}
+				this._checkKey=false;
+			}
+		}
+
+		VectorGraphManager.getInstance=function(){
+			return VectorGraphManager.instance=VectorGraphManager.instance|| new VectorGraphManager();
+		}
+
+		VectorGraphManager.instance=null
+		return VectorGraphManager;
 	})()
 
 
@@ -10805,6 +13508,11 @@ window.Laya=(function(window,document){
 			this.geomatrys.push(this._curGeomatry=geo=new Polygon(x,y,points,color,borderWidth,borderColor));
 			if (!color)geo.fill=false;
 			if (borderColor==undefined)geo.borderWidth=0;
+			return geo;
+		}
+
+		__proto.setGeomtry=function(shape){
+			this.geomatrys.push(this._curGeomatry=shape);
 		}
 
 		__proto.drawLine=function(x,y,points,width,color){
@@ -10815,6 +13523,7 @@ window.Laya=(function(window,document){
 				this.geomatrys.push(this._curGeomatry=geo=new Line(x,y,points,width,color));
 			}
 			geo.fill=false;
+			return geo;
 		}
 
 		__proto.update=function(){
@@ -11170,6 +13879,86 @@ window.Laya=(function(window,document){
 	})()
 
 
+	/**
+	*...
+	*@author
+	*/
+	//class laya.webgl.shader.d2.fillTexture.FillTextureSprite
+	var FillTextureSprite=(function(){
+		function FillTextureSprite(){
+			this.mVBBuffer=null;
+			this.mIBBuffer=null;
+			this.mVBData=null;
+			this.mIBData=null;
+			this.mEleNum=0;
+			this.mShaderValue=null;
+			this.mTexture=null;
+			this.transform=null;
+		}
+
+		__class(FillTextureSprite,'laya.webgl.shader.d2.fillTexture.FillTextureSprite');
+		var __proto=FillTextureSprite.prototype;
+		__proto.initTexture=function(texture,x,y,width,height,offsetX,offsetY){
+			this.mTexture=texture;
+			if (this.mVBBuffer){
+				this.mVBBuffer.dispose();
+			}
+			if (this.mIBBuffer){
+				this.mIBBuffer.dispose();
+			}
+			this.mVBBuffer=VertexBuffer2D.create();
+			this.mIBBuffer=IndexBuffer2D.create();
+			this.mIBData=new Uint16Array();
+			var tVBArray;
+			var tIBArray;
+			tVBArray=[];
+			var w=texture.bitmap.width,h=texture.bitmap.height,uv=texture.uv;
+			var tTextureX=uv[0] *w;
+			var tTextureY=uv[1] *h;
+			var tTextureW=(uv[2]-uv[0])*w;
+			var tTextureH=(uv[5]-uv[3])*h;
+			var tU=width / tTextureW;
+			var tV=height / tTextureH;
+			var tWidth=width;
+			var tHeight=height;
+			var tRed=1;
+			var tGreed=1;
+			var tBlue=1;
+			var tAlpha=1;
+			tVBArray.push(x,y,0,0,tRed,tGreed,tBlue,tAlpha);
+			tVBArray.push(x+tWidth,y,tU,0,tRed,tGreed,tBlue,tAlpha);
+			tVBArray.push(x+tWidth,y+tHeight,tU,tV,tRed,tGreed,tBlue,tAlpha);
+			tVBArray.push(x,y+tHeight,0,tV,tRed,tGreed,tBlue,tAlpha);
+			tIBArray=[];
+			tIBArray.push(0,1,3,3,1,2);
+			this.mEleNum=tIBArray.length;
+			this.mVBData=new Float32Array(tVBArray);
+			this.mIBData=new Uint16Array(tIBArray);
+			this.mVBBuffer.append(this.mVBData);
+			this.mIBBuffer.append(this.mIBData);
+			this.mTexture=texture;
+			if (this.mShaderValue==null){
+				this.mShaderValue=new FillTextureShaderValue();
+			}
+			this.mShaderValue.u_offset[0]=-offsetX / tTextureW;
+			this.mShaderValue.u_offset[1]=-offsetY / tTextureH;
+			this.mShaderValue.u_texRange[0]=tTextureX / w;
+			this.mShaderValue.u_texRange[1]=tTextureW / w;
+			this.mShaderValue.u_texRange[2]=tTextureY / h;
+			this.mShaderValue.u_texRange[3]=tTextureH / h;
+		}
+
+		__proto.render=function(context,x,y){
+			if (Render.isWebGL){
+				this.mShaderValue.textureHost=this.mTexture;
+				context.setIBVB(x,y,this.mIBBuffer,this.mVBBuffer,this.mEleNum,this.transform,FillTextureShader.shader,this.mShaderValue,0,0);
+			}
+		}
+
+		return FillTextureSprite;
+	})()
+
+
 	//class laya.webgl.shader.d2.Shader2D
 	var Shader2D=(function(){
 		function Shader2D(){
@@ -11203,12 +13992,80 @@ window.Laya=(function(window,document){
 			vs="attribute vec4 position;\nuniform vec2 size;\nuniform mat4 mmat;\nvoid main() {\n  vec4 pos=mmat*position;\n  gl_Position =vec4((pos.x/size.x-0.5)*2.0,(0.5-pos.y/size.y)*2.0,pos.z,1.0);\n}";
 			ps="precision mediump float;\nuniform vec4 color;\nuniform float alpha;\n#include?COLOR_FILTER \"parts/ColorFilter_ps_uniform.glsl\";\nvoid main() {\n	vec4 a = vec4(color.r, color.g, color.b, color.a);\n	a.w = alpha;\n	gl_FragColor = a;\n	#include?COLOR_FILTER \"parts/ColorFilter_ps_logic.glsl\";\n}";
 			Shader.preCompile(0,0x02,vs,ps,null);
-			vs="attribute vec4 position;\nattribute vec3 a_color;\nuniform mat4 mmat;\nuniform mat4 u_mmat2;\nuniform vec2 size;\nvarying vec3 color;\nvoid main(){\n  vec4 pos=mmat*u_mmat2*position;\n  gl_Position =vec4((pos.x/size.x-0.5)*2.0,(0.5-pos.y/size.y)*2.0,pos.z,1.0);\n  color=a_color;\n}";
+			vs="attribute vec4 position;\nattribute vec3 a_color;\nuniform mat4 mmat;\nuniform mat4 u_mmat2;\nuniform vec2 u_pos;\nuniform vec2 size;\nvarying vec3 color;\nvoid main(){\n  vec4 tPos = vec4(position.x + u_pos.x,position.y + u_pos.y,position.z,position.w);\n  vec4 pos=mmat*u_mmat2*tPos;\n  gl_Position =vec4((pos.x/size.x-0.5)*2.0,(0.5-pos.y/size.y)*2.0,pos.z,1.0);\n  color=a_color;\n}";
 			ps="precision mediump float;\n//precision mediump float;\nvarying vec3 color;\nuniform float alpha;\nvoid main(){\n	//vec4 a=vec4(color.r, color.g, color.b, 1);\n	//a.a*=alpha;\n    gl_FragColor=vec4(color.r, color.g, color.b, alpha);\n}";
 			Shader.preCompile(0,0x04,vs,ps,null);
 		}
 
 		return Shader2D;
+	})()
+
+
+	/**
+	*这里销毁的问题，后面待确认
+	*@author ...
+	*/
+	//class laya.webgl.shader.d2.skinAnishader.SkinMesh
+	var SkinMesh=(function(){
+		function SkinMesh(){
+			this.mVBBuffer=null;
+			this.mIBBuffer=null;
+			this.mVBData=null;
+			this.mIBData=null;
+			this.mEleNum=0;
+			this.mShaderValue=null;
+			this.mTexture=null;
+			this.transform=null;
+		}
+
+		__class(SkinMesh,'laya.webgl.shader.d2.skinAnishader.SkinMesh');
+		var __proto=SkinMesh.prototype;
+		__proto.init=function(texture,vs,ps){
+			this.mVBBuffer=VertexBuffer2D.create();
+			this.mIBBuffer=IndexBuffer2D.create();
+			this.mIBData=new Uint16Array();
+			var tVBArray;
+			var tIBArray;
+			if (vs){
+				tVBArray=vs;
+				}else {
+				tVBArray=[];
+				var tWidth=texture.width;
+				var tHeight=texture.height;
+				var tRed=1;
+				var tGreed=1;
+				var tBlue=1;
+				var tAlpha=1;
+				tVBArray.push(0,0,0,0,tRed,tGreed,tBlue,tAlpha);
+				tVBArray.push(tWidth,0,1,0,tRed,tGreed,tBlue,tAlpha);
+				tVBArray.push(tWidth,tHeight,1,1,tRed,tGreed,tBlue,tAlpha);
+				tVBArray.push(0,tHeight,0,1,tRed,tGreed,tBlue,tAlpha);
+			}
+			if (ps){
+				tIBArray=ps;
+				}else {
+				tIBArray=[];
+				tIBArray.push(0,1,3,3,1,2);
+			}
+			this.mEleNum=tIBArray.length;
+			this.mVBData=new Float32Array(tVBArray);
+			this.mIBData=new Uint16Array(tIBArray);
+			this.mVBBuffer.append(this.mVBData);
+			this.mIBBuffer.append(this.mIBData);
+			this.mTexture=texture;
+			if (this.mShaderValue==null){
+				this.mShaderValue=new aniShaderValue1();
+			}
+		}
+
+		__proto.render=function(context,x,y){
+			if (Render.isWebGL){
+				this.mShaderValue.textureHost=this.mTexture;
+				(context).setIBVB(x,y,this.mIBBuffer,this.mVBBuffer,this.mEleNum,this.transform,SkinAniShader1.shader,this.mShaderValue,0,0);
+			}
+		}
+
+		return SkinMesh;
 	})()
 
 
@@ -12379,7 +15236,7 @@ window.Laya=(function(window,document){
 					break ;
 				}
 			}
-			this._size=Laya.__parseInt(this._words[this._index]);
+			this._size=parseInt(this._words[this._index]);
 			this._text=null;
 			this._italic=-2;
 		}
@@ -12753,6 +15610,48 @@ window.Laya=(function(window,document){
 
 	/**
 	*...
+	*@author ...
+	*/
+	//class laya.webgl.utils.MatirxArray
+	var MatirxArray=(function(){
+		function MatirxArray(){}
+		__class(MatirxArray,'laya.webgl.utils.MatirxArray');
+		MatirxArray.ArrayMul=function(a,b,o){
+			if (!a){
+				MatirxArray.copyArray(b,o);
+				return;
+			}
+			if (!b){
+				MatirxArray.copyArray(a,o);
+				return;
+			};
+			var ai0=NaN,ai1=NaN,ai2=NaN,ai3=NaN;
+			for (var i=0;i < 4;i++){
+				ai0=a[i];
+				ai1=a[i+4];
+				ai2=a[i+8];
+				ai3=a[i+12];
+				o[i]=ai0 *b[0]+ai1 *b[1]+ai2 *b[2]+ai3 *b[3];
+				o[i+4]=ai0 *b[4]+ai1 *b[5]+ai2 *b[6]+ai3 *b[7];
+				o[i+8]=ai0 *b[8]+ai1 *b[9]+ai2 *b[10]+ai3 *b[11];
+				o[i+12]=ai0 *b[12]+ai1 *b[13]+ai2 *b[14]+ai3 *b[15];
+			}
+		}
+
+		MatirxArray.copyArray=function(f,t){
+			if (!f)return;
+			if (!t)return;
+			for (var i=0;i < f.length;i++){
+				t[i]=f[i];
+			}
+		}
+
+		return MatirxArray;
+	})()
+
+
+	/**
+	*...
 	*@author laya
 	*/
 	//class laya.webgl.utils.RenderState2D
@@ -13055,7 +15954,7 @@ window.Laya=(function(window,document){
 				}
 			}
 			AtlasResourceManager._enable();
-			RunDriver.benginFlush=function (){
+			RunDriver.beginFlush=function (){
 				var atlasResourceManager=AtlasResourceManager.instance;
 				var count=atlasResourceManager.getAtlaserCount();
 				for (var i=0;i < count;i++){
@@ -13087,6 +15986,39 @@ window.Laya=(function(window,document){
 				texture._uvID++;
 				AtlasResourceManager._atlasRestore++;
 				((texture.bitmap).enableMerageInAtlas)&& (AtlasResourceManager.instance.addToAtlas(texture));
+			}
+			RunDriver.getTexturePixels=function (value,x,y,width,height){
+				var tSprite=new Sprite();
+				tSprite.x=-x;
+				tSprite.y=-y;
+				tSprite.graphics.drawTexture(value,0,0,value.sourceWidth,value.sourceHeight);
+				var tRenderTarget=RenderTarget2D.create(width,height);
+				tRenderTarget.start();
+				tRenderTarget.clear(0,0,0,0);
+				tSprite.render(Render.context,0,0);
+				(Render.context.ctx).flush();
+				tRenderTarget.end();
+				var tUint8Array=tRenderTarget.getData(0,0,width,height);
+				var tArray=[];
+				var tIndex=0;
+				for (var i=height-1;i >=0;i--){
+					for (var j=0;j < width;j++){
+						tIndex=(i *width+j)*4;
+						tArray.push(tUint8Array[tIndex]);
+						tArray.push(tUint8Array[tIndex+1]);
+						tArray.push(tUint8Array[tIndex+2]);
+						tArray.push(tUint8Array[tIndex+3]);
+					}
+				}
+				return tArray;
+			}
+			RunDriver.fillTextureShader=function (value,x,y,width,height){
+				var tFillTetureSprite=new FillTextureSprite();
+				return tFillTetureSprite;
+			}
+			RunDriver.skinAniSprite=function (){
+				var tSkinSprite=new SkinMesh()
+				return tSkinSprite;
 			}
 			Filter._filterStart=function (scope,sprite,context,x,y){
 				var b=scope.getValue("bounds");
@@ -13491,12 +16423,17 @@ window.Laya=(function(window,document){
 			assets.push({url:"res/atlas/role.json",type:"atlas"});
 			assets.push({url:"res/atlas/combo.json",type:"atlas"});
 			assets.push({url:"res/atlas/result.json",type:"atlas"});
+			assets.push({url:"res/atlas/res.json",type:"atlas"});
 			assets.push({url:"res/skeleton/zhangfei/zhangfei.sk",type:"arraybuffer"});
 			assets.push({url:"res/skeleton/zhangfei/zhangfei.png",type:"image"});
 			assets.push({url:"res/skeleton/zhaoyun/zhaoyun.sk",type:"arraybuffer"});
 			assets.push({url:"res/skeleton/zhaoyun/zhaoyun.png",type:"image"});
 			assets.push({url:"res/skeleton/zhugeliang/zhugeliang.sk",type:"arraybuffer"});
 			assets.push({url:"res/skeleton/zhugeliang/zhugeliang.png",type:"image"});
+			assets.push({url:"res/skeleton/qingqizhuqiang/qingqizhuqiang.sk",type:"arraybuffer"});
+			assets.push({url:"res/skeleton/qingqizhuqiang/qingqizhuqiang.png",type:"image"});
+			assets.push({url:"res/skeleton/qingqizhuqiang_effect/qingqizhuqiang_effect.sk",type:"arraybuffer"});
+			assets.push({url:"res/skeleton/qingqizhuqiang_effect/qingqizhuqiang_effect.png",type:"image"});
 			this.loadAsset(assets);
 		}
 
@@ -13556,6 +16493,7 @@ window.Laya=(function(window,document){
 			this.data=null;
 			this.gameMediator=null;
 			this.gameView=null;
+			this.manager=null;
 			this.testCase=null;
 			ArenaContext.__super.call(this);
 			ArenaContext._i=this;
@@ -13569,12 +16507,9 @@ window.Laya=(function(window,document){
 			this.gameMediator=new ArenaMediator();
 			this.gameView=new ArenaView();
 			this.gameMediator.view=this.gameView;
+			this.manager=new ArenaManager();
+			this.gameMediator.arenaManager=this.manager;
 			this.testCase=new ArenaTestCase();
-		}
-
-		__proto.initUI=function(){
-			this.gameView=new ArenaView();
-			this.gameMediator.view=this.gameView;
 		}
 
 		__getset(1,ArenaContext,'i',function(){
@@ -13684,7 +16619,8 @@ window.Laya=(function(window,document){
 			if (node===this)return node;
 			if (index >=0 && index <=this._childs.length){
 				if (node._parent===this){
-					this._childs.splice(this.getChildIndex(node),1);
+					var oldIndex=this.getChildIndex(node);
+					this._childs.splice(oldIndex,1);
 					this._childs.splice(index,0,node);
 					if (this.model){
 						this.model.removeChild(node.model);
@@ -13760,6 +16696,7 @@ window.Laya=(function(window,document){
 				throw new Error("setChildIndex:The index is out of bounds.");
 			};
 			var oldIndex=this.getChildIndex(node);
+			if (oldIndex < 0)throw new Error("setChildIndex:node is must child of this object.");
 			childs.splice(oldIndex,1);
 			childs.splice(index,0,node);
 			if (this.model){
@@ -13885,7 +16822,6 @@ window.Laya=(function(window,document){
 		*@param display 是否可见。
 		*/
 		__proto._displayChild=function(node,display){
-			node._setDisplay(display);
 			var childs=node._childs;
 			if (childs){
 				for (var i=childs.length-1;i >-1;i--){
@@ -13894,6 +16830,7 @@ window.Laya=(function(window,document){
 					child._childs.length && this._displayChild(child,display);
 				}
 			}
+			node._setDisplay(display);
 		}
 
 		/**
@@ -14013,29 +16950,116 @@ window.Laya=(function(window,document){
 		function ArenaMediator(){
 			this.status=0;
 			this.secondStatus=0;
+			this.uniqueSkillRolePositionList=[];
 			this.timer=null;
+			this.qteTime=0;
+			this.arenaManager=null;
+			this.selectPos=0;
+			this.touchImageState=false;
+			this.touchStartTime=0;
+			this.touchEndTime=0;
+			this.qteSelectView=null;
+			this.pauseState=false;
 			ArenaMediator.__super.call(this);
+			this.timer=new Timer();
+			this.qteTime=0;
 		}
 
 		__class(ArenaMediator,'com.gamepark.casino.game.arena.mediator.ArenaMediator',_super);
 		var __proto=ArenaMediator.prototype;
-		__proto.onInitialize=function(){}
+		__proto.onInitialize=function(){
+			this.arenaView.arenaFootView.btn_auto.on("click",this,this.btnAutoClickHandler)
+			this.initButtonShow();
+		}
+
+		__proto.btnPauseClickHandler=function($evt){
+			if (this.pauseState==false){
+				this.pauseState=true;
+				this.arenaManager.pause();
+				this.gameContext.arenaContext.gameView.arenaFootView.img_state.visible=true;
+				this.gameContext.arenaContext.gameView.arenaFootView.img_state.skin="res/img_zhandoutingzhi.png"
+				this.gameContext.arenaContext.gameView.arenaFootView.img_state_bg.visible=true;
+			}
+			else{
+				this.pauseState=false;
+				this.arenaManager.resume();
+				this.gameContext.arenaContext.gameView.arenaFootView.img_state.visible=false;
+				this.gameContext.arenaContext.gameView.arenaFootView.img_state_bg.visible=false;
+			}
+		}
+
+		__proto.btnAutoClickHandler=function($evt){
+			if (this.gameContext.arenaContext.manager.isBattleOperation()){
+				if (this.gameContext.arenaContext.data.isAutoBattle==true){
+					this.gameContext.arenaContext.data.isAutoBattle=false;
+				}
+				else{
+					this.gameContext.arenaContext.data.isAutoBattle=true
+					this.gameContext.arenaContext.data.doAutoBattleOperation();
+					this.qteJumpHandler();
+					this.refreshStateView();
+				}
+			}
+			else{
+				if (this.gameContext.arenaContext.data.isAutoBattle==true){
+					this.gameContext.arenaContext.data.isAutoBattle=false;
+				}
+				else{
+					this.gameContext.arenaContext.data.isAutoBattle=true
+				}
+				this.refreshStateView();
+			}
+		}
+
+		//gameContext.arenaContext.data.doAutoBattleOperation();
+		__proto.refreshStateView=function(){
+			if (this.gameContext.arenaContext.data.isAutoBattle==true){
+				this.gameContext.arenaContext.gameView.arenaFootView.img_state.visible=true;
+				this.gameContext.arenaContext.gameView.arenaFootView.img_state.skin="res/img_zidongzhandou.png"
+				this.gameContext.arenaContext.gameView.arenaFootView.img_state_bg.visible=true;
+			}
+			else{
+				this.gameContext.arenaContext.gameView.arenaFootView.img_state.visible=false;
+				this.gameContext.arenaContext.gameView.arenaFootView.img_state_bg.visible=false;
+			}
+		}
+
+		__proto.btnSpeedClickHandler=function($evt){
+			switch(this.gameContext.arenaContext.data.speed){
+				case 1:
+					this.gameContext.arenaContext.data.speed=2;
+					this.arenaView.arenaFootView.btnSpeed.skin="res/btn_quick_1.5.png"
+					break ;
+				case 2:
+					this.gameContext.arenaContext.data.speed=3;
+					this.arenaView.arenaFootView.btnSpeed.skin="res/btn_quick_2.png"
+					break ;
+				case 3:
+					this.gameContext.arenaContext.data.speed=1;
+					this.arenaView.arenaFootView.btnSpeed.skin="res/btn_quick_1.png"
+					break ;
+				}
+			this.arenaView.roleView.changeSpeed();
+		}
+
 		__proto.open=function(){
 			this.initUI();
+			this.gameContext.arenaContext.data.speed=1;
 			this.startGame();
 		}
 
 		__proto.initUI=function(){
 			var i=0;
 			for(i=0;i < 6;i++){
-				this.arenaView.roleListView["roleItemView"+(i+1)].hpView.imgHp.scaleX=1;
-				this.arenaView.roleListView["roleItemView"+(i+1)].mpView.imgMp.scaleX=0;
+				this.arenaView.arenaFootView.roleListView["roleItemView"+(i+1)].hpView.imgHp.scaleX=1;
+				this.arenaView.arenaFootView.roleListView["roleItemView"+(i+1)].refreshHP(0);
 			}
-			GameContext.i.arenaContext.gameView.rightPlayerInfoView.imgPlayerHp.scaleX=1;
-			GameContext.i.arenaContext.gameView.leftPlayerInfoView.imgPlayerHp.scaleX=1;
 		}
 
+		//GameContext.i.arenaContext.gameView.leftPlayerInfoView.imgPlayerHp.scaleX=1;
 		__proto.startGame=function(){
+			this.gameContext.arenaContext.data.initialize();
+			this.initButtonShow();
 			var leftPlayer=this.gameContext.arenaContext.data.playerList[0];
 			this.arenaView.leftPlayerInfoView.lbName.text=leftPlayer.name;
 			this.arenaView.leftPlayerInfoView.lbFirstAttack.text="先手值："+leftPlayer.roleVO.firstAttack;
@@ -14048,185 +17072,224 @@ window.Laya=(function(window,document){
 			for(i=0;i < this.gameContext.arenaContext.data.playerList.length;i++){
 				playerInfo=this.gameContext.arenaContext.data.playerList[i];
 				if (playerInfo.isMe==true){
+					var roleInfo;
 					for (j=0;j < playerInfo.roleVO.roleInfoList.length;j++){
-						this.arenaView.roleListView["roleItemView"+(j+1)].disabled=false;
-						this.arenaView.roleListView["roleItemView"+(j+1)].imgHeader.skin="sanguo/img_role_"+playerInfo.roleVO.roleInfoList[j].meta.id+".png";
-						this.arenaView.roleListView["roleItemView"+(j+1)].imgType.skin="role/img_type_"+playerInfo.roleVO.roleInfoList[j].meta.type+".png";
+						roleInfo=playerInfo.roleVO.roleInfoList[j];
+						this.arenaView.arenaFootView.roleListView["roleItemView"+(j+1)].disabled=false;
+						this.arenaView.arenaFootView.roleListView["roleItemView"+(j+1)].imgHeader.skin="res/img_role_"+playerInfo.roleVO.roleInfoList[j].meta.id+".png";
+						this.arenaView.arenaFootView.roleListView["roleItemView"+(j+1)].imgType.skin="res/img_type_"+playerInfo.roleVO.roleInfoList[j].meta.type+".png";
+						this.arenaView.arenaFootView.roleListView["roleItemView"+(j+1)].imgHeaderNumber=j;
+						this.arenaView.arenaFootView.roleListView["roleItemView"+(j+1)].lab_number.visible=false;
+						this.arenaView.arenaFootView.showView(roleInfo,j);
 					}
 				}
-				this.arenaView.roleView.showRoleListByPlayer(playerInfo,i);
+				this.arenaManager.showRoleListByPlayer(playerInfo,i);
 			}
-			this.status=1;
-			this.secondStatus=101;
-			this.arenaView.timer.frameLoop(1,this,this.enterFrameHandler);
+			this.arenaManager.doEnter();
+			this.arenaManager.addEnterFrameHandler();
 		}
 
-		__proto.enterFrameHandler=function(){
-			switch(this.status){
-				case 1:
-				switch(this.secondStatus){
-					case 101:
-						this.arenaView.roleView.doEnter();
-						this.secondStatus=102;
-						break ;
-					case 102:
-						if(this.arenaView.roleView.isCompleteEntering()){
-							this.secondStatus=103;
-						}
-						break ;
-					case 103:
-						this.arenaView.roleView.doIdle();
-						this.status=2;
-						break ;
-					}
-				break ;
-				case 2:;
-				var leftPlayer=this.gameContext.arenaContext.data.playerList[0];
-				var rightPlayer=this.gameContext.arenaContext.data.playerList[1];
-				if(leftPlayer.roleVO.firstAttack >=rightPlayer.roleVO.firstAttack){
-					leftPlayer.status=1;
-					rightPlayer.status=2;
-					this.arenaView.roleView.attackPlayer=leftPlayer;
-					this.arenaView.roleView.defensePlayer=rightPlayer;
+		//
+		__proto.initButtonShow=function(){
+			if (this.gameContext.arenaContext.manager.isBattleOperation()==false){
+				this.arenaView.arenaFootView.btnSpeed.visible=true;
+				this.arenaView.arenaFootView.btn_pause.visible=true
+				this.arenaView.arenaFootView.btnSpeed.on("click",this,this.btnSpeedClickHandler);
+				this.arenaView.arenaFootView.btn_pause.on("click",this,this.btnPauseClickHandler)
+			}
+			else{
+				this.arenaView.arenaFootView.btnSpeed.visible=false;
+				this.arenaView.arenaFootView.btn_pause.visible=false
+			}
+		}
+
+		__proto.uniqueSkillOrQteStage=function(){
+			this.touchStartTime=0;
+			this.touchImageState=false;
+			this.uniqueSkillRolePositionList=[];
+			this.selectPos=this.gameContext.arenaContext.manager.roleListLogic.defensePlayer.roleVO.getAutoAttackDefenceRolePosition();
+			this.qteTime=0;
+			this.addImageTouch();
+			this.timer.loop(1000,this,this.addUniqueSkillOrQteStage);
+			this.addUniqueSkillOrQteStage();
+			this.initButtonShow();
+			this.arenaView.roleView.showFirstSelect();
+			this.roleViewTouch();
+		}
+
+		__proto.roleViewTouch=function(){
+			var roleItemView;
+			console.log("this.arenaView.roleView.roleItemViewList.length==",this.arenaView.roleView.roleItemViewList)
+			for (var i=0;i < this.arenaView.roleView.roleItemViewList.length;i++){
+				roleItemView=this.arenaView.roleView.roleItemViewList[i];
+				roleItemView.imgTouch.on("click",this,this.roleClickHandler,[roleItemView]);
+			}
+		}
+
+		__proto.roleClickHandler=function($roleItemView,$e){
+			if($roleItemView.logic.isDie()){
+				return;
+			}
+			if($roleItemView.group==1 &&
+				this.arenaManager.roleListLogic.defensePlayer.roleVO.getAutoAttackDefenceRolePosition()< 3){
+				if ($roleItemView.position >=3){
+					return;
 				}
 				else{
-					leftPlayer.status=2;
-					rightPlayer.status=1;
-					this.arenaView.roleView.attackPlayer=rightPlayer;
-					this.arenaView.roleView.defensePlayer=leftPlayer;
+					this.arenaView.roleView.hideAllSelect();
+					$roleItemView.showSelect();
+					this.selectPos=$roleItemView.position;
 				}
-				this.arenaView.roleView.attackPlayer.roleVO.actionIndex=0;
-				this.arenaView.roleView.attackPlayer.roleVO.turnToAttack();
-				this.status=4;
-				break ;
-				case 4:
-				this.status=5;
-				this.secondStatus=601;
-				break ;
-				case 5:
-				switch(this.secondStatus){
-					case 601:
-						this.arenaView.roleView.preAttack();
-						if(this.arenaView.roleView.canSuperUniqueSkill()){
-							this.secondStatus=602;
-						}
-						else{
-							this.status=6;
-							this.secondStatus=601;
-						}
-						break ;
-					case 602:
-						if(this.arenaView.roleView.defensePlayer.roleVO.isAllDie()){
-							this.status=7;
-						}
-						else{
-							if(this.arenaView.roleView.canSuperUniqueSkill()){
-								this.arenaView.roleView.calcSuperUniqueSkillRoleAndTarget();
-								this.secondStatus=603;
-							}
-							else{
-								this.secondStatus=606;
-							}
-						}
-						break ;
-					case 603:
-						this.arenaView.roleView.doRunToAttack();
-						this.secondStatus=604;
-						break ;
-					case 604:
-						if(this.arenaView.roleView.isFinishSuperUniqueSkill()){
-							console.log("the role is finish superUniqueSkill , position is : ",this.arenaView.roleView.attackPlayer.roleVO.actionRoleInfo.position);;
-							this.secondStatus=602;
-						}
-						break ;
-					case 606:
-						if(this.arenaView.roleView.defensePlayer.roleVO.isAllDie()){
-							this.status=7;
-						}
-						else{
-							this.status=6;
-							this.secondStatus=601;
-						}
-						break ;
-					}
-				break ;
-				case 6:
-				switch(this.secondStatus){
-					case 601:
-						this.arenaView.roleView.preAttack();
-						if(this.arenaView.roleView.canAttack()){
-							this.secondStatus=602;
-						}
-						else{
-							this.secondStatus=606;
-						}
-						break ;
-					case 602:
-						if(this.arenaView.roleView.defensePlayer.roleVO.isAllDie()){
-							this.status=7;
-						}
-						else{
-							if(this.arenaView.roleView.canAttack()){
-								this.arenaView.roleView.calcAttackRoleAndTarget();
-								this.secondStatus=603;
-							}
-							else{
-								this.secondStatus=606;
-							}
-						}
-						break ;
-					case 603:
-						console.log("the role run to attack , position is : ",this.arenaView.roleView.attackPlayer.roleVO.actionRoleInfo.position);;
-						this.arenaView.roleView.doRunToAttack();
-						this.secondStatus=604;
-						break ;
-					case 604:
-						if(this.arenaView.roleView.isFinishAttacking()){
-							console.log("the role is finish attack");
-							this.secondStatus=602;
-						}
-						break ;
-					case 606:
-						if(this.arenaView.roleView.isFinishLastAttacking()){
-							if(this.arenaView.roleView.defensePlayer.roleVO.isAllDie()){
-								this.status=7;
-							}
-							else{
-								if(this.arenaView.roleView.attackPlayer.isMe){
-									var effectInfo=new EffectItemInfo();
-									effectInfo.damage=this.arenaView.roleView.attackPlayer.roleVO.totalDamage;
-									effectInfo.type=12;
-									effectInfo.sourceRoleInfo=this.arenaView.roleView.attackPlayer.roleVO.actionRoleInfo;
-									this.arenaView.effectView.addEffect(effectInfo);
-								};
-								var tempPlayer=this.arenaView.roleView.attackPlayer;
-								this.arenaView.roleView.attackPlayer=this.arenaView.roleView.defensePlayer;
-								this.arenaView.roleView.defensePlayer=tempPlayer;
-								this.arenaView.roleView.attackPlayer.status=1;
-								this.arenaView.roleView.defensePlayer.status=2;
-								this.status=4;
-							}
-						}
-						break ;
-					}
-				break ;
-				case 7:
-				console.log("result!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-				if(this.arenaView.roleView.attackPlayer.canShowResult()){
-					this.arenaView.roleView.showResult();
-					this.arenaView.timer.clearAll(this);
-					this.arenaView.timer.frameOnce(40,this,this.showResultView);
+			}
+			else if($roleItemView.group==1 &&
+			this.arenaManager.roleListLogic.defensePlayer.roleVO.getAutoAttackDefenceRolePosition()>=3){
+				if ($roleItemView.position < 3){
+					return;
 				}
-				break ;
-				default :
-				console.log("error!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-				break ;
+				else{
+					this.arenaView.roleView.hideAllSelect();
+					$roleItemView.showSelect();
+					this.selectPos=$roleItemView.position;
+				}
 			}
 		}
 
-		__proto.showResultView=function(){
-			var showResulitView=new AreanResultView();
-			GameContext.i.uiService.addPopup(showResulitView);
+		__proto.imgTouchHandler=function(){
+			this.touchStartTime=this.qteTime;
+			if (this.gameContext.arenaContext.data.isAutoBattle==true){
+				this.gameContext.arenaContext.data.isAutoBattle==false
+			}
+			this.arenaView.arenaFootView.lab_time.visible=false;
+			this.arenaView.arenaFootView.img_clock_bg.visible=false;
+		}
+
+		__proto.addUniqueSkillOrQteStage=function(){
+			this.qteTime++;
+			if(this.qteTime==1){
+				this.gameContext.arenaContext.gameView.img_touch_bg.on("click",this,this.imgTouchHandler);
+				this.qteSelectView=new QteSelectView();
+				GameContext.i.uiService.addPopup(this.qteSelectView);
+			}
+			else if((this.qteTime-this.touchStartTime)>=20 && this.touchImageState==false && (this.qteTime-this.touchStartTime)<25){
+				this.arenaView.arenaFootView.lab_time.text=""+(25-this.qteTime+this.touchStartTime);
+				this.arenaView.arenaFootView.lab_time.visible=true;
+				this.arenaView.arenaFootView.img_clock_bg.visible=true;
+			}
+			else if((this.qteTime-this.touchStartTime)>=25 && this.touchImageState==false){
+				if (this.qteSelectView !=null){
+					GameContext.i.uiService.removePopup(this.qteSelectView);
+				}
+				this.uniqueSkillRolePositionList=[];
+				this.RefreshimgHeaderLable();
+				this.gameContext.arenaContext.data.isAutoBattle=true
+				this.gameContext.arenaContext.data.doAutoBattleOperation();
+				this.arenaView.arenaFootView.lab_time.visible=false;
+				this.arenaView.arenaFootView.img_clock_bg.visible=false;
+				this.timer.clearAll(this);
+				this.qteTime=0;
+				this.touchStartTime=0;
+				this.arenaView.roleView.hideAllSelect();
+			}
+			else if(this.qteTime==800){
+			}
+		}
+
+		//this.qteTime=0;
+		__proto.addUniqueSkillStage=function(){}
+		__proto.addQteStage=function(){}
+		__proto.qteRefreshHit=function($itemViewNumber,$hitNumber){
+			this.arenaView.arenaFootView.roleListView["roleItemView"+$itemViewNumber].lab_jiacheng.visible=true;
+			this.arenaView.arenaFootView.roleListView["roleItemView"+$itemViewNumber].lab_jiacheng.text=""+$hitNumber;
+		}
+
+		__proto.qteEndHandler=function($qteResultList){
+			GameContext.i.arenaContext.manager.onFinishBattleOperation(this.selectPos,this.uniqueSkillRolePositionList,$qteResultList);
+			this.uniqueSkillRolePositionList=[];
+			this.RemoveImageTouch();
+			this.initButtonShow();
+			this.refreshStateView();
+			this.arenaView.roleView.hideAllSelect();
+		}
+
+		__proto.qteJumpHandler=function(){
+			this.uniqueSkillRolePositionList=[];
+			this.RemoveImageTouch();
+			if (this.qteSelectView !=null){
+				GameContext.i.uiService.removePopup(this.qteSelectView);
+			}
+			this.uniqueSkillRolePositionList=[];
+			this.RefreshimgHeaderLable();
+			this.arenaView.arenaFootView.lab_time.visible=false;
+			this.arenaView.arenaFootView.img_clock_bg.visible=false;
+			this.timer.clearAll(this);
+			this.qteTime=0;
+			this.touchStartTime=0;
+			this.initButtonShow();
+			this.arenaView.roleView.hideAllSelect();
+		}
+
+		__proto.imgHeaderClickHandler=function($args,$roleInfo,$roleItemView,$evt){
+			this.imgTouchHandler();
+			if ($roleInfo.canSuperUniqueSkill()==false){
+				return;
+			};
+			var stateBoolean=false
+			for (var i=0;i < this.uniqueSkillRolePositionList.length;i++){
+				if ($args==this.uniqueSkillRolePositionList[i]){
+					$roleItemView.imgPosState=1;
+					this.uniqueSkillRolePositionList.splice(i,1);
+					stateBoolean=true;
+				}
+			}
+			if (stateBoolean==false){
+				this.uniqueSkillRolePositionList.push($args);
+			}
+			this.RefreshimgHeaderLable();
+		}
+
+		__proto.RemoveImageTouch=function(){
+			for (var j=0;j < 6;j++){
+				this.arenaView.arenaFootView.roleListView["roleItemView"+(j+1)].lab_number.visible=false;
+				this.arenaView.arenaFootView.roleListView["roleItemView"+(j+1)].imgHeader.mouseEnabled=false;
+				this.arenaView.arenaFootView.roleListView["roleItemView"+(j+1)].lab_jiacheng.visible=false;
+			}
+		}
+
+		__proto.addImageTouch=function(){
+			var playerInfo;
+			var i=0;
+			var j=0;
+			for(i=0;i < this.gameContext.arenaContext.data.playerList.length;i++){
+				playerInfo=this.gameContext.arenaContext.data.playerList[i];
+				if (playerInfo.isMe==true){
+					for (j=0;j < playerInfo.roleVO.roleInfoList.length;j++){
+						this.arenaView.arenaFootView.roleListView["roleItemView"+(j+1)].lab_number.visible=false;
+						this.arenaView.arenaFootView.roleListView["roleItemView"+(j+1)].imgHeader.mouseEnabled=true;
+						this.arenaView.arenaFootView.roleListView["roleItemView"+(j+1)].imgHeader.mouseThrough=true;
+						this.arenaView.arenaFootView.roleListView["roleItemView"+(j+1)].imgHeader.on("click",this,this.imgHeaderClickHandler,[j,playerInfo.roleVO.roleInfoList[j],this.arenaView.arenaFootView.roleListView["roleItemView"+(j+1)]]);
+					}
+				}
+			}
+		}
+
+		__proto.RefreshimgHeaderLable=function(){
+			for (var j=0;j < 6;j++){
+				this.arenaView.arenaFootView.roleListView["roleItemView"+(j+1)].lab_number.visible=false;
+				if (this.arenaView.arenaFootView.roleListView["roleItemView"+(j+1)].imgPosState==1){
+					this.arenaView.arenaFootView.roleListView["roleItemView"+(j+1)].y+=25;
+					this.arenaView.arenaFootView.roleListView["roleItemView"+(j+1)].imgPosState=0;
+					this.arenaView.arenaFootView.roleListView["roleItemView"+(j+1)].img_texiao.visible=false;
+				}
+			}
+			for (var i=0;i < this.uniqueSkillRolePositionList.length;i++){
+				this.arenaView.arenaFootView.roleListView["roleItemView"+((this.uniqueSkillRolePositionList[i])+1)].lab_number.visible=true;
+				this.arenaView.arenaFootView.roleListView["roleItemView"+((this.uniqueSkillRolePositionList[i])+1)].lab_number.text=""+(i+1);
+				if (this.arenaView.arenaFootView.roleListView["roleItemView"+((this.uniqueSkillRolePositionList[i])+1)].imgPosState==0){
+					this.arenaView.arenaFootView.roleListView["roleItemView"+((this.uniqueSkillRolePositionList[i])+1)].y-=25;
+					this.arenaView.arenaFootView.roleListView["roleItemView"+((this.uniqueSkillRolePositionList[i])+1)].imgPosState=2;
+					this.arenaView.arenaFootView.roleListView["roleItemView"+((this.uniqueSkillRolePositionList[i])+1)].img_texiao.visible=true;
+				}
+			}
 		}
 
 		__proto.restartGame=function(){
@@ -14636,7 +17699,7 @@ window.Laya=(function(window,document){
 
 
 	/**
-	*@private
+	*<code>AnimationPlayer</code> 类用于动画播放器。
 	*/
 	//class laya.ani.AnimationPlayer extends laya.events.EventDispatcher
 	var AnimationPlayer=(function(_super){
@@ -14644,7 +17707,10 @@ window.Laya=(function(window,document){
 			this._templet=null;
 			this._currentTime=NaN;
 			this._currentFrameTime=NaN;
-			this._duration=NaN;
+			this._playStart=NaN;
+			this._playEnd=NaN;
+			this._playDuration=NaN;
+			this._overallDuration=NaN;
 			this._stopWhenCircleFinish=false;
 			this._elapsedPlaybackTime=NaN;
 			this._startPlayLoopCount=NaN;
@@ -14661,7 +17727,7 @@ window.Laya=(function(window,document){
 			this._currentAnimationClipIndex=-1;
 			this._currentKeyframeIndex=-1;
 			this._currentTime=0.0;
-			this._duration=Number.MAX_VALUE;
+			this._overallDuration=Number.MAX_VALUE;
 			this._stopWhenCircleFinish=false;
 			this._elapsedPlaybackTime=0;
 			this._startPlayLoopCount=-1;
@@ -14672,24 +17738,73 @@ window.Laya=(function(window,document){
 		__class(AnimationPlayer,'laya.ani.AnimationPlayer',_super);
 		var __proto=AnimationPlayer.prototype;
 		/**
-		*播放动画
-		*@param name 动画名字
-		*@param playbackRate 播放速率
-		*@param duration 播放时长（Number.MAX_VALUE为循环播放，0为1次）
+		*@private
 		*/
-		__proto.play=function(index,playbackRate,duration){
+		__proto._calculatePlayDuration=function(){
+			if (this.state!==0){
+				var oriDuration=this._templet.getAniDuration(this._currentAnimationClipIndex);
+				(this._playEnd===0)&& (this._playEnd=oriDuration);
+				if (Math.floor(this._playEnd)> oriDuration)
+					throw new Error("AnimationPlayer:playEnd must less than original Duration.");
+				this._playDuration=this._playEnd-this._playStart;
+			}
+		}
+
+		/**
+		*播放动画。
+		*@param index 动画索引。
+		*@param playbackRate 播放速率。
+		*@param duration 播放时长（0为1次,Number.MAX_VALUE为循环播放）。
+		*@param playStart 播放的起始时间位置。
+		*@param playEnd 播放的结束时间位置。（0为动画一次循环的最长结束时间位置）。
+		*/
+		__proto.play=function(index,playbackRate,overallDuration,playStart,playEnd){
 			(index===void 0)&& (index=0);
 			(playbackRate===void 0)&& (playbackRate=1.0);
-			(duration===void 0)&& (duration=1.7976931348623157e+308);
+			(overallDuration===void 0)&& (overallDuration=Number.MAX_VALUE);
+			(playStart===void 0)&& (playStart=0);
+			(playEnd===void 0)&& (playEnd=0);
+			if (!this._templet)
+				throw new Error("AnimationPlayer:templet must not be null,maybe you need to set url.");
+			if (overallDuration < 0 || playStart < 0 || playEnd < 0)
+				throw new Error("AnimationPlayer:overallDuration,playStart and playEnd must large than zero.");
+			if ((playEnd!==0)&&(playStart > playEnd))
+				throw new Error("AnimationPlayer:start must less than end.");
 			this._currentTime=0;
+			this._currentFrameTime=0;
 			this._elapsedPlaybackTime=0;
 			this.playbackRate=playbackRate;
-			this._duration=duration;
+			this._overallDuration=overallDuration;
+			this._playStart=playStart;
+			this._playEnd=playEnd;
 			this._paused=false;
 			this._currentAnimationClipIndex=index;
 			this._currentKeyframeIndex=0;
 			this._startPlayLoopCount=Stat.loopCount;
 			this.event("played");
+			if (this._templet.loaded)
+				this._calculatePlayDuration();
+			else
+			this._templet.once("loaded",this,this._calculatePlayDuration);
+		}
+
+		/**
+		*播放动画。
+		*@param index 动画索引。
+		*@param playbackRate 播放速率。
+		*@param duration 播放时长（0为1次,Number.MAX_VALUE为循环播放）。
+		*@param playStartFrame 播放的原始起始帧率位置。
+		*@param playEndFrame 播放的原始结束帧率位置。（0为动画一次循环的最长结束时间位置）。
+		*/
+		__proto.playByFrame=function(index,playbackRate,overallDuration,playStartFrame,playEndFrame,fpsIn3DBuilder){
+			(index===void 0)&& (index=0);
+			(playbackRate===void 0)&& (playbackRate=1.0);
+			(overallDuration===void 0)&& (overallDuration=Number.MAX_VALUE);
+			(playStartFrame===void 0)&& (playStartFrame=0);
+			(playEndFrame===void 0)&& (playEndFrame=0);
+			(fpsIn3DBuilder===void 0)&& (fpsIn3DBuilder=30);
+			var interval=1000.0 / fpsIn3DBuilder;
+			this.play(index,playbackRate,overallDuration,playStartFrame *interval,playEndFrame *interval);
 		}
 
 		/**
@@ -14712,24 +17827,26 @@ window.Laya=(function(window,document){
 				return;
 			var time=0;
 			(this._startPlayLoopCount!==Stat.loopCount)&& (time=elapsedTime *this.playbackRate,this._elapsedPlaybackTime+=time);
-			var currentAniClipDuration=this._templet.getAniDuration(this._currentAnimationClipIndex);
-			if ((this._duration!==0 && this._elapsedPlaybackTime >=this._duration)|| (this._duration===0 && this._elapsedPlaybackTime >=currentAniClipDuration)){
+			var currentAniClipPlayDuration=this.playDuration;
+			if ((this._overallDuration!==0 && this._elapsedPlaybackTime >=this._overallDuration)|| (this._overallDuration===0 && this._elapsedPlaybackTime >=currentAniClipPlayDuration)){
 				this._currentAnimationClipIndex=this._currentKeyframeIndex=-1;
 				this.event("stopped");
 				return;
 			}
 			time+=this._currentTime;
-			if (currentAniClipDuration > 0){
-				while (time >=currentAniClipDuration){
+			if (currentAniClipPlayDuration > 0){
+				while (time >=currentAniClipPlayDuration){
 					if (this._stopWhenCircleFinish){
 						this._currentAnimationClipIndex=this._currentKeyframeIndex=-1;
 						this._stopWhenCircleFinish=false;
 						this.event("stopped");
 						return;
 					}
-					time-=currentAniClipDuration;
+					time-=currentAniClipPlayDuration;
 				}
-				this.currentTime=time;
+				this._currentTime=time;
+				this._currentKeyframeIndex=Math.floor((this.currentPlayTime)/ this._cacheFrameRateInterval);
+				this._currentFrameTime=this._currentKeyframeIndex *this._cacheFrameRateInterval;
 				}else {
 				if (this._stopWhenCircleFinish){
 					this._currentAnimationClipIndex=this._currentKeyframeIndex=-1;
@@ -14760,17 +17877,49 @@ window.Laya=(function(window,document){
 		__getset(0,__proto,'templet',function(){
 			return this._templet;
 			},function(value){
-			if (!this.State===0)
+			if (!this.state===0)
 				this.stop(true);
 			this._templet=value;
 		});
 
 		/**
+		*获取当前精确时间，不包括重播时间
+		*@return value 当前时间
+		*/
+		__getset(0,__proto,'currentPlayTime',function(){
+			return this._currentTime+this._playStart;
+		});
+
+		/**
+		*动画播放的起始时间位置。
+		*@return 起始时间位置。
+		*/
+		__getset(0,__proto,'playStart',function(){
+			return this._playStart;
+		});
+
+		/**
+		*动画播放的结束时间位置。
+		*@return 结束时间位置。
+		*/
+		__getset(0,__proto,'playEnd',function(){
+			return this._playEnd;
+		});
+
+		/**
 		*获取当前帧数
-		*@return value 当前帧数
+		*@return 当前帧数
 		*/
 		__getset(0,__proto,'currentKeyframeIndex',function(){
 			return this._currentKeyframeIndex;
+		});
+
+		/**
+		*获取动画播放一次的总时间
+		*@return 动画播放一次的总时间
+		*/
+		__getset(0,__proto,'playDuration',function(){
+			return this._playDuration;
 		});
 
 		/**
@@ -14793,36 +17942,22 @@ window.Laya=(function(window,document){
 		*设置当前播放位置
 		*@param value 当前时间
 		*/
-		/**
-		*获取当前精确时间，不包括重播时间
-		*@return value 当前时间
-		*/
-		__getset(0,__proto,'currentTime',function(){
-			return this._currentTime;
-			},function(value){
+		__getset(0,__proto,'currentTime',null,function(value){
+			if (this._currentAnimationClipIndex===-1 || !this._templet || !this._templet.loaded)
+				return;
+			if (value < this._playStart || value > this._playEnd)
+				throw new Error("AnimationPlayer:value must large than playStartTime,small than playEndTime.");
 			this._currentTime=value;
-			this._currentKeyframeIndex=Math.floor((this._currentTime % (this._templet.getAniDuration(this._currentAnimationClipIndex)))/ this._cacheFrameRateInterval);
+			this._currentKeyframeIndex=Math.floor(this.currentPlayTime / this._cacheFrameRateInterval);
 			this._currentFrameTime=this._currentKeyframeIndex *this._cacheFrameRateInterval;
 		});
 
 		/**
-		*获取当前播放状态
-		*@return 当前播放状态
+		*获取动画播放的总总时间
+		*@return 动画播放的总时间
 		*/
-		__getset(0,__proto,'State',function(){
-			if (this._currentAnimationClipIndex===-1)
-				return 0;
-			if (this._paused)
-				return 1;
-			return 2;
-		});
-
-		/**
-		*获取缓存帧率间隔时间
-		*@return 缓存帧率间隔时间
-		*/
-		__getset(0,__proto,'cacheFrameRateInterval',function(){
-			return this._cacheFrameRateInterval;
+		__getset(0,__proto,'overallDuration',function(){
+			return this._overallDuration;
 		});
 
 		/**
@@ -14840,324 +17975,28 @@ window.Laya=(function(window,document){
 			value && this.event("paused");
 		});
 
+		/**
+		*获取缓存帧率间隔时间
+		*@return 缓存帧率间隔时间
+		*/
+		__getset(0,__proto,'cacheFrameRateInterval',function(){
+			return this._cacheFrameRateInterval;
+		});
+
+		/**
+		*获取当前播放状态
+		*@return 当前播放状态
+		*/
+		__getset(0,__proto,'state',function(){
+			if (this._currentAnimationClipIndex===-1)
+				return 0;
+			if (this._paused)
+				return 1;
+			return 2;
+		});
+
 		return AnimationPlayer;
 	})(EventDispatcher)
-
-
-	/**
-	*@private
-	*/
-	//class laya.ani.KeyframesAniTemplet extends laya.events.EventDispatcher
-	var KeyframesAniTemplet=(function(_super){
-		function KeyframesAniTemplet(){
-			this._aniMap={};
-			//this._publicExtData=null;
-			//this._useParent=false;
-			//this.unfixedCurrentFrameIndexes=null;
-			//this.unfixedCurrentTimes=null;
-			//this.unfixedKeyframes=null;
-			this.unfixedLastAniIndex=-1;
-			this._loaded=false;
-			//this._aniVersion=null;
-			this._animationDatasCache=[];
-			KeyframesAniTemplet.__super.call(this);
-			this._anis=new Array;
-		}
-
-		__class(KeyframesAniTemplet,'laya.ani.KeyframesAniTemplet',_super);
-		var __proto=KeyframesAniTemplet.prototype;
-		__proto.parse=function(data,playbackRate){
-			var i=0,j=0,k=0,n=0,l=0;
-			var read=new Byte(data);
-			this._aniVersion=read.readUTFString();
-			var aniClassName=read.readUTFString();
-			var strList=read.readUTFString().split("\n");
-			var aniCount=read.getUint8();
-			var publicDataPos=read.getUint32();
-			var publicExtDataPos=read.getUint32();
-			var publicData;
-			if (publicDataPos > 0)
-				publicData=data.slice(publicDataPos,publicExtDataPos);
-			var publicRead=new Byte(publicData);
-			if (publicExtDataPos > 0)
-				this._publicExtData=data.slice(publicExtDataPos,data.byteLength);
-			this._useParent=!!read.getUint8();
-			this._anis.length=aniCount;
-			for (i=0;i < aniCount;i++){
-				var ani=this._anis[i]=
-				{};
-				ani.nodes=new Array;
-				var name=ani.name=strList[read.getUint16()];
-				this._aniMap[name]=i;
-				ani.bone3DMap={};
-				ani.playTime=read.getFloat32();
-				var boneCount=ani.nodes.length=read.getUint8();
-				ani.totalKeyframesLength=0;
-				for (j=0;j < boneCount;j++){
-					var node=ani.nodes[j]=
-					{};
-					node.childs=[];
-					var nameIndex=read.getInt16();
-					if (nameIndex >=0){
-						node.name=strList[nameIndex];
-						ani.bone3DMap[node.name]=j;
-					}
-					node.keyFrame=new Array;
-					node.parentIndex=read.getInt16();
-					node.parentIndex==-1 ? node.parent=null :node.parent=ani.nodes[node.parentIndex];
-					var isLerp=!!read.getUint8();
-					var keyframeParamsOffset=read.getUint32();
-					publicRead.pos=keyframeParamsOffset;
-					var keyframeDataCount=node.keyframeWidth=publicRead.getUint16();
-					ani.totalKeyframesLength+=keyframeDataCount;
-					if (isLerp){
-						node.interpolationMethod=[];
-						node.interpolationMethod.length=keyframeDataCount;
-						for (k=0;k < keyframeDataCount;k++)
-						node.interpolationMethod[k]=KeyframesAniTemplet.interpolation[publicRead.getUint8()];
-					}
-					if (node.parent !=null)
-						node.parent.childs.push(node);
-					var privateDataLen=read.getUint16();
-					if (privateDataLen > 0){
-						node.extenData=data.slice(read.pos,read.pos+privateDataLen);
-						read.pos+=privateDataLen;
-					};
-					var keyframeCount=read.getUint16();
-					node.keyFrame.length=keyframeCount;
-					var startTime=0;
-					for (k=0,n=keyframeCount;k < n;k++){
-						var keyFrame=node.keyFrame[k]=
-						{};
-						keyFrame.duration=read.getFloat32();
-						keyFrame.startTime=startTime;
-						keyFrame.data=new Float32Array(keyframeDataCount);
-						keyFrame.dData=new Float32Array(keyframeDataCount);
-						keyFrame.nextData=new Float32Array(keyframeDataCount);
-						for (l=0;l < keyframeDataCount;l++){
-							keyFrame.data[l]=read.getFloat32();
-							if (keyFrame.data[l] >-0.00000001 && keyFrame.data[l] < 0.00000001)keyFrame.data[l]=0;
-						}
-						startTime+=keyFrame.duration;
-					}
-					node.playTime=ani.playTime;
-					this._calculateKeyFrame(node,keyframeCount,keyframeDataCount);
-					this._calculateKeyFrameIndex(node,playbackRate);
-				}
-			}
-			this._loaded=true;
-			this.event("loaded",this);
-		}
-
-		__proto._calculateKeyFrame=function(node,keyframeCount,keyframeDataCount){
-			var keyFrames=node.keyFrame;
-			keyFrames[keyframeCount]=keyFrames[0];
-			for (var i=0;i < keyframeCount;i++){
-				var keyFrame=keyFrames[i];
-				for (var j=0;j < keyframeDataCount;j++){
-					keyFrame.dData[j]=(keyFrame.duration===0)? 0 :(keyFrames[i+1].data[j]-keyFrame.data[j])/ keyFrame.duration;
-					keyFrame.nextData[j]=keyFrames[i+1].data[j];
-				}
-			}
-			keyFrames.length--;
-		}
-
-		__proto._calculateKeyFrameIndex=function(node,playbackRate){
-			var frameInterval=1000 / playbackRate;
-			node.frameCount=Math.floor(node.playTime / frameInterval);
-			node.fullFrame=new Uint16Array(node.frameCount+1);
-			var lastFrameIndex=-1;
-			for (var i=0,n=node.keyFrame.length;i < n;i++){
-				var keyFrame=node.keyFrame[i];
-				var tm=keyFrame.startTime;
-				var endTm=tm+keyFrame.duration+frameInterval;
-				do {
-					var frameIndex=Math.floor(tm / frameInterval+0.5);
-					for (var k=lastFrameIndex+1;k < frameIndex;k++)
-					node.fullFrame[k]=i;
-					lastFrameIndex=frameIndex;
-					node.fullFrame[frameIndex]=i;
-					tm+=frameInterval;
-				}while (tm <=endTm);
-			}
-		}
-
-		__proto.getAnimationCount=function(){
-			return this._anis.length;
-		}
-
-		__proto.getAnimation=function(aniIndex){
-			return this._anis[aniIndex];
-		}
-
-		__proto.getAniDuration=function(aniIndex){
-			return this._anis[aniIndex].playTime;
-		}
-
-		__proto.getNodes=function(aniIndex){
-			return this._anis[aniIndex].nodes;
-		}
-
-		__proto.getNodeIndexWithName=function(aniIndex,name){
-			return this._anis[aniIndex].bone3DMap[name];
-		}
-
-		__proto.getNodeCount=function(aniIndex){
-			return this._anis[aniIndex].nodes.length;
-		}
-
-		__proto.getTotalkeyframesLength=function(aniIndex){
-			return this._anis[aniIndex].totalKeyframesLength;
-		}
-
-		__proto.getPublicExtData=function(){
-			return this._publicExtData;
-		}
-
-		__proto.getAnimationDataWithCache=function(cacheDatas,aniIndex,frameIndex){
-			var cache=cacheDatas[aniIndex];
-			return cache ? cache[frameIndex] :null;
-		}
-
-		__proto.setAnimationDataWithCache=function(cacheDatas,aniIndex,frameIndex,data){
-			var cache=cacheDatas[aniIndex];
-			cache || (cache=cacheDatas[aniIndex]=[],cache.length=30);
-			cache[frameIndex] || (cache[frameIndex]=new Float32Array(data.length));
-			cache[frameIndex].set(data,0);
-		}
-
-		__proto.getOriginalData=function(aniIndex,originalData,frameIndex,playCurTime){
-			var oneAni=this._anis[aniIndex];
-			var nodes=oneAni.nodes;
-			var j=0;
-			for (var i=0,n=nodes.length,outOfs=0;i < n;i++){
-				var node=nodes[i];
-				var key;
-				key=node.keyFrame[node.fullFrame[frameIndex]];
-				node.dataOffset=outOfs;
-				var dt=playCurTime-key.startTime;
-				for (j=0;j < node.keyframeWidth;){
-					j+=node.interpolationMethod[j](node,j,originalData,outOfs+j,key.data,dt,key.dData,key.duration,key.nextData);
-				}
-				outOfs+=node.keyframeWidth;
-			}
-		}
-
-		__proto.getNodesCurrentFrameIndex=function(aniIndex,playCurTime){
-			var ani=this._anis[aniIndex];
-			var nodes=ani.nodes;
-			if (aniIndex!==this.unfixedLastAniIndex){
-				this.unfixedCurrentFrameIndexes=new Uint32Array(nodes.length);
-				this.unfixedCurrentTimes=new Float32Array(nodes.length);
-				this.unfixedLastAniIndex=aniIndex;
-			}
-			for (var i=0,n=nodes.length,outOfs=0;i < n;i++){
-				var node=nodes[i];
-				if (playCurTime < this.unfixedCurrentTimes[i])
-					this.unfixedCurrentFrameIndexes[i]=0;
-				this.unfixedCurrentTimes[i]=playCurTime;
-				while ((this.unfixedCurrentFrameIndexes[i] < node.keyFrame.length)){
-					if (node.keyFrame[this.unfixedCurrentFrameIndexes[i]].startTime > this.unfixedCurrentTimes[i])
-						break ;
-					this.unfixedCurrentFrameIndexes[i]++;
-				}
-				this.unfixedCurrentFrameIndexes[i]--;
-			}
-			return this.unfixedCurrentFrameIndexes;
-		}
-
-		__proto.getOriginalDataUnfixedRate=function(aniIndex,originalData,playCurTime){
-			var oneAni=this._anis[aniIndex];
-			var nodes=oneAni.nodes;
-			if (aniIndex!==this.unfixedLastAniIndex){
-				this.unfixedCurrentFrameIndexes=new Uint32Array(nodes.length);
-				this.unfixedCurrentTimes=new Float32Array(nodes.length);
-				this.unfixedKeyframes=__newvec(nodes.length);
-				this.unfixedLastAniIndex=aniIndex;
-			};
-			var j=0;
-			for (var i=0,n=nodes.length,outOfs=0;i < n;i++){
-				var node=nodes[i];
-				if (playCurTime < this.unfixedCurrentTimes[i])
-					this.unfixedCurrentFrameIndexes[i]=0;
-				this.unfixedCurrentTimes[i]=playCurTime;
-				while (this.unfixedCurrentFrameIndexes[i] < node.keyFrame.length){
-					if (node.keyFrame[this.unfixedCurrentFrameIndexes[i]].startTime > this.unfixedCurrentTimes[i])
-						break ;
-					this.unfixedKeyframes[i]=node.keyFrame[this.unfixedCurrentFrameIndexes[i]];
-					this.unfixedCurrentFrameIndexes[i]++;
-				};
-				var key=this.unfixedKeyframes[i];
-				node.dataOffset=outOfs;
-				var dt=playCurTime-key.startTime;
-				for (j=0;j < node.keyframeWidth;){
-					j+=node.interpolationMethod[j](node,j,originalData,outOfs+j,key.data,dt,key.dData,key.duration,key.nextData);
-				}
-				outOfs+=node.keyframeWidth;
-			}
-		}
-
-		__getset(0,__proto,'loaded',function(){
-			return this._loaded;
-		});
-
-		KeyframesAniTemplet._LinearInterpolation_0=function(bone,index,out,outOfs,data,dt,dData,duration,nextData){
-			out[outOfs]=data[index]+dt *dData[index];
-			return 1;
-		}
-
-		KeyframesAniTemplet._QuaternionInterpolation_1=function(bone,index,out,outOfs,data,dt,dData,duration,nextData){
-			MathUtil.slerpQuaternionArray(data,index,nextData,index,dt / duration,out,outOfs);
-			return 4;
-		}
-
-		KeyframesAniTemplet._AngleInterpolation_2=function(bone,index,out,outOfs,data,dt,dData,duration,nextData){
-			return 0;
-		}
-
-		KeyframesAniTemplet._RadiansInterpolation_3=function(bone,index,out,outOfs,data,dt,dData,duration,nextData){
-			return 0;
-		}
-
-		KeyframesAniTemplet._Matrix4x4Interpolation_4=function(bone,index,out,outOfs,data,dt,dData,duration,nextData){
-			for (var i=0;i < 16;i++,index++)
-			out[outOfs+i]=data[index]+dt *dData[index];
-			return 16;
-		}
-
-		KeyframesAniTemplet._NoInterpolation_5=function(bone,index,out,outOfs,data,dt,dData,duration,nextData){
-			out[outOfs]=data[index];
-			return 1;
-		}
-
-		KeyframesAniTemplet._uniqueIDCounter=1;
-		KeyframesAniTemplet.interpolation=[KeyframesAniTemplet._LinearInterpolation_0,KeyframesAniTemplet._QuaternionInterpolation_1,KeyframesAniTemplet._AngleInterpolation_2,KeyframesAniTemplet._RadiansInterpolation_3,KeyframesAniTemplet._Matrix4x4Interpolation_4,KeyframesAniTemplet._NoInterpolation_5];
-		KeyframesAniTemplet.LAYA_ANIMATION_VISION="LAYAANIMATION:1.0.1";
-		return KeyframesAniTemplet;
-	})(EventDispatcher)
-
-
-	//class com.gamepark.casino.model.PlayerInfo extends com.gamepark.casino.model.ErisGamePropertyObserver
-	var PlayerInfo1=(function(_super){
-		function PlayerInfo(){
-			this.id=0;
-			this.name=null;
-			this._chip=0;
-			PlayerInfo.__super.call(this);
-		}
-
-		__class(PlayerInfo,'com.gamepark.casino.model.PlayerInfo',_super,'PlayerInfo1');
-		var __proto=PlayerInfo.prototype;
-		__getset(0,__proto,'chip',function(){
-			return this._chip;
-			},function(value){
-			var old=this._chip;
-			this._chip=value;
-			this.validateProperty("chip",old,value);
-		});
-
-		return PlayerInfo;
-	})(ErisGamePropertyObserver)
 
 
 	/**
@@ -15377,11 +18216,643 @@ window.Laya=(function(window,document){
 
 		Resource.animationCache={};
 		Resource.meshCache={};
+		Resource.materialCache={};
 		Resource._uniqueIDCounter=0;
 		Resource._loadedResources=[];
 		Resource._isLoadedResourcesSorted=false;
 		return Resource;
 	})(EventDispatcher)
+
+
+	/**
+	*@private
+	*/
+	//class laya.ani.KeyframesAniTemplet extends laya.events.EventDispatcher
+	var KeyframesAniTemplet=(function(_super){
+		function KeyframesAniTemplet(){
+			this._aniMap={};
+			//this._publicExtData=null;
+			//this._useParent=false;
+			//this.unfixedCurrentFrameIndexes=null;
+			//this.unfixedCurrentTimes=null;
+			//this.unfixedKeyframes=null;
+			this.unfixedLastAniIndex=-1;
+			this._loaded=false;
+			//this._aniVersion=null;
+			this._animationDatasCache=[];
+			KeyframesAniTemplet.__super.call(this);
+			this._anis=new Array;
+		}
+
+		__class(KeyframesAniTemplet,'laya.ani.KeyframesAniTemplet',_super);
+		var __proto=KeyframesAniTemplet.prototype;
+		__proto.parse=function(data,playbackRate){
+			var i=0,j=0,k=0,n=0,l=0;
+			var read=new Byte(data);
+			this._aniVersion=read.readUTFString();
+			var aniClassName=read.readUTFString();
+			var strList=read.readUTFString().split("\n");
+			var aniCount=read.getUint8();
+			var publicDataPos=read.getUint32();
+			var publicExtDataPos=read.getUint32();
+			var publicData;
+			if (publicDataPos > 0)
+				publicData=data.slice(publicDataPos,publicExtDataPos);
+			var publicRead=new Byte(publicData);
+			if (publicExtDataPos > 0)
+				this._publicExtData=data.slice(publicExtDataPos,data.byteLength);
+			this._useParent=!!read.getUint8();
+			this._anis.length=aniCount;
+			for (i=0;i < aniCount;i++){
+				var ani=this._anis[i]=
+				{};
+				ani.nodes=new Array;
+				var name=ani.name=strList[read.getUint16()];
+				this._aniMap[name]=i;
+				ani.bone3DMap={};
+				ani.playTime=read.getFloat32();
+				var boneCount=ani.nodes.length=read.getUint8();
+				ani.totalKeyframesLength=0;
+				for (j=0;j < boneCount;j++){
+					var node=ani.nodes[j]=
+					{};
+					node.childs=[];
+					var nameIndex=read.getInt16();
+					if (nameIndex >=0){
+						node.name=strList[nameIndex];
+						ani.bone3DMap[node.name]=j;
+					}
+					node.keyFrame=new Array;
+					node.parentIndex=read.getInt16();
+					node.parentIndex==-1 ? node.parent=null :node.parent=ani.nodes[node.parentIndex];
+					var isLerp=!!read.getUint8();
+					var keyframeParamsOffset=read.getUint32();
+					publicRead.pos=keyframeParamsOffset;
+					var keyframeDataCount=node.keyframeWidth=publicRead.getUint16();
+					ani.totalKeyframesLength+=keyframeDataCount;
+					if (isLerp){
+						node.interpolationMethod=[];
+						node.interpolationMethod.length=keyframeDataCount;
+						for (k=0;k < keyframeDataCount;k++)
+						node.interpolationMethod[k]=KeyframesAniTemplet.interpolation[publicRead.getUint8()];
+					}
+					if (node.parent !=null)
+						node.parent.childs.push(node);
+					var privateDataLen=read.getUint16();
+					if (privateDataLen > 0){
+						node.extenData=data.slice(read.pos,read.pos+privateDataLen);
+						read.pos+=privateDataLen;
+					};
+					var keyframeCount=read.getUint16();
+					node.keyFrame.length=keyframeCount;
+					var startTime=0;
+					for (k=0,n=keyframeCount;k < n;k++){
+						var keyFrame=node.keyFrame[k]=
+						{};
+						keyFrame.duration=read.getFloat32();
+						keyFrame.startTime=startTime;
+						keyFrame.data=new Float32Array(keyframeDataCount);
+						keyFrame.dData=new Float32Array(keyframeDataCount);
+						keyFrame.nextData=new Float32Array(keyframeDataCount);
+						for (l=0;l < keyframeDataCount;l++){
+							keyFrame.data[l]=read.getFloat32();
+							if (keyFrame.data[l] >-0.00000001 && keyFrame.data[l] < 0.00000001)keyFrame.data[l]=0;
+						}
+						startTime+=keyFrame.duration;
+					}
+					node.playTime=ani.playTime;
+					this._calculateKeyFrame(node,keyframeCount,keyframeDataCount);
+					this._calculateKeyFrameIndex(node,playbackRate);
+				}
+			}
+			this._loaded=true;
+			this.event("loaded",this);
+		}
+
+		__proto._calculateKeyFrame=function(node,keyframeCount,keyframeDataCount){
+			var keyFrames=node.keyFrame;
+			keyFrames[keyframeCount]=keyFrames[0];
+			for (var i=0;i < keyframeCount;i++){
+				var keyFrame=keyFrames[i];
+				for (var j=0;j < keyframeDataCount;j++){
+					keyFrame.dData[j]=(keyFrame.duration===0)? 0 :(keyFrames[i+1].data[j]-keyFrame.data[j])/ keyFrame.duration;
+					keyFrame.nextData[j]=keyFrames[i+1].data[j];
+				}
+			}
+			keyFrames.length--;
+		}
+
+		__proto._calculateKeyFrameIndex=function(node,playbackRate){
+			var frameInterval=1000 / playbackRate;
+			node.frameCount=Math.floor(node.playTime / frameInterval);
+			node.fullFrame=new Uint16Array(node.frameCount+1);
+			var lastFrameIndex=-1;
+			for (var i=0,n=node.keyFrame.length;i < n;i++){
+				var keyFrame=node.keyFrame[i];
+				var tm=keyFrame.startTime;
+				var endTm=tm+keyFrame.duration+frameInterval;
+				do {
+					var frameIndex=Math.floor(tm / frameInterval+0.5);
+					for (var k=lastFrameIndex+1;k < frameIndex;k++)
+					node.fullFrame[k]=i;
+					lastFrameIndex=frameIndex;
+					node.fullFrame[frameIndex]=i;
+					tm+=frameInterval;
+				}while (tm <=endTm);
+			}
+		}
+
+		__proto.getAnimationCount=function(){
+			return this._anis.length;
+		}
+
+		__proto.getAnimation=function(aniIndex){
+			return this._anis[aniIndex];
+		}
+
+		__proto.getAniDuration=function(aniIndex){
+			return this._anis[aniIndex].playTime;
+		}
+
+		__proto.getNodes=function(aniIndex){
+			return this._anis[aniIndex].nodes;
+		}
+
+		__proto.getNodeIndexWithName=function(aniIndex,name){
+			return this._anis[aniIndex].bone3DMap[name];
+		}
+
+		__proto.getNodeCount=function(aniIndex){
+			return this._anis[aniIndex].nodes.length;
+		}
+
+		__proto.getTotalkeyframesLength=function(aniIndex){
+			return this._anis[aniIndex].totalKeyframesLength;
+		}
+
+		__proto.getPublicExtData=function(){
+			return this._publicExtData;
+		}
+
+		__proto.getAnimationDataWithCache=function(cacheDatas,aniIndex,frameIndex){
+			var cache=cacheDatas[aniIndex];
+			return cache ? cache[frameIndex] :null;
+		}
+
+		__proto.setAnimationDataWithCache=function(cacheDatas,aniIndex,frameIndex,data){
+			var cache=cacheDatas[aniIndex];
+			cache || (cache=cacheDatas[aniIndex]=[]);
+			cache[frameIndex]=data;
+		}
+
+		__proto.getOriginalData=function(aniIndex,originalData,frameIndex,playCurTime){
+			var oneAni=this._anis[aniIndex];
+			var nodes=oneAni.nodes;
+			var j=0;
+			for (var i=0,n=nodes.length,outOfs=0;i < n;i++){
+				var node=nodes[i];
+				var key;
+				key=node.keyFrame[node.fullFrame[frameIndex]];
+				node.dataOffset=outOfs;
+				var dt=playCurTime-key.startTime;
+				for (j=0;j < node.keyframeWidth;){
+					j+=node.interpolationMethod[j](node,j,originalData,outOfs+j,key.data,dt,key.dData,key.duration,key.nextData);
+				}
+				outOfs+=node.keyframeWidth;
+			}
+		}
+
+		__proto.getNodesCurrentFrameIndex=function(aniIndex,playCurTime){
+			var ani=this._anis[aniIndex];
+			var nodes=ani.nodes;
+			if (aniIndex!==this.unfixedLastAniIndex){
+				this.unfixedCurrentFrameIndexes=new Uint32Array(nodes.length);
+				this.unfixedCurrentTimes=new Float32Array(nodes.length);
+				this.unfixedLastAniIndex=aniIndex;
+			}
+			for (var i=0,n=nodes.length,outOfs=0;i < n;i++){
+				var node=nodes[i];
+				if (playCurTime < this.unfixedCurrentTimes[i])
+					this.unfixedCurrentFrameIndexes[i]=0;
+				this.unfixedCurrentTimes[i]=playCurTime;
+				while ((this.unfixedCurrentFrameIndexes[i] < node.keyFrame.length)){
+					if (node.keyFrame[this.unfixedCurrentFrameIndexes[i]].startTime > this.unfixedCurrentTimes[i])
+						break ;
+					this.unfixedCurrentFrameIndexes[i]++;
+				}
+				this.unfixedCurrentFrameIndexes[i]--;
+			}
+			return this.unfixedCurrentFrameIndexes;
+		}
+
+		__proto.getOriginalDataUnfixedRate=function(aniIndex,originalData,playCurTime){
+			var oneAni=this._anis[aniIndex];
+			var nodes=oneAni.nodes;
+			if (aniIndex!==this.unfixedLastAniIndex){
+				this.unfixedCurrentFrameIndexes=new Uint32Array(nodes.length);
+				this.unfixedCurrentTimes=new Float32Array(nodes.length);
+				this.unfixedKeyframes=__newvec(nodes.length);
+				this.unfixedLastAniIndex=aniIndex;
+			};
+			var j=0;
+			for (var i=0,n=nodes.length,outOfs=0;i < n;i++){
+				var node=nodes[i];
+				if (playCurTime < this.unfixedCurrentTimes[i])
+					this.unfixedCurrentFrameIndexes[i]=0;
+				this.unfixedCurrentTimes[i]=playCurTime;
+				while (this.unfixedCurrentFrameIndexes[i] < node.keyFrame.length){
+					if (node.keyFrame[this.unfixedCurrentFrameIndexes[i]].startTime > this.unfixedCurrentTimes[i])
+						break ;
+					this.unfixedKeyframes[i]=node.keyFrame[this.unfixedCurrentFrameIndexes[i]];
+					this.unfixedCurrentFrameIndexes[i]++;
+				};
+				var key=this.unfixedKeyframes[i];
+				node.dataOffset=outOfs;
+				var dt=playCurTime-key.startTime;
+				for (j=0;j < node.keyframeWidth;){
+					j+=node.interpolationMethod[j](node,j,originalData,outOfs+j,key.data,dt,key.dData,key.duration,key.nextData);
+				}
+				outOfs+=node.keyframeWidth;
+			}
+		}
+
+		__getset(0,__proto,'loaded',function(){
+			return this._loaded;
+		});
+
+		KeyframesAniTemplet._LinearInterpolation_0=function(bone,index,out,outOfs,data,dt,dData,duration,nextData){
+			out[outOfs]=data[index]+dt *dData[index];
+			return 1;
+		}
+
+		KeyframesAniTemplet._QuaternionInterpolation_1=function(bone,index,out,outOfs,data,dt,dData,duration,nextData){
+			var amount=duration===0 ? 0 :dt / duration;
+			MathUtil.slerpQuaternionArray(data,index,nextData,index,amount,out,outOfs);
+			return 4;
+		}
+
+		KeyframesAniTemplet._AngleInterpolation_2=function(bone,index,out,outOfs,data,dt,dData,duration,nextData){
+			return 0;
+		}
+
+		KeyframesAniTemplet._RadiansInterpolation_3=function(bone,index,out,outOfs,data,dt,dData,duration,nextData){
+			return 0;
+		}
+
+		KeyframesAniTemplet._Matrix4x4Interpolation_4=function(bone,index,out,outOfs,data,dt,dData,duration,nextData){
+			for (var i=0;i < 16;i++,index++)
+			out[outOfs+i]=data[index]+dt *dData[index];
+			return 16;
+		}
+
+		KeyframesAniTemplet._NoInterpolation_5=function(bone,index,out,outOfs,data,dt,dData,duration,nextData){
+			out[outOfs]=data[index];
+			return 1;
+		}
+
+		KeyframesAniTemplet._uniqueIDCounter=1;
+		KeyframesAniTemplet.interpolation=[KeyframesAniTemplet._LinearInterpolation_0,KeyframesAniTemplet._QuaternionInterpolation_1,KeyframesAniTemplet._AngleInterpolation_2,KeyframesAniTemplet._RadiansInterpolation_3,KeyframesAniTemplet._Matrix4x4Interpolation_4,KeyframesAniTemplet._NoInterpolation_5];
+		KeyframesAniTemplet.LAYA_ANIMATION_VISION="LAYAANIMATION:1.0.2";
+		return KeyframesAniTemplet;
+	})(EventDispatcher)
+
+
+	//class com.gamepark.casino.meta.FightAttackTypeMeta extends com.gamepark.casino.meta.MetaBase
+	var FightAttackTypeMeta=(function(_super){
+		function FightAttackTypeMeta($metaObj){
+			this.id=0;
+			this.first=0;
+			this.attackTypeList=null;
+			this.limit=0;
+			FightAttackTypeMeta.__super.call(this,$metaObj);
+		}
+
+		__class(FightAttackTypeMeta,'com.gamepark.casino.meta.FightAttackTypeMeta',_super);
+		return FightAttackTypeMeta;
+	})(MetaBase)
+
+
+	//class com.gamepark.casino.meta.FightSkillEffectMeta extends com.gamepark.casino.meta.MetaBase
+	var FightSkillEffectMeta=(function(_super){
+		function FightSkillEffectMeta($metaObj){
+			this.id=0;
+			this.type1=0;
+			this.type2=0;
+			this.targetType=0;
+			this.factor1=NaN;
+			this.factor2=NaN;
+			this.factor3=0;
+			this.percent=NaN;
+			this.times=NaN;
+			this.affectStep=0;
+			FightSkillEffectMeta.__super.call(this,$metaObj);
+		}
+
+		__class(FightSkillEffectMeta,'com.gamepark.casino.meta.FightSkillEffectMeta',_super);
+		return FightSkillEffectMeta;
+	})(MetaBase)
+
+
+	//class com.gamepark.casino.meta.FightSkillMeta extends com.gamepark.casino.meta.MetaBase
+	var FightSkillMeta=(function(_super){
+		function FightSkillMeta($metaObj){
+			this.id=0;
+			this.name=null;
+			this.target=0;
+			this.type=0;
+			this.effectIdList=[];
+			this.effectAmount=0;
+			this.cutInPicRes=null;
+			FightSkillMeta.__super.call(this,$metaObj);
+		}
+
+		__class(FightSkillMeta,'com.gamepark.casino.meta.FightSkillMeta',_super);
+		var __proto=FightSkillMeta.prototype;
+		__proto.getFirstEffectMeta=function(){
+			return this.metaData.fightSkillEffectMetaDict.get(this.effectIdList[0]);
+		}
+
+		return FightSkillMeta;
+	})(MetaBase)
+
+
+	//class com.gamepark.casino.meta.HeroBaseMeta extends com.gamepark.casino.meta.MetaBase
+	var HeroBaseMeta=(function(_super){
+		function HeroBaseMeta($metaObj){
+			this.id=0;
+			this.modelResId=0;
+			this.weaponName=null;
+			this.charName=null;
+			this.type=0;
+			this.skillId=0;
+			this.superUniqueSkillId=0;
+			this.passiveSkillIdList=0;
+			this.attack=0;
+			this.defense=0;
+			this.hp=0;
+			this.mp=0;
+			this.attackRate=NaN;
+			this.defenseRate=NaN;
+			this.damageRate=NaN;
+			this.undamageRate=NaN;
+			this.crit=NaN;
+			this.uncrit=NaN;
+			this.critDeepen=NaN;
+			this.block=NaN;
+			this.unblock=NaN;
+			this.blockDeepen=NaN;
+			this.skillRate=NaN;
+			this.firstAttack=0;
+			HeroBaseMeta.__super.call(this,$metaObj);
+		}
+
+		__class(HeroBaseMeta,'com.gamepark.casino.meta.HeroBaseMeta',_super);
+		var __proto=HeroBaseMeta.prototype;
+		// this.skillRate=$metaObj["skillRate"];
+		__getset(0,__proto,'skillMeta',function(){
+			return this.metaData.fightSkillMetaDict.get(this.skillId);
+		});
+
+		__getset(0,__proto,'superUniqueSkillMeta',function(){
+			return this.metaData.fightSkillMetaDict.get(this.superUniqueSkillId);
+		});
+
+		__getset(0,__proto,'modelResMeta',function(){
+			return this.metaData.heroResourceMetaDict.get(this.modelResId);
+		});
+
+		return HeroBaseMeta;
+	})(MetaBase)
+
+
+	//class com.gamepark.casino.meta.HeroResourceMeta extends com.gamepark.casino.meta.MetaBase
+	var HeroResourceMeta=(function(_super){
+		function HeroResourceMeta($metaObj){
+			this.id=0;
+			this.name=null;
+			this.attack1KeyFrameList=[];
+			this.attack2KeyFrameList=[];
+			this.attack3KeyFrameList=[];
+			this.attack4KeyFrameList=[];
+			this.attack5KeyFrameList=[];
+			this.skillKeyFrameList=[];
+			this.superUniqueSkillKeyFrameList=[];
+			this.attack1HurtActionList=[];
+			this.attack2HurtActionList=[];
+			this.attack3JumpDistance=0;
+			this.attack5JumpDistance=0;
+			this.hurt2StopOnSkyKeyFrame=0;
+			HeroResourceMeta.__super.call(this,$metaObj);
+		}
+
+		__class(HeroResourceMeta,'com.gamepark.casino.meta.HeroResourceMeta',_super);
+		var __proto=HeroResourceMeta.prototype;
+		__getset(0,__proto,'resAniData',function(){
+			return "res/skeleton/"+this.name+"/"+this.name+".sk";
+		});
+
+		__getset(0,__proto,'resAniTexture',function(){
+			return "res/skeleton/"+this.name+"/"+this.name+".png";
+		});
+
+		return HeroResourceMeta;
+	})(MetaBase)
+
+
+	//class com.gamepark.casino.model.PlayerInfo extends com.gamepark.casino.model.ErisGamePropertyObserver
+	var PlayerInfo1=(function(_super){
+		function PlayerInfo(){
+			this.id=0;
+			this.name=null;
+			this._chip=0;
+			PlayerInfo.__super.call(this);
+		}
+
+		__class(PlayerInfo,'com.gamepark.casino.model.PlayerInfo',_super,'PlayerInfo1');
+		var __proto=PlayerInfo.prototype;
+		__getset(0,__proto,'chip',function(){
+			return this._chip;
+			},function(value){
+			var old=this._chip;
+			this._chip=value;
+			this.validateProperty("chip",old,value);
+		});
+
+		return PlayerInfo;
+	})(ErisGamePropertyObserver)
+
+
+	/**
+	*...
+	*@author laya
+	*/
+	//class laya.webgl.shader.d2.value.Value2D extends laya.webgl.shader.ShaderValue
+	var Value2D=(function(_super){
+		function Value2D(mainID,subID){
+			this.size=[0,0];
+			this.alpha=1.0;
+			//this.mmat=null;
+			this.ALPHA=1.0;
+			//this.shader=null;
+			//this.mainID=0;
+			this.subID=0;
+			//this.filters=null;
+			//this.textureHost=null;
+			//this.texture=null;
+			//this.fillStyle=null;
+			//this.color=null;
+			//this.strokeStyle=null;
+			//this.colorAdd=null;
+			//this.glTexture=null;
+			//this.u_mmat2=null;
+			this.u_pos=[0,0];
+			//this._inClassCache=null;
+			this._cacheID=0;
+			Value2D.__super.call(this);
+			this.defines=new ShaderDefines2D();
+			this.position=Value2D._POSITION;
+			this.mainID=mainID;
+			this.subID=subID;
+			this.textureHost=null;
+			this.texture=null;
+			this.fillStyle=null;
+			this.color=null;
+			this.strokeStyle=null;
+			this.colorAdd=null;
+			this.glTexture=null;
+			this.u_mmat2=null;
+			this._cacheID=mainID|subID;
+			this._inClassCache=Value2D._cache[this._cacheID];
+			if (mainID>0 && !this._inClassCache){
+				this._inClassCache=Value2D._cache[this._cacheID]=[];
+				this._inClassCache._length=0;
+			}
+			this.clear();
+		}
+
+		__class(Value2D,'laya.webgl.shader.d2.value.Value2D',_super);
+		var __proto=Value2D.prototype;
+		__proto.setValue=function(value){}
+		//throw new Error("todo in subclass");
+		__proto.refresh=function(){
+			var size=this.size;
+			size[0]=RenderState2D.width;
+			size[1]=RenderState2D.height;
+			this.alpha=this.ALPHA *RenderState2D.worldAlpha;
+			this.mmat=RenderState2D.worldMatrix4;
+			return this;
+		}
+
+		__proto._ShaderWithCompile=function(){
+			return Shader.withCompile(0,this.mainID,this.defines.toNameDic(),this.mainID | this.defines._value,Shader2X.create);
+		}
+
+		__proto._withWorldShaderDefines=function(){
+			var defs=RenderState2D.worldShaderDefines;
+			var sd=Shader.sharders [this.mainID | this.defines._value | defs.getValue()];
+			if (!sd){
+				var def={};
+				var dic;
+				var name;
+				dic=this.defines.toNameDic();for (name in dic)def[name]="";
+				dic=defs.toNameDic();for (name in dic)def[name]="";
+				sd=Shader.withCompile(0,this.mainID,def,this.mainID | this.defines._value| defs.getValue(),Shader2X.create);
+			};
+			var worldFilters=RenderState2D.worldFilters;
+			if (!worldFilters)return sd;
+			var n=worldFilters.length,f;
+			for (var i=0;i < n;i++){
+				((f=worldFilters[i]))&& f.action.setValue(this);
+			}
+			return sd;
+		}
+
+		__proto.upload=function(){
+			var renderstate2d=RenderState2D;
+			this.alpha=this.ALPHA *renderstate2d.worldAlpha;
+			if (RenderState2D.worldMatrix4!==RenderState2D.TEMPMAT4_ARRAY)this.defines.add(0x80);
+			var sd=renderstate2d.worldShaderDefines?this._withWorldShaderDefines():(Shader.sharders [this.mainID | this.defines._value] || this._ShaderWithCompile());
+			var params;
+			this.size[0]=renderstate2d.width,this.size[1]=renderstate2d.height;
+			this.mmat=renderstate2d.worldMatrix4;
+			if (Shader.activeShader!==sd){
+				if (sd._shaderValueWidth!==renderstate2d.width || sd._shaderValueHeight!==renderstate2d.height){
+					sd._shaderValueWidth=renderstate2d.width;
+					sd._shaderValueHeight=renderstate2d.height;
+				}
+				else{
+					params=sd._params2dQuick2 || sd._make2dQuick2();
+				}
+				sd.upload(this,params);
+			}
+			else{
+				if (sd._shaderValueWidth!==renderstate2d.width || sd._shaderValueHeight!==renderstate2d.height){
+					sd._shaderValueWidth=renderstate2d.width;
+					sd._shaderValueHeight=renderstate2d.height;
+				}
+				else{
+					params=(sd._params2dQuick1)|| sd._make2dQuick1();
+				}
+				sd.upload(this,params);
+			}
+		}
+
+		__proto.setFilters=function(value){
+			this.filters=value;
+			if (!value)
+				return;
+			var n=value.length,f;
+			for (var i=0;i < n;i++){
+				f=value[i]
+				if (f){
+					this.defines.add(f.type);
+					f.action.setValue(this);
+				}
+			}
+		}
+
+		__proto.clear=function(){
+			this.defines.setValue(this.subID);
+		}
+
+		__proto.release=function(){
+			this._inClassCache[this._inClassCache._length++]=this;
+			this.fillStyle=null;
+			this.strokeStyle=null;
+			this.clear();
+		}
+
+		Value2D._initone=function(type,classT){
+			Value2D._typeClass[type]=classT;
+			Value2D._cache[type]=[];
+			Value2D._cache[type]._length=0;
+		}
+
+		Value2D.__init__=function(){
+			Value2D._POSITION=[2,0x1406,false,4 *CONST3D2D.BYTES_PE,0];
+			Value2D._TEXCOORD=[2,0x1406,false,4 *CONST3D2D.BYTES_PE,2 *CONST3D2D.BYTES_PE];
+			Value2D._initone(0x02,Color2dSV);
+			Value2D._initone(0x04,PrimitiveSV);
+			Value2D._initone(0x01,TextureSV);
+			Value2D._initone(0x01 | 0x40,TextSV);
+			Value2D._initone(0x01 | 0x08,TextureSV);
+		}
+
+		Value2D.create=function(mainType,subType){
+			var types=Value2D._cache[mainType|subType];
+			if (types._length)
+				return types[--types._length];
+			else
+			return new Value2D._typeClass[mainType|subType](subType);
+		}
+
+		Value2D._POSITION=null
+		Value2D._TEXCOORD=null
+		Value2D._cache=[];
+		Value2D._typeClass=[];
+		Value2D.TEMPMAT4_ARRAY=[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1];
+		return Value2D;
+	})(ShaderValue)
 
 
 	/**
@@ -15487,8 +18958,29 @@ window.Laya=(function(window,document){
 			};
 		}
 
+		/**@private */
 		__proto.addTextureToAtlas=function(e){
 			RunDriver.addTextureToAtlas(this);
+		}
+
+		/**
+		*获取Texture上的某个区域的像素点
+		*@param x
+		*@param y
+		*@param width
+		*@param height
+		*@return 返回像素点集合
+		*/
+		__proto.getPixels=function(x,y,width,height){
+			if (Render.isWebGL){
+				return RunDriver.getTexturePixels(this,x,y,width,height);
+				}else {
+				Browser.canvas.size(x+width,y+height);
+				Browser.context.drawImage(this.bitmap.source,0,0);
+				Browser.document.body.appendChild(Browser.canvas.source);
+				var info=Browser.context.getImageData(x,y,width,height);
+			}
+			return info.data;
 		}
 
 		/**实际高度。*/
@@ -15512,6 +19004,28 @@ window.Laya=(function(window,document){
 		*/
 		__getset(0,__proto,'released',function(){
 			return this.bitmap.released;
+		});
+
+		/**
+		*通过外部设置是否启用纹理平铺(后面要改成在着色器里计算)
+		*/
+		/**
+		*获取当前纹理是否启用了纹理平铺
+		*/
+		__getset(0,__proto,'repeat',function(){
+			if (Render.isWebGL && this.bitmap){
+				return this.bitmap.repeat;
+			}
+			return true;
+			},function(value){
+			if (value){
+				if (Render.isWebGL && this.bitmap){
+					this.bitmap.repeat=value;
+					if (value){
+						this.bitmap.enableMerageInAtlas=false;
+					}
+				}
+			}
 		});
 
 		/**激活并获取资源。*/
@@ -15586,8 +19100,11 @@ window.Laya=(function(window,document){
 		Texture.createFromTexture=function(texture,x,y,width,height){
 			var rect=Rectangle.TEMP.setTo(x-texture.offsetX,y-texture.offsetY,width,height);
 			var result=rect.intersection(Texture._rect1.setTo(0,0,texture.width,texture.height),Texture._rect2);
-			if (result)return Texture.create(texture,result.x,result.y,result.width,result.height,result.x-rect.x,result.y-rect.y,width,height);
-			else return new Texture(HTMLImage.create(null));
+			if (result)
+				var tex=Texture.create(texture,result.x,result.y,result.width,result.height,result.x-rect.x,result.y-rect.y,width,height);
+			else return null;
+			tex.bitmap.useNum--;
+			return tex;
 		}
 
 		Texture.DEF_UV=[0,0,1.0,0,1.0,1.0,0,1.0];
@@ -15596,6 +19113,32 @@ window.Laya=(function(window,document){
 		Texture._rect2=new Rectangle();
 		return Texture;
 	})(EventDispatcher)
+
+
+	/**
+	*...
+	*@author
+	*/
+	//class laya.ani.GraphicsAni extends laya.display.Graphics
+	var GraphicsAni=(function(_super){
+		function GraphicsAni(){
+			GraphicsAni.__super.call(this);
+		}
+
+		__class(GraphicsAni,'laya.ani.GraphicsAni',_super);
+		var __proto=GraphicsAni.prototype;
+		/**
+		*@private
+		*画自定义蒙皮动画
+		*@param skin
+		*/
+		__proto.drawSkin=function(skin){
+			var arr=[skin];
+			this._saveToCmd(Render._context._drawSkin,arr);
+		}
+
+		return GraphicsAni;
+	})(Graphics)
 
 
 	/**
@@ -15625,7 +19168,7 @@ window.Laya=(function(window,document){
 		var __proto=LoaderManager.prototype;
 		/**
 		*加载资源。
-		*@param url 地址，或者资源对象数组。
+		*@param url 地址，或者资源对象数组(简单数组：["a.png","b.png"]，复杂数组[{url:"a.png",type:Loader.IMAGE,size:100,priority:1},{url:"b.json",type:Loader.JSON,size:50,priority:1}])。
 		*@param complete 结束回调，如果加载失败，则返回 null 。
 		*@param progress 进度回调，回调参数为当前文件加载的进度信息(0-1)。
 		*@param type 资源类型。
@@ -15636,7 +19179,7 @@ window.Laya=(function(window,document){
 		__proto.load=function(url,complete,progress,type,priority,cache){
 			(priority===void 0)&& (priority=1);
 			(cache===void 0)&& (cache=true);
-			if ((url instanceof Array))return this._loadAssets(url,complete,progress,cache);
+			if ((url instanceof Array))return this._loadAssets(url,complete,progress,priority,cache);
 			url=URL.formatURL(url);
 			var content=Loader.getRes(url);
 			if (content !=null){
@@ -15667,7 +19210,10 @@ window.Laya=(function(window,document){
 			if (this._loaderCount >=this.maxLoader)return;
 			for (var i=0;i < this._maxPriority;i++){
 				var infos=this._resInfos[i];
-				if (infos.length > 0)return this._doLoad(infos.shift())
+				if (infos.length > 0){
+					var info=infos.shift();
+					if (info)return this._doLoad(info);
+				}
 			}
 			this._loaderCount || this.event("complete");
 		}
@@ -15730,18 +19276,60 @@ window.Laya=(function(window,document){
 			return Loader.getRes(url);
 		}
 
-		/**清理当前未完成的加载。*/
+		/**清理当前未完成的加载，所有未加载的内容全部停止加载。*/
 		__proto.clearUnLoaded=function(){
-			this._resInfos.length=0;
+			for (var i=0;i < this._maxPriority;i++){
+				var infos=this._resInfos[i];
+				for (var j=infos.length-1;j >-1;j--){
+					var info=infos[j];
+					if (info){
+						info.offAll();
+						this._infoPool.push(info);
+					}
+				}
+				infos.length=0;
+			}
 			this._loaderCount=0;
 			this._resMap={};
 		}
 
 		/**
+		*根据地址集合清理掉未加载的内容
+		*@param urls 资源地址集合
+		*/
+		__proto.cancelLoadByUrls=function(urls){
+			if (!urls)return;
+			for (var i=0,n=urls.length;i < n;i++){
+				this.cancelLoadByUrl(urls[i]);
+			}
+		}
+
+		/**
+		*根据地址清理掉未加载的内容
+		*@param url 资源地址
+		*/
+		__proto.cancelLoadByUrl=function(url){
+			url=URL.formatURL(url);
+			for (var i=0;i < this._maxPriority;i++){
+				var infos=this._resInfos[i];
+				for (var j=infos.length-1;j >-1;j--){
+					var info=infos[j];
+					if (info && info.url===url){
+						infos[j]=null;
+						info.offAll();
+						this._infoPool.push(info);
+					}
+				}
+			}
+			if (this._resMap[url])delete this._resMap[url];
+		}
+
+		/**
 		*@private
 		*加载数组里面的资源。
-		*@param arr 简单：["a.png","b.png"]，复杂[{url:"a.png",type:Loader.IMAGE,size:100,priority:1},{url:"b.json",type:Loader.JSOn,size:50,priority:1}]*/
-		__proto._loadAssets=function(arr,complete,progress,cache){
+		*@param arr 简单：["a.png","b.png"]，复杂[{url:"a.png",type:Loader.IMAGE,size:100,priority:1},{url:"b.json",type:Loader.JSON,size:50,priority:1}]*/
+		__proto._loadAssets=function(arr,complete,progress,priority,cache){
+			(priority===void 0)&& (priority=1);
 			(cache===void 0)&& (cache=true);
 			var itemCount=arr.length;
 			var loadedSize=0;
@@ -15749,12 +19337,12 @@ window.Laya=(function(window,document){
 			var items=[];
 			for (var i=0;i < itemCount;i++){
 				var item=arr[i];
-				if ((typeof item=='string'))item={url:item,type:"image",size:1,priority:1};
+				if ((typeof item=='string'))item={url:item,type:"image",size:1,priority:priority};
 				if (!item.size)item.size=1;
 				item.progress=0;
 				totalSize+=item.size;
 				items.push(item);
-				var progressHandler=progress ? Handler.create(this,loadProgress,[item]):null;
+				var progressHandler=progress ? Handler.create(this,loadProgress,[item],false):null;
 				this.load(item.url,Handler.create(item,loadComplete,[item]),progressHandler,item.type,item.priority || 1,cache);
 			}
 			function loadComplete (item,content){
@@ -15768,7 +19356,8 @@ window.Laya=(function(window,document){
 				if (progress !=null){
 					item.progress=value;
 					var num=0;
-					for (var j=0;j < itemCount;j++){
+					var count=items.length;
+					for (var j=0;j < count;j++){
 						var item1=items[j];
 						num+=item1.size *item1.progress;
 					};
@@ -15920,6 +19509,15 @@ window.Laya=(function(window,document){
 		*停止。
 		*/
 		__proto.stop=function(){}
+		/**
+		*private
+		*/
+		__proto.__runComplete=function(handler){
+			if (handler){
+				handler.run();
+			}
+		}
+
 		/**
 		*音量。
 		*/
@@ -16088,6 +19686,7 @@ window.Laya=(function(window,document){
 
 		__proto.dispose=function(){
 			delete WebAudioSound._dataCache[this.url];
+			delete WebAudioSound.__loadingSound[this.url];
 		}
 
 		WebAudioSound.decode=function(){
@@ -16262,14 +19861,18 @@ window.Laya=(function(window,document){
 		*/
 		__proto.complete=function(){
 			this.clear();
-			if (this._responseType==="json"){
-				this._data=JSON.parse(this._http.responseText);
-				}else if (this._responseType==="xml"){
-				this._data=Utils.parseXMLFromString(this._http.responseText);
-				}else {
-				this._data=this._http.response || this._http.responseText;
+			try {
+				if (this._responseType==="json"){
+					this._data=JSON.parse(this._http.responseText);
+					}else if (this._responseType==="xml"){
+					this._data=Utils.parseXMLFromString(this._http.responseText);
+					}else {
+					this._data=this._http.response || this._http.responseText;
+				}
+				this.event("complete",(this._data instanceof Array)? [this._data] :this._data);
+				}catch (e){
+				this.error(e.message);
 			}
-			this.event("complete",(this._data instanceof Array)? [this._data] :this._data);
 		}
 
 		/**
@@ -16395,7 +19998,7 @@ window.Laya=(function(window,document){
 		*@param url 资源地址。
 		*/
 		__proto._loadSound=function(url){
-			var sound=new Sound();
+			var sound=(new SoundManager._soundClass());
 			var _this=this;
 			sound.on("complete",this,soundOnload);
 			sound.on("error",this,soundOnErr);
@@ -16445,8 +20048,11 @@ window.Laya=(function(window,document){
 							var split=this._url.indexOf("/")>=0 ? "/" :"\\";
 							var idx=this._url.lastIndexOf(split);
 							var folderPath=idx >=0 ? this._url.substr(0,idx+1):"";
+							idx=this._url.indexOf("?");
+							var ver;
+							ver=idx >=0 ? this._url.substr(idx):"";
 							for (var i=0,len=toloadPics.length;i < len;i++){
-								toloadPics[i]=folderPath+toloadPics[i];
+								toloadPics[i]=folderPath+toloadPics[i]+ver;
 							}
 							}else {
 							toloadPics=[this._url.replace(".json",".png")];
@@ -16532,7 +20138,7 @@ window.Laya=(function(window,document){
 				Loader._loaders[Loader._startIndex].endLoad();
 				Loader._startIndex++;
 				if (Browser.now()-startTimer > Loader.maxTimeOut){
-					console.log("loader callback cost a long time:"+(Browser.now()-startTimer)+")"+" url="+Loader._loaders[Loader._startIndex-1].url);
+					console.log("loader callback cost a long time:"+(Browser.now()-startTimer)+" url="+Loader._loaders[Loader._startIndex-1].url);
 					Laya.timer.frameOnce(1,null,Loader.checkNext);
 					return;
 				}
@@ -16559,8 +20165,8 @@ window.Laya=(function(window,document){
 				var res=Loader.loadedMap[url];
 				if ((res instanceof laya.resource.Texture )&& res.bitmap){
 					(res).destroy();
+					delete Loader.loadedMap[url];
 				}
-				delete Loader.loadedMap[url];
 			}
 		}
 
@@ -16798,6 +20404,234 @@ window.Laya=(function(window,document){
 		Socket.BIG_ENDIAN="bigEndian";
 		return Socket;
 	})(EventDispatcher)
+
+
+	/**
+	*<code>AutoBitmap</code> 类是用于表示位图图像或绘制图形的显示对象。
+	*<p>封装了位置，宽高及九宫格的处理，供UI组件使用。</p>
+	*/
+	//class laya.ui.AutoBitmap extends laya.display.Graphics
+	var AutoBitmap=(function(_super){
+		function AutoBitmap(){
+			this.autoCacheCmd=true;
+			this._width=0;
+			this._height=0;
+			this._source=null;
+			this._sizeGrid=null;
+			this._isChanged=false;
+			this._offset=null;
+			AutoBitmap.__super.call(this);
+		}
+
+		__class(AutoBitmap,'laya.ui.AutoBitmap',_super);
+		var __proto=AutoBitmap.prototype;
+		/**@inheritDoc */
+		__proto.destroy=function(){
+			_super.prototype.destroy.call(this);
+			this._source=null;
+			this._sizeGrid=null;
+			this._offset=null;
+		}
+
+		/**@private */
+		__proto._setChanged=function(){
+			if (!this._isChanged){
+				this._isChanged=true;
+				Laya.timer.callLater(this,this.changeSource);
+			}
+		}
+
+		/**
+		*@private
+		*修改纹理资源。
+		*/
+		__proto.changeSource=function(){
+			if (AutoBitmap.cacheCount++> 50)AutoBitmap.clearCache();
+			this._isChanged=false;
+			var source=this._source;
+			if (!source || !source.bitmap)return;
+			var width=this.width;
+			var height=this.height;
+			var sizeGrid=this._sizeGrid;
+			var sw=source.sourceWidth;
+			var sh=source.sourceHeight;
+			if (!sizeGrid || (sw===width && sh===height)){
+				this.clear();
+				this.drawTexture(source,this._offset ? this._offset[0] :0,this._offset ? this._offset[1] :0,width,height);
+				}else {
+				source.$_GID || (source.$_GID=Utils.getGID());
+				var key=source.$_GID+"."+width+"."+height+"."+sizeGrid.join(".");
+				if (AutoBitmap.cmdCaches[key]){
+					this.cmds=AutoBitmap.cmdCaches[key];
+					return;
+				}
+				this.clear();
+				var top=sizeGrid[0];
+				var right=sizeGrid[1];
+				var bottom=sizeGrid[2];
+				var left=sizeGrid[3];
+				var repeat=sizeGrid[4];
+				if (left+right > width){
+					right=0;
+				}
+				left && top && this.drawTexture(AutoBitmap.getTexture(source,0,0,left,top),0,0,left,top);
+				right && top && this.drawTexture(AutoBitmap.getTexture(source,sw-right,0,right,top),width-right,0,right,top);
+				left && bottom && this.drawTexture(AutoBitmap.getTexture(source,0,sh-bottom,left,bottom),0,height-bottom,left,bottom);
+				right && bottom && this.drawTexture(AutoBitmap.getTexture(source,sw-right,sh-bottom,right,bottom),width-right,height-bottom,right,bottom);
+				top && this.drawBitmap(repeat,AutoBitmap.getTexture(source,left,0,sw-left-right,top),left,0,width-left-right,top);
+				bottom && this.drawBitmap(repeat,AutoBitmap.getTexture(source,left,sh-bottom,sw-left-right,bottom),left,height-bottom,width-left-right,bottom);
+				left && this.drawBitmap(repeat,AutoBitmap.getTexture(source,0,top,left,sh-top-bottom),0,top,left,height-top-bottom);
+				right && this.drawBitmap(repeat,AutoBitmap.getTexture(source,sw-right,top,right,sh-top-bottom),width-right,top,right,height-top-bottom);
+				this.drawBitmap(repeat,AutoBitmap.getTexture(source,left,top,sw-left-right,sh-top-bottom),left,top,width-left-right,height-top-bottom);
+				if (this.autoCacheCmd && !Render.isConchApp)AutoBitmap.cmdCaches[key]=this.cmds;
+			}
+			this._repaint();
+		}
+
+		__proto.drawBitmap=function(repeat,tex,x,y,width,height){
+			(width===void 0)&& (width=0);
+			(height===void 0)&& (height=0);
+			if (repeat)this.fillTexture(tex,x,y,width,height);
+			else this.drawTexture(tex,x,y,width,height);
+		}
+
+		/**
+		*当前实例的有效缩放网格数据。
+		*<p>如果设置为null,则在应用任何缩放转换时，将正常缩放整个显示对象。</p>
+		*<p>数据格式：[上边距,右边距,下边距,左边距,是否重复填充(值为0：不重复填充，1：重复填充)]。
+		*<ul><li>例如：[4,4,4,4,1]</li></ul></p>
+		*<p> <code>sizeGrid</code> 的值如下所示：
+		*<ol>
+		*<li>上边距</li>
+		*<li>右边距</li>
+		*<li>下边距</li>
+		*<li>左边距</li>
+		*<li>是否重复填充(值为0：不重复填充，1：重复填充)</li>
+		*</ol></p>
+		*<p>当定义 <code>sizeGrid</code> 属性时，该显示对象被分割到以 <code>sizeGrid</code> 数据中的"上边距,右边距,下边距,左边距" 组成的矩形为基础的具有九个区域的网格中，该矩形定义网格的中心区域。网格的其它八个区域如下所示：
+		*<ul>
+		*<li>矩形上方的区域</li>
+		*<li>矩形外的右上角</li>
+		*<li>矩形左侧的区域</li>
+		*<li>矩形右侧的区域</li>
+		*<li>矩形外的左下角</li>
+		*<li>矩形下方的区域</li>
+		*<li>矩形外的右下角</li>
+		*<li>矩形外的左上角</li>
+		*</ul>
+		*同时也支持3宫格，比如0,4,0,4,1为水平3宫格，4,0,4,0,1为垂直3宫格，3宫格性能比9宫格高。
+		*</p>
+		*/
+		__getset(0,__proto,'sizeGrid',function(){
+			return this._sizeGrid;
+			},function(value){
+			this._sizeGrid=value;
+			this._setChanged();
+		});
+
+		/**
+		*对象的纹理资源。
+		*@see laya.resource.Texture
+		*/
+		__getset(0,__proto,'source',function(){
+			return this._source;
+			},function(value){
+			if (value){
+				this._source=value
+				this._setChanged();
+				}else {
+				this._source=null;
+				this.clear();
+			}
+		});
+
+		/**
+		*表示显示对象的宽度，以像素为单位。
+		*/
+		__getset(0,__proto,'width',function(){
+			if (this._width)return this._width;
+			if (this._source)return this._source.sourceWidth;
+			return 0;
+			},function(value){
+			if (this._width !=value){
+				this._width=value;
+				this._setChanged();
+			}
+		});
+
+		/**
+		*表示显示对象的高度，以像素为单位。
+		*/
+		__getset(0,__proto,'height',function(){
+			if (this._height)return this._height;
+			if (this._source)return this._source.sourceHeight;
+			return 0;
+			},function(value){
+			if (this._height !=value){
+				this._height=value;
+				this._setChanged();
+			}
+		});
+
+		AutoBitmap.getTexture=function(tex,x,y,width,height){
+			if (width <=0)width=1;
+			if (height <=0)height=1;
+			tex.$_GID || (tex.$_GID=Utils.getGID())
+			var key=tex.$_GID+"."+x+"."+y+"."+width+"."+height;
+			var texture=AutoBitmap.textureCache[key];
+			if (!texture){
+				texture=AutoBitmap.textureCache[key]=Texture.createFromTexture(tex,x,y,width,height);
+			}
+			return texture;
+		}
+
+		AutoBitmap.clearCache=function(){
+			AutoBitmap.cacheCount=0;
+			AutoBitmap.cmdCaches={};
+			AutoBitmap.textureCache={};
+		}
+
+		AutoBitmap.setCache=function(key,value){
+			AutoBitmap.cacheCount++;
+			AutoBitmap.textureCache[key]=value;
+		}
+
+		AutoBitmap.getCache=function(key){
+			return AutoBitmap.textureCache[key];
+		}
+
+		AutoBitmap.cmdCaches={};
+		AutoBitmap.cacheCount=0;
+		AutoBitmap.textureCache={};
+		return AutoBitmap;
+	})(Graphics)
+
+
+	//class laya.webgl.display.GraphicsGL extends laya.display.Graphics
+	var GraphicsGL=(function(_super){
+		function GraphicsGL(){
+			GraphicsGL.__super.call(this);
+		}
+
+		__class(GraphicsGL,'laya.webgl.display.GraphicsGL',_super);
+		var __proto=GraphicsGL.prototype;
+		__proto.setShader=function(shader){
+			this._saveToCmd(Render.context._setShader,[shader]);
+		}
+
+		__proto.setIBVB=function(x,y,ib,vb,numElement,shader){
+			this._saveToCmd(Render.context._setIBVB,[x,y,ib,vb,numElement,shader]);
+		}
+
+		__proto.drawParticle=function(x,y,ps){
+			var pt=RunDriver.createParticleTemplate2D(ps);
+			pt.x=x;
+			pt.y=y;
+			this._saveToCmd(Render.context._drawParticle,[pt]);
+		}
+
+		return GraphicsGL;
+	})(Graphics)
 
 
 	/**
@@ -17046,7 +20880,7 @@ window.Laya=(function(window,document){
 					w=w.substr(0,offset);
 				}
 				if (this._calculation("width",w))return;
-				w=Laya.__parseInt(w);
+				w=parseInt(w);
 			}
 			this.size(w,-1);
 		});
@@ -17058,7 +20892,7 @@ window.Laya=(function(window,document){
 			this._type |=0x2000;
 			if ((typeof h=='string')){
 				if (this._calculation("height",h))return;
-				h=Laya.__parseInt(h);
+				h=parseInt(h);
 			}
 			this.size(-1,h);
 		});
@@ -17126,7 +20960,7 @@ window.Laya=(function(window,document){
 			};
 			var i=0;
 			if (values[0].indexOf('px')> 0){
-				this._border.size=Laya.__parseInt(values[0]);
+				this._border.size=parseInt(values[0]);
 				i++;
 			}else this._border.size=1;
 			this._border.type=values[i];
@@ -17139,7 +20973,7 @@ window.Laya=(function(window,document){
 		__getset(0,__proto,'leading',function(){
 			return this._spacing[1];
 			},function(d){
-			((typeof d=='string'))&& (d=Laya.__parseInt(d+""));
+			((typeof d=='string'))&& (d=parseInt(d+""));
 			this._spacing===CSSStyle._SPACING && (this._spacing=[0,0]);
 			this._spacing[1]=d;
 		});
@@ -17155,7 +20989,7 @@ window.Laya=(function(window,document){
 				else if (value==="right")
 				value="100% -100% 0";
 				if (this._calculation("left",value))return;
-				value=Laya.__parseInt(value);
+				value=parseInt(value);
 			}
 			ower.x=value;
 		});
@@ -17180,7 +21014,7 @@ window.Laya=(function(window,document){
 				else if (value==="bottom")
 				value="100% -100% 0";
 				if (this._calculation("top",value))return;
-				value=Laya.__parseInt(value);
+				value=parseInt(value);
 			}
 			ower.y=value;
 		});
@@ -17236,7 +21070,7 @@ window.Laya=(function(window,document){
 		__getset(0,__proto,'letterSpacing',function(){
 			return this._spacing[0];
 			},function(d){
-			((typeof d=='string'))&& (d=Laya.__parseInt(d+""));
+			((typeof d=='string'))&& (d=parseInt(d+""));
 			this._spacing===CSSStyle._SPACING && (this._spacing=[0,0]);
 			this._spacing[0]=d;
 		});
@@ -17412,16 +21246,16 @@ window.Laya=(function(window,document){
 						break ;
 					case 'line-height':
 						one[0]='lineHeight';
-						one[1]=Laya.__parseInt(value);
+						one[1]=parseInt(value);
 						break ;
 					case 'font-size':
 						one[0]='fontSize';
-						one[1]=Laya.__parseInt(value);
+						one[1]=parseInt(value);
 						break ;
 					case 'padding':
 						valueArray=value.split(' ');
 						valueArray.length > 1 || (valueArray[1]=valueArray[2]=valueArray[3]=valueArray[0]);
-						one[1]=[Laya.__parseInt(valueArray[0]),Laya.__parseInt(valueArray[1]),Laya.__parseInt(valueArray[2]),Laya.__parseInt(valueArray[3])];
+						one[1]=[parseInt(valueArray[0]),parseInt(valueArray[1]),parseInt(valueArray[2]),parseInt(valueArray[3])];
 						break ;
 					case 'rotate':
 						one[0]="_rotate";
@@ -17435,7 +21269,7 @@ window.Laya=(function(window,document){
 					case 'translate':
 						valueArray=value.split(' ');
 						one[0]="_translate";
-						one[1]=[Laya.__parseInt(valueArray[0]),Laya.__parseInt(valueArray[1])];
+						one[1]=[parseInt(valueArray[0]),parseInt(valueArray[1])];
 						break ;
 					default :
 						(one[0]=CSSStyle._CSSTOVALUE[name])|| (one[0]=name);
@@ -17481,55 +21315,6 @@ window.Laya=(function(window,document){
 		CSSStyle._LISTERRESZIE=0x80000;
 		return CSSStyle;
 	})(Style)
-
-
-	/**
-	*...
-	*@author laya
-	*/
-	//class laya.webgl.shader.d2.ShaderDefines2D extends laya.webgl.shader.ShaderDefines
-	var ShaderDefines2D=(function(_super){
-		function ShaderDefines2D(){
-			ShaderDefines2D.__super.call(this,ShaderDefines2D.__name2int,ShaderDefines2D.__int2name,ShaderDefines2D.__int2nameMap);
-		}
-
-		__class(ShaderDefines2D,'laya.webgl.shader.d2.ShaderDefines2D',_super);
-		ShaderDefines2D.__init__=function(){
-			ShaderDefines2D.reg("TEXTURE2D",0x01);
-			ShaderDefines2D.reg("COLOR2D",0x02);
-			ShaderDefines2D.reg("PRIMITIVE",0x04);
-			ShaderDefines2D.reg("GLOW_FILTER",0x08);
-			ShaderDefines2D.reg("BLUR_FILTER",0x10);
-			ShaderDefines2D.reg("COLOR_FILTER",0x20);
-			ShaderDefines2D.reg("COLOR_ADD",0x40);
-			ShaderDefines2D.reg("WORLDMAT",0x80);
-		}
-
-		ShaderDefines2D.reg=function(name,value){
-			ShaderDefines._reg(name,value,ShaderDefines2D.__name2int,ShaderDefines2D.__int2name);
-		}
-
-		ShaderDefines2D.toText=function(value,int2name,int2nameMap){
-			return ShaderDefines._toText(value,int2name,int2nameMap);
-		}
-
-		ShaderDefines2D.toInt=function(names){
-			return ShaderDefines._toInt(names,ShaderDefines2D.__name2int);
-		}
-
-		ShaderDefines2D.TEXTURE2D=0x01;
-		ShaderDefines2D.COLOR2D=0x02;
-		ShaderDefines2D.PRIMITIVE=0x04;
-		ShaderDefines2D.FILTERGLOW=0x08;
-		ShaderDefines2D.FILTERBLUR=0x10;
-		ShaderDefines2D.FILTERCOLOR=0x20;
-		ShaderDefines2D.COLORADD=0x40;
-		ShaderDefines2D.WORLDMAT=0x80;
-		ShaderDefines2D.__name2int={};
-		ShaderDefines2D.__int2name=[];
-		ShaderDefines2D.__int2nameMap=[];
-		return ShaderDefines2D;
-	})(ShaderDefines)
 
 
 	/**
@@ -17606,30 +21391,12 @@ window.Laya=(function(window,document){
 		__class(ColorFilter,'laya.filters.ColorFilter',_super);
 		var __proto=ColorFilter.prototype;
 		Laya.imps(__proto,{"laya.filters.IFilter":true})
-		/**@private */
-		__proto.getRGBG=function(){
-			var mat=this._mat;
-			var tRed=mat[0]+mat[1]+mat[2]+mat[3]+this._alpha[0] *0.25;
-			var tGreed=mat[4]+mat[5]+mat[6]+mat[7]+this._alpha[1] *0.25;
-			var tBlue=mat[8]+mat[9]+mat[10]+mat[11]+this._alpha[2] *0.25;
-			var tAlph=mat[12]+mat[13]+mat[14]+mat[15]+this._alpha[3] *0.25;
-			var tSrcMin=Math.min(tRed,tGreed,tBlue);
-			var tSrcMax=Math.max(tRed,tGreed,tBlue);
-			var tSrcLen=tSrcMax-tSrcMin;
-			var tSrcCen=tSrcLen / 2+tSrcMin;
-			var tResultRed=tRed *tRed / tSrcCen *0.55;
-			var tResultGreed=tGreed *tGreed / tSrcCen *0.55;
-			var tResultBlue=tBlue *tBlue / tSrcCen *0.55;
-			var tGray=1.0-(tSrcLen / 1.05);
-			return [tResultRed,tResultGreed,tResultBlue,tGray];
-		}
-
 		/**
 		*@private 通知微端
 		*/
 		__proto.callNative=function(sp){
-			var t=sp._$P.rgbg=this.getRGBG();
-			sp.model && sp.model.filter(t[0],t[1],t[2],t[3]);
+			var t=sp._$P.cf=this;
+			sp.model && sp.model.setFilterMatrix&&sp.model.setFilterMatrix(this._mat,this._alpha);
 		}
 
 		/**@private */
@@ -17660,6 +21427,55 @@ window.Laya=(function(window,document){
 		ColorFilter._GRAY=null
 		return ColorFilter;
 	})(Filter)
+
+
+	/**
+	*...
+	*@author laya
+	*/
+	//class laya.webgl.shader.d2.ShaderDefines2D extends laya.webgl.shader.ShaderDefines
+	var ShaderDefines2D=(function(_super){
+		function ShaderDefines2D(){
+			ShaderDefines2D.__super.call(this,ShaderDefines2D.__name2int,ShaderDefines2D.__int2name,ShaderDefines2D.__int2nameMap);
+		}
+
+		__class(ShaderDefines2D,'laya.webgl.shader.d2.ShaderDefines2D',_super);
+		ShaderDefines2D.__init__=function(){
+			ShaderDefines2D.reg("TEXTURE2D",0x01);
+			ShaderDefines2D.reg("COLOR2D",0x02);
+			ShaderDefines2D.reg("PRIMITIVE",0x04);
+			ShaderDefines2D.reg("GLOW_FILTER",0x08);
+			ShaderDefines2D.reg("BLUR_FILTER",0x10);
+			ShaderDefines2D.reg("COLOR_FILTER",0x20);
+			ShaderDefines2D.reg("COLOR_ADD",0x40);
+			ShaderDefines2D.reg("WORLDMAT",0x80);
+		}
+
+		ShaderDefines2D.reg=function(name,value){
+			ShaderDefines._reg(name,value,ShaderDefines2D.__name2int,ShaderDefines2D.__int2name);
+		}
+
+		ShaderDefines2D.toText=function(value,int2name,int2nameMap){
+			return ShaderDefines._toText(value,int2name,int2nameMap);
+		}
+
+		ShaderDefines2D.toInt=function(names){
+			return ShaderDefines._toInt(names,ShaderDefines2D.__name2int);
+		}
+
+		ShaderDefines2D.TEXTURE2D=0x01;
+		ShaderDefines2D.COLOR2D=0x02;
+		ShaderDefines2D.PRIMITIVE=0x04;
+		ShaderDefines2D.FILTERGLOW=0x08;
+		ShaderDefines2D.FILTERBLUR=0x10;
+		ShaderDefines2D.FILTERCOLOR=0x20;
+		ShaderDefines2D.COLORADD=0x40;
+		ShaderDefines2D.WORLDMAT=0x80;
+		ShaderDefines2D.__name2int={};
+		ShaderDefines2D.__int2name=[];
+		ShaderDefines2D.__int2nameMap=[];
+		return ShaderDefines2D;
+	})(ShaderDefines)
 
 
 	/**
@@ -17746,7 +21562,7 @@ window.Laya=(function(window,document){
 	//class laya.filters.webgl.BlurFilterActionGL extends laya.filters.webgl.FilterActionGL
 	var BlurFilterActionGL=(function(_super){
 		function BlurFilterActionGL(){
-			this.data
+			this.data=null;
 			BlurFilterActionGL.__super.call(this);
 		}
 
@@ -17898,199 +21714,6 @@ window.Laya=(function(window,document){
 
 
 	/**
-	*<code>AutoBitmap</code> 类是用于表示位图图像或绘制图形的显示对象。
-	*<p>封装了位置，宽高及九宫格的处理，供UI组件使用。</p>
-	*/
-	//class laya.ui.AutoBitmap extends laya.display.Graphics
-	var AutoBitmap=(function(_super){
-		function AutoBitmap(){
-			this.autoCacheCmd=true;
-			this._width=0;
-			this._height=0;
-			this._source=null;
-			this._sizeGrid=null;
-			this._isChanged=false;
-			this._offset=null;
-			AutoBitmap.__super.call(this);
-		}
-
-		__class(AutoBitmap,'laya.ui.AutoBitmap',_super);
-		var __proto=AutoBitmap.prototype;
-		/**@inheritDoc */
-		__proto.destroy=function(){
-			_super.prototype.destroy.call(this);
-			this._source=null;
-			this._sizeGrid=null;
-			this._offset=null;
-		}
-
-		/**@private */
-		__proto._setChanged=function(){
-			if (!this._isChanged){
-				this._isChanged=true;
-				Laya.timer.callLater(this,this.changeSource);
-			}
-		}
-
-		/**
-		*@private
-		*修改纹理资源。
-		*/
-		__proto.changeSource=function(){
-			if (AutoBitmap.cacheCount++> 50)AutoBitmap.clearCache();
-			this._isChanged=false;
-			var source=this._source;
-			if (!source)return;
-			var width=this.width;
-			var height=this.height;
-			var sizeGrid=this._sizeGrid;
-			var sw=source.sourceWidth;
-			var sh=source.sourceHeight;
-			if (!sizeGrid || (sw===width && sh===height)){
-				this.clear();
-				this.drawTexture(source,this._offset ? this._offset[0] :0,this._offset ? this._offset[1] :0,width,height);
-				}else {
-				source.$_GID || (source.$_GID=Utils.getGID());
-				var key=source.$_GID+"."+width+"."+height+"."+sizeGrid.join(".");
-				if (AutoBitmap.cmdCaches[key]){
-					this.cmds=AutoBitmap.cmdCaches[key];
-					return;
-				}
-				this.clear();
-				var top=sizeGrid[0];
-				var right=sizeGrid[1];
-				var bottom=sizeGrid[2];
-				var left=sizeGrid[3];
-				if (left+right > width){
-					right=0;
-				}
-				left && top && this.drawTexture(AutoBitmap.getTexture(source,0,0,left,top),0,0,left,top);
-				right && top && this.drawTexture(AutoBitmap.getTexture(source,sw-right,0,right,top),width-right,0,right,top);
-				left && bottom && this.drawTexture(AutoBitmap.getTexture(source,0,sh-bottom,left,bottom),0,height-bottom,left,bottom);
-				right && bottom && this.drawTexture(AutoBitmap.getTexture(source,sw-right,sh-bottom,right,bottom),width-right,height-bottom,right,bottom);
-				top && this.drawTexture(AutoBitmap.getTexture(source,left,0,sw-left-right,top),left,0,width-left-right,top);
-				bottom && this.drawTexture(AutoBitmap.getTexture(source,left,sh-bottom,sw-left-right,bottom),left,height-bottom,width-left-right,bottom);
-				left && this.drawTexture(AutoBitmap.getTexture(source,0,top,left,sh-top-bottom),0,top,left,height-top-bottom);
-				right && this.drawTexture(AutoBitmap.getTexture(source,sw-right,top,right,sh-top-bottom),width-right,top,right,height-top-bottom);
-				this.drawTexture(AutoBitmap.getTexture(source,left,top,sw-left-right,sh-top-bottom),left,top,width-left-right,height-top-bottom);
-				if (this.autoCacheCmd)AutoBitmap.cmdCaches[key]=this.cmds;
-			}
-			this._repaint();
-		}
-
-		/**
-		*当前实例的有效缩放网格数据。
-		*<p>如果设置为null,则在应用任何缩放转换时，将正常缩放整个显示对象。</p>
-		*<p>数据格式：[上边距,右边距,下边距,左边距,是否重复填充(值为0：不重复填充，1：重复填充)]。
-		*<ul><li>例如：[4,4,4,4,1]</li></ul></p>
-		*<p> <code>sizeGrid</code> 的值如下所示：
-		*<ol>
-		*<li>上边距</li>
-		*<li>右边距</li>
-		*<li>下边距</li>
-		*<li>左边距</li>
-		*<li>是否重复填充(值为0：不重复填充，1：重复填充)</li>
-		*</ol></p>
-		*<p>当定义 <code>sizeGrid</code> 属性时，该显示对象被分割到以 <code>sizeGrid</code> 数据中的"上边距,右边距,下边距,左边距" 组成的矩形为基础的具有九个区域的网格中，该矩形定义网格的中心区域。网格的其它八个区域如下所示：
-		*<ul>
-		*<li>矩形上方的区域</li>
-		*<li>矩形外的右上角</li>
-		*<li>矩形左侧的区域</li>
-		*<li>矩形右侧的区域</li>
-		*<li>矩形外的左下角</li>
-		*<li>矩形下方的区域</li>
-		*<li>矩形外的右下角</li>
-		*<li>矩形外的左上角</li>
-		*</ul>
-		*同时也支持3宫格，比如0,4,0,4,1为水平3宫格，4,0,4,0,1为垂直3宫格，3宫格性能比9宫格高。
-		*</p>
-		*/
-		__getset(0,__proto,'sizeGrid',function(){
-			return this._sizeGrid;
-			},function(value){
-			this._sizeGrid=value;
-			this._setChanged();
-		});
-
-		/**
-		*对象的纹理资源。
-		*@see laya.resource.Texture
-		*/
-		__getset(0,__proto,'source',function(){
-			return this._source;
-			},function(value){
-			if (value){
-				this._source=value
-				this._setChanged();
-				}else {
-				this._source=null;
-				this.clear();
-			}
-		});
-
-		/**
-		*表示显示对象的宽度，以像素为单位。
-		*/
-		__getset(0,__proto,'width',function(){
-			if (this._width)return this._width;
-			if (this._source)return this._source.sourceWidth;
-			return 0;
-			},function(value){
-			if (this._width !=value){
-				this._width=value;
-				this._setChanged();
-			}
-		});
-
-		/**
-		*表示显示对象的高度，以像素为单位。
-		*/
-		__getset(0,__proto,'height',function(){
-			if (this._height)return this._height;
-			if (this._source)return this._source.sourceHeight;
-			return 0;
-			},function(value){
-			if (this._height !=value){
-				this._height=value;
-				this._setChanged();
-			}
-		});
-
-		AutoBitmap.getTexture=function(tex,x,y,width,height){
-			if (width <=0)width=1;
-			if (height <=0)height=1;
-			tex.$_GID || (tex.$_GID=Utils.getGID())
-			var key=tex.$_GID+"."+x+"."+y+"."+width+"."+height;
-			var texture=AutoBitmap.textureCache[key];
-			if (!texture){
-				texture=AutoBitmap.textureCache[key]=Texture.createFromTexture(tex,x,y,width,height);
-			}
-			return texture;
-		}
-
-		AutoBitmap.clearCache=function(){
-			AutoBitmap.cacheCount=0;
-			AutoBitmap.cmdCaches={};
-			AutoBitmap.textureCache={};
-		}
-
-		AutoBitmap.setCache=function(key,value){
-			AutoBitmap.cacheCount++;
-			AutoBitmap.textureCache[key]=value;
-		}
-
-		AutoBitmap.getCache=function(key){
-			return AutoBitmap.textureCache[key];
-		}
-
-		AutoBitmap.cmdCaches={};
-		AutoBitmap.cacheCount=0;
-		AutoBitmap.textureCache={};
-		return AutoBitmap;
-	})(Graphics)
-
-
-	/**
 	*<code>UIEvent</code> 类用来定义UI组件类的事件类型。
 	*/
 	//class laya.ui.UIEvent extends laya.events.Event
@@ -18103,202 +21726,6 @@ window.Laya=(function(window,document){
 		UIEvent.HIDE_TIP="hidetip";
 		return UIEvent;
 	})(Event)
-
-
-	/**
-	*...
-	*@author laya
-	*/
-	//class laya.webgl.shader.d2.value.Value2D extends laya.webgl.shader.ShaderValue
-	var Value2D=(function(_super){
-		function Value2D(mainID,subID){
-			this.size=[0,0];
-			this.alpha=1.0;
-			//this.mmat=null;
-			this.ALPHA=1.0;
-			//this.shader=null;
-			//this.mainID=0;
-			this.subID=0;
-			//this.filters=null;
-			//this.textureHost=null;
-			//this.texture=null;
-			//this.fillStyle=null;
-			//this.color=null;
-			//this.strokeStyle=null;
-			//this.colorAdd=null;
-			//this.glTexture=null;
-			//this.u_mmat2=null;
-			//this._inClassCache=null;
-			this._cacheID=0;
-			Value2D.__super.call(this);
-			this.defines=new ShaderDefines2D();
-			this.position=Value2D._POSITION;
-			this.mainID=mainID;
-			this.subID=subID;
-			this.textureHost=null;
-			this.texture=null;
-			this.fillStyle=null;
-			this.color=null;
-			this.strokeStyle=null;
-			this.colorAdd=null;
-			this.glTexture=null;
-			this.u_mmat2=null;
-			this._cacheID=mainID|subID;
-			this._inClassCache=Value2D._cache[this._cacheID];
-			if (mainID>0 && !this._inClassCache){
-				this._inClassCache=Value2D._cache[this._cacheID]=[];
-				this._inClassCache._length=0;
-			}
-			this.clear();
-		}
-
-		__class(Value2D,'laya.webgl.shader.d2.value.Value2D',_super);
-		var __proto=Value2D.prototype;
-		__proto.setValue=function(value){}
-		//throw new Error("todo in subclass");
-		__proto.refresh=function(){
-			var size=this.size;
-			size[0]=RenderState2D.width;
-			size[1]=RenderState2D.height;
-			this.alpha=this.ALPHA *RenderState2D.worldAlpha;
-			this.mmat=RenderState2D.worldMatrix4;
-			return this;
-		}
-
-		__proto._ShaderWithCompile=function(){
-			return Shader.withCompile(0,this.mainID,this.defines.toNameDic(),this.mainID | this.defines._value,Shader2X.create);
-		}
-
-		__proto._withWorldShaderDefines=function(){
-			var defs=RenderState2D.worldShaderDefines;
-			var sd=Shader.sharders [this.mainID | this.defines._value | defs.getValue()];
-			if (!sd){
-				var def={};
-				var dic;
-				var name;
-				dic=this.defines.toNameDic();for (name in dic)def[name]="";
-				dic=defs.toNameDic();for (name in dic)def[name]="";
-				sd=Shader.withCompile(0,this.mainID,def,this.mainID | this.defines._value| defs.getValue(),Shader2X.create);
-			};
-			var worldFilters=RenderState2D.worldFilters;
-			if (!worldFilters)return sd;
-			var n=worldFilters.length,f;
-			for (var i=0;i < n;i++){
-				((f=worldFilters[i]))&& f.action.setValue(this);
-			}
-			return sd;
-		}
-
-		__proto.upload=function(){
-			var renderstate2d=RenderState2D;
-			this.alpha=this.ALPHA *renderstate2d.worldAlpha;
-			if (RenderState2D.worldMatrix4!==RenderState2D.TEMPMAT4_ARRAY)this.defines.add(0x80);
-			var sd=renderstate2d.worldShaderDefines?this._withWorldShaderDefines():(Shader.sharders [this.mainID | this.defines._value] || this._ShaderWithCompile());
-			var params;
-			this.size[0]=renderstate2d.width,this.size[1]=renderstate2d.height;
-			this.mmat=renderstate2d.worldMatrix4;
-			if (Shader.activeShader!==sd){
-				if (sd._shaderValueWidth!==renderstate2d.width || sd._shaderValueHeight!==renderstate2d.height){
-					sd._shaderValueWidth=renderstate2d.width;
-					sd._shaderValueHeight=renderstate2d.height;
-				}
-				else{
-					params=sd._params2dQuick2 || sd._make2dQuick2();
-				}
-				sd.upload(this,params);
-			}
-			else{
-				if (sd._shaderValueWidth!==renderstate2d.width || sd._shaderValueHeight!==renderstate2d.height){
-					sd._shaderValueWidth=renderstate2d.width;
-					sd._shaderValueHeight=renderstate2d.height;
-				}
-				else{
-					params=(sd._params2dQuick1)|| sd._make2dQuick1();
-				}
-				sd.upload(this,params);
-			}
-		}
-
-		__proto.setFilters=function(value){
-			this.filters=value;
-			if (!value)
-				return;
-			var n=value.length,f;
-			for (var i=0;i < n;i++){
-				f=value[i]
-				if (f){
-					this.defines.add(f.type);
-					f.action.setValue(this);
-				}
-			}
-		}
-
-		__proto.clear=function(){
-			this.defines.setValue(this.subID);
-		}
-
-		__proto.release=function(){
-			this._inClassCache[this._inClassCache._length++]=this;
-			this.clear();
-		}
-
-		Value2D._initone=function(type,classT){
-			Value2D._typeClass[type]=classT;
-			Value2D._cache[type]=[];
-			Value2D._cache[type]._length=0;
-		}
-
-		Value2D.__init__=function(){
-			Value2D._POSITION=[2,0x1406,false,4 *CONST3D2D.BYTES_PE,0];
-			Value2D._TEXCOORD=[2,0x1406,false,4 *CONST3D2D.BYTES_PE,2 *CONST3D2D.BYTES_PE];
-			Value2D._initone(0x02,Color2dSV);
-			Value2D._initone(0x04,PrimitiveSV);
-			Value2D._initone(0x01,TextureSV);
-			Value2D._initone(0x01 | 0x40,TextSV);
-			Value2D._initone(0x01 | 0x08,TextureSV);
-		}
-
-		Value2D.create=function(mainType,subType){
-			var types=Value2D._cache[mainType|subType];
-			if (types._length)
-				return types[--types._length];
-			else
-			return new Value2D._typeClass[mainType|subType](subType);
-		}
-
-		Value2D._POSITION=null
-		Value2D._TEXCOORD=null
-		Value2D._cache=[];
-		Value2D._typeClass=[];
-		return Value2D;
-	})(ShaderValue)
-
-
-	//class laya.webgl.display.GraphicsGL extends laya.display.Graphics
-	var GraphicsGL=(function(_super){
-		function GraphicsGL(){
-			GraphicsGL.__super.call(this);
-		}
-
-		__class(GraphicsGL,'laya.webgl.display.GraphicsGL',_super);
-		var __proto=GraphicsGL.prototype;
-		__proto.setShader=function(shader){
-			this._saveToCmd(Render.context._setShader,[shader]);
-		}
-
-		__proto.setIBVB=function(x,y,ib,vb,numElement,shader){
-			this._saveToCmd(Render.context._setIBVB,[x,y,ib,vb,numElement,shader]);
-		}
-
-		__proto.drawParticle=function(x,y,ps){
-			var pt=RunDriver.createParticleTemplate2D(ps);
-			pt.x=x;
-			pt.y=y;
-			this._saveToCmd(Render.context._drawParticle,[pt]);
-		}
-
-		return GraphicsGL;
-	})(Graphics)
 
 
 	/**
@@ -18330,11 +21757,17 @@ window.Laya=(function(window,document){
 			//this._targets=null;
 			this._saveMark=null;
 			//this.sprite=null;
+			this.mId=-1;
+			this.mHaveKey=false;
+			this.mHaveLineKey=false;
+			this.mX=0;
+			this.mY=0;
 			WebGLContext2D.__super.call(this);
 			this._width=99999999;
 			this._height=99999999;
 			this._clipRect=WebGLContext2D.MAXCLIPRECT;
 			this._shader2D=new Shader2D();
+			this.mOutPoint
 			this.drawTexture=this._drawTextureM;
 			this._canvas=c;
 			this._curMat=Matrix.create();
@@ -18855,11 +22288,32 @@ window.Laya=(function(window,document){
 			return this._submits._length;
 		}
 
-		/*******************************************start矢量绘制***************************************************/
+		__proto.setPathId=function(id){
+			this.mId=id;
+			if (this.mId !=-1){
+				this.mHaveKey=false;
+				var tVGM=VectorGraphManager.getInstance();
+				if (tVGM.shapeDic[this.mId]){
+					this.mHaveKey=true;
+				}
+				this.mHaveLineKey=false;
+				if (tVGM.shapeLineDic[this.mId]){
+					this.mHaveLineKey=true;
+				}
+			}
+		}
+
+		__proto.movePath=function(x,y){
+			this.mX+=x;
+			this.mY+=y;
+		}
+
 		__proto.beginPath=function(){
 			var tPath=this._getPath();
 			tPath.tempArray.length=0;
 			tPath.closePath=false;
+			this.mX=0;
+			this.mY=0;
 		}
 
 		__proto.closePath=function(){
@@ -18875,11 +22329,24 @@ window.Laya=(function(window,document){
 		__proto.stroke=function(){
 			var tPath=this._getPath();
 			if (this.lineWidth > 0){
-				tPath.drawLine(0,0,tPath.tempArray,this.lineWidth,this.strokeStyle._color.numColor);
+				if (this.mId==-1){
+					tPath.drawLine(0,0,tPath.tempArray,this.lineWidth,this.strokeStyle._color.numColor);
+					}else {
+					if (this.mHaveLineKey){
+						var tShapeLine=VectorGraphManager.getInstance().shapeLineDic[this.mId];
+						tPath.setGeomtry(tShapeLine);
+						}else {
+						VectorGraphManager.getInstance().addLine(this.mId,tPath.drawLine(0,0,tPath.tempArray,this.lineWidth,this.strokeStyle._color.numColor));
+					}
+				}
 				tPath.update();
+				var tArray=RenderState2D.getMatrArray();
+				RenderState2D.mat2MatArray(this._curMat,tArray);
+				var tPosArray=[this.mX,this.mY];
 				var tempSubmit=Submit.createShape(this,tPath.ib,tPath.vb,tPath.count,tPath.offset,Value2D.create(0x04,0));
 				tempSubmit.shaderValue.ALPHA=this._shader2D.ALPHA;
-				tempSubmit.shaderValue.u_mmat2=RenderState2D.mat2MatArray(this._curMat,RenderState2D.getMatrArray());
+				tempSubmit.shaderValue.u_pos=tPosArray;
+				tempSubmit.shaderValue.u_mmat2=tArray;
 				this._submits[this._submits._length++]=tempSubmit;
 			}
 		}
@@ -18913,6 +22380,11 @@ window.Laya=(function(window,document){
 		}
 
 		__proto.arcTo=function(x1,y1,x2,y2,r){
+			if (this.mId !=-1){
+				if (this.mHaveKey){
+					return;
+				}
+			};
 			var tPath=this._getPath();
 			var x0=tPath.getEndPointX();
 			var y0=tPath.getEndPointY();
@@ -18955,6 +22427,13 @@ window.Laya=(function(window,document){
 
 		__proto.arc=function(cx,cy,r,startAngle,endAngle,counterclockwise){
 			(counterclockwise===void 0)&& (counterclockwise=false);
+			if (this.mId !=-1){
+				if (this.mHaveKey){
+					return;
+				}
+				cx=0;
+				cy=0;
+			};
 			var a=0,da=0,hda=0,kappa=0;
 			var dx=0,dy=0,x=0,y=0,tanx=0,tany=0;
 			var px=0,py=0,ptanx=0,ptany=0;
@@ -18977,9 +22456,9 @@ window.Laya=(function(window,document){
 					}
 				}
 			}
-			if (r < 100){
+			if (r < 101){
 				ndivs=Math.max(10,da *r / 5);
-				}else if (r < 200){
+				}else if (r < 201){
 				ndivs=Math.max(10,da *r / 20);
 				}else {
 				ndivs=Math.max(10,da *r / 40);
@@ -19043,23 +22522,36 @@ window.Laya=(function(window,document){
 		__proto.drawPoly=function(x,y,points,color,lineWidth,boderColor,isConvexPolygon){
 			(isConvexPolygon===void 0)&& (isConvexPolygon=false);
 			this._shader2D.glTexture=null;
-			this._getPath().polygon(x,y,points,color,lineWidth ? lineWidth :1,boderColor);
-			this._path.update();
+			var tPath=this._getPath();
+			if (this.mId==-1){
+				tPath.polygon(x,y,points,color,lineWidth ? lineWidth :1,boderColor)
+				}else {
+				if (this.mHaveKey){
+					var tShape=VectorGraphManager.getInstance().shapeDic[this.mId];
+					tPath.setGeomtry(tShape);
+					}else {
+					VectorGraphManager.getInstance().addShape(this.mId,tPath.polygon(x,y,points,color,lineWidth ? lineWidth :1,boderColor));
+				}
+			}
+			tPath.update();
+			var tPosArray=[this.mX,this.mY];
 			var tArray=RenderState2D.getMatrArray();
 			RenderState2D.mat2MatArray(this._curMat,tArray);
 			var tempSubmit;
 			if (!isConvexPolygon){
 				var submit=SubmitStencil.create(4);
 				this.addRenderObject(submit);
-				tempSubmit=Submit.createShape(this,this._path.ib,this._path.vb,this._path.count,this._path.offset,Value2D.create(0x04,0));
+				tempSubmit=Submit.createShape(this,tPath.ib,tPath.vb,tPath.count,tPath.offset,Value2D.create(0x04,0));
 				tempSubmit.shaderValue.ALPHA=this._shader2D.ALPHA;
+				tempSubmit.shaderValue.u_pos=tPosArray;
 				tempSubmit.shaderValue.u_mmat2=tArray;
 				this._submits[this._submits._length++]=tempSubmit;
 				submit=SubmitStencil.create(5);
 				this.addRenderObject(submit);
 			}
-			tempSubmit=Submit.createShape(this,this._path.ib,this._path.vb,this._path.count,this._path.offset,Value2D.create(0x04,0));
+			tempSubmit=Submit.createShape(this,tPath.ib,tPath.vb,tPath.count,tPath.offset,Value2D.create(0x04,0));
 			tempSubmit.shaderValue.ALPHA=this._shader2D.ALPHA;
+			tempSubmit.shaderValue.u_pos=tPosArray;
 			tempSubmit.shaderValue.u_mmat2=tArray;
 			this._submits[this._submits._length++]=tempSubmit;
 			if (!isConvexPolygon){
@@ -19067,9 +22559,14 @@ window.Laya=(function(window,document){
 				this.addRenderObject(submit);
 			}
 			if (lineWidth > 0){
-				this._path.drawLine(x,y,points,lineWidth,boderColor);
-				this._path.update();
-				tempSubmit=Submit.createShape(this,this._path.ib,this._path.vb,this._path.count,this._path.offset,Value2D.create(0x04,0));
+				if (this.mHaveLineKey){
+					var tShapeLine=VectorGraphManager.getInstance().shapeLineDic[this.mId];
+					tPath.setGeomtry(tShapeLine);
+					}else {
+					VectorGraphManager.getInstance().addShape(this.mId,tPath.drawLine(x,y,points,lineWidth,boderColor));
+				}
+				tPath.update();
+				tempSubmit=Submit.createShape(this,tPath.ib,tPath.vb,tPath.count,tPath.offset,Value2D.create(0x04,0));
 				tempSubmit.shaderValue.ALPHA=this._shader2D.ALPHA;
 				tempSubmit.shaderValue.u_mmat2=tArray;
 				this._submits[this._submits._length++]=tempSubmit;
@@ -19572,28 +23069,34 @@ window.Laya=(function(window,document){
 	var Polygon=(function(_super){
 		function Polygon(x,y,points,color,borderWidth,borderColor){
 			this._points=null;
-			this._points=points;
+			this.mUint16Array=null;
+			this.mFloat32Array=null;
+			this._points=points.slice(0,points.length);
 			Polygon.__super.call(this,x,y,0,0,this._points.length / 2,color,borderWidth,borderColor);
 		}
 
 		__class(Polygon,'laya.webgl.shapes.Polygon',_super);
 		var __proto=Polygon.prototype;
 		__proto.getData=function(ib,vb,start){
-			var indices=[];
-			var verts=[];
-			var color=this.color;
-			var r=((color >> 16)& 0x0000ff)/ 255,g=((color >> 8)& 0xff)/ 255,b=(color & 0x0000ff)/ 255;
-			var tArray;
-			tArray=this._points;
-			var i=0,tLen=Math.floor(tArray.length / 2);
-			for (i=0;i < tLen;i++){
-				verts.push(this.x+tArray[i *2],this.y+tArray[i *2+1],r,g,b);
+			if (!(this.mUint16Array && this.mFloat32Array)){
+				var indices=[];
+				var verts=[];
+				var color=this.color;
+				var r=((color >> 16)& 0x0000ff)/ 255,g=((color >> 8)& 0xff)/ 255,b=(color & 0x0000ff)/ 255;
+				var tArray;
+				tArray=this._points;
+				var i=0,tLen=Math.floor(tArray.length / 2);
+				for (i=0;i < tLen;i++){
+					verts.push(this.x+tArray[i *2],this.y+tArray[i *2+1],r,g,b);
+				}
+				for (i=2;i < tLen;i++){
+					indices.push(start,start+i-1,start+i);
+				}
+				this.mUint16Array=new Uint16Array(indices);
+				this.mFloat32Array=new Float32Array(verts);
 			}
-			for (i=2;i < tLen;i++){
-				indices.push(start,start+i-1,start+i);
-			}
-			ib.append(new Uint16Array(indices));
-			vb.append(new Float32Array(verts));
+			ib.append(this.mUint16Array);
+			vb.append(this.mFloat32Array);
 		}
 
 		return Polygon;
@@ -20463,7 +23966,11 @@ window.Laya=(function(window,document){
 
 		/**cacheAs后，设置自己和父对象缓存失效。*/
 		__proto.repaint=function(){
+			this.model&&this.model.repaint&&this.model.repaint();
 			(this._repaint===0)&& (this._repaint=1,this.parentRepaint());
+			if (this._$P && this._$P.maskParent){
+				this._$P.maskParent.repaint();
+			}
 		}
 
 		/**
@@ -20766,7 +24273,7 @@ window.Laya=(function(window,document){
 			this._height!==value && (this._height=value,this.model && this.model.size(this._width,value),this.repaint());
 		});
 
-		/**手动设置的可点击区域。*/
+		/**手动设置的可点击区域，或者一个HitArea区域。*/
 		__getset(0,__proto,'hitArea',function(){
 			return this._$P.hitArea;
 			},function(value){
@@ -20873,7 +24380,7 @@ window.Laya=(function(window,document){
 		__getset(0,__proto,'alpha',function(){
 			return this._style.alpha;
 			},function(value){
-			if (this._style.alpha!==value){
+			if (this._style && this._style.alpha!==value){
 				value=value < 0 ? 0 :(value > 1 ? 1 :value);
 				this.getStyle().alpha=value;
 				this.model && this.model.alpha(value);
@@ -20887,11 +24394,25 @@ window.Laya=(function(window,document){
 		__getset(0,__proto,'visible',function(){
 			return this._style.visible;
 			},function(value){
-			if (this._style.visible!==value){
+			if (this._style && this._style.visible!==value){
 				this.getStyle().visible=value;
 				this.model && this.model.visible(value);
 				this.parentRepaint();
 			}
+		});
+
+		/**
+		*获得全局Y轴缩放值
+		*/
+		__getset(0,__proto,'globalScaleY',function(){
+			var scale=1;
+			var ele=this;
+			while (ele){
+				if (ele===Laya.stage)break ;
+				scale *=ele.scaleX;
+				ele=ele.parent;
+			}
+			return scale;
 		});
 
 		/**绘图对象。*/
@@ -20949,11 +24470,13 @@ window.Laya=(function(window,document){
 				}
 			}
 			if (value && value.length > 0){
-				if (this.cacheAs !="bitmap"){
-					if (!Render.isConchNode)this.cacheAs="bitmap";
-					this._set$P("cacheForFilters",true);
+				if (!(Render.isWebGL && value.length==1 && (((value[0])instanceof laya.filters.ColorFilter )))){
+					if (this.cacheAs !="bitmap"){
+						if (!Render.isConchNode)this.cacheAs="bitmap";
+						this._set$P("cacheForFilters",true);
+					}
+					this._set$P("hasFilter",true);
 				}
-				this._set$P("hasFilter",true);
 				}else {
 				this._set$P("hasFilter",false);
 				if (this._$P["cacheForFilters"] && this.cacheAs=="bitmap"){
@@ -20998,6 +24521,20 @@ window.Laya=(function(window,document){
 		});
 
 		/**
+		*获得全局X轴缩放值
+		*/
+		__getset(0,__proto,'globalScaleX',function(){
+			var scale=1;
+			var ele=this;
+			while (ele){
+				if (ele===Laya.stage)break ;
+				scale *=ele.scaleX;
+				ele=ele.parent;
+			}
+			return scale;
+		});
+
+		/**
 		*表示鼠标在此对象上的 X 轴坐标信息。
 		*/
 		__getset(0,__proto,'mouseX',function(){
@@ -21028,477 +24565,6 @@ window.Laya=(function(window,document){
 		Sprite.CustomList=[];
 		return Sprite;
 	})(Node)
-
-
-	/**
-	*动画模板类
-	*/
-	//class laya.ani.bone.Templet extends laya.ani.KeyframesAniTemplet
-	var Templet=(function(_super){
-		function Templet(){
-			this._mainTexture=null;
-			this._textureJson=null;
-			this._graphicsCache=[];
-			this.srcBoneMatrixArr=[];
-			this.boneSlotDic={};
-			this.bindBoneBoneSlotDic={};
-			this.boneSlotArray=[];
-			this.skinDataArray=[];
-			this.skinDic={};
-			this.subTextureDic={};
-			this.isParseFail=false;
-			this.url=null;
-			this.yReverseMatrix=null;
-			this._rate=60;
-			Templet.__super.call(this);
-		}
-
-		__class(Templet,'laya.ani.bone.Templet',_super);
-		var __proto=Templet.prototype;
-		/**
-		*解析骨骼动画数据
-		*@param texture 骨骼动画用到的纹理
-		*@param skeletonData 骨骼动画信息及纹理分块信息
-		*@param playbackRate 缓冲的帧率数据（会根据帧率去分帧）
-		*/
-		__proto.parseData=function(texture,skeletonData,playbackRate){
-			(playbackRate===void 0)&& (playbackRate=60);
-			this._mainTexture=texture;
-			this._rate=playbackRate;
-			this.parse(skeletonData,playbackRate);
-		}
-
-		/**
-		*创建动画
-		*0,使用模板缓冲的数据，模板缓冲的数据，不允许修改 （内存开销小，计算开销小，不支持换装）
-		*1,使用动画自己的缓冲区，每个动画都会有自己的缓冲区，相当耗费内存 （内存开销大，计算开销小，支持换装）
-		*2,使用动态方式，去实时去画 （内存开销小，计算开销大，支持换装,不建议使用）
-		*@param aniMode 0 动画模式，0:不支持换装,1,2支持换装
-		*@return
-		*/
-		__proto.buildArmature=function(aniMode){
-			(aniMode===void 0)&& (aniMode=0);
-			return new Skeleton(this,aniMode);
-		}
-
-		/**
-		*@private
-		*解析动画
-		*@param data 解析的二进制数据
-		*@param playbackRate 帧率
-		*/
-		__proto.parse=function(data,playbackRate){
-			_super.prototype.parse.call(this,data,playbackRate);
-			if (this._loaded){
-				this._parsePublicExtData();
-				this.event("complete",this);
-				}else {
-				this.event("error",this);
-				this.isParseFail=true;
-			}
-		}
-
-		/**
-		*解析自定义数据
-		*/
-		__proto._parsePublicExtData=function(){
-			var i=0,j=0,k=0,l=0,n=0;
-			for (i=0,n=this.getAnimationCount();i < n;i++){
-				this._graphicsCache.push([]);
-			};
-			var tByte=new Byte(this.getPublicExtData());
-			var tX=0,tY=0,tWidth=0,tHeight=0;
-			var tFrameX=0,tFrameY=0,tFrameWidth=0,tFrameHeight=0;
-			var tTempleData=0;
-			var tTextureLen=tByte.getUint8();
-			var tTextureName=tByte.readUTFString();
-			var tTextureNameArr=tTextureName.split("\n");
-			var tTexture;
-			for (i=0;i < tTextureLen;i++){
-				if (this._aniVersion=="LAYAANIMATION:1.0.0"){
-					tTextureName=tTextureNameArr[i];
-					}else if (this._aniVersion=="LAYAANIMATION:1.0.1"){
-					tTextureName=tTextureNameArr[i *2+1];
-				}
-				tX=tByte.getFloat32();
-				tY=tByte.getFloat32();
-				tWidth=tByte.getFloat32();
-				tHeight=tByte.getFloat32();
-				tTempleData=tByte.getFloat32();
-				tFrameX=isNaN(tTempleData)? 0 :tTempleData;
-				tTempleData=tByte.getFloat32();
-				tFrameY=isNaN(tTempleData)? 0 :tTempleData;
-				tTempleData=tByte.getFloat32();
-				tFrameWidth=isNaN(tTempleData)? tWidth :tTempleData;
-				tTempleData=tByte.getFloat32();
-				tFrameHeight=isNaN(tTempleData)? tHeight :tTempleData;
-				this.subTextureDic[tTextureName]=Texture.create(this._mainTexture,tX,tY,tWidth,tHeight,-tFrameX,-tFrameY,tFrameWidth,tFrameHeight);
-			};
-			var tMatrixDataLen=tByte.getUint16();
-			var tLen=tByte.getUint16();
-			var parentIndex=0;
-			var boneLength=Math.floor(tLen / tMatrixDataLen);
-			var tMatrixArray=this.srcBoneMatrixArr;
-			for (i=0;i < boneLength;i++){
-				var tResultTransform=new Transform();
-				tResultTransform.scX=tByte.getFloat32();
-				tResultTransform.skX=tByte.getFloat32();
-				tResultTransform.skY=tByte.getFloat32();
-				tResultTransform.scY=tByte.getFloat32();
-				tResultTransform.x=tByte.getFloat32();
-				tResultTransform.y=tByte.getFloat32();
-				tMatrixArray.push(tResultTransform);
-			};
-			var tBoneSlotLen=tByte.getInt16();
-			var tDBBoneSlot;
-			var tDBBoneSlotArr;
-			for (i=0;i < tBoneSlotLen;i++){
-				tDBBoneSlot=new BoneSlot();
-				tDBBoneSlot.name=tByte.readUTFString();
-				tDBBoneSlot.parent=tByte.readUTFString();
-				tDBBoneSlot.srcDisplayIndex=tDBBoneSlot.displayIndex=tByte.getInt16();
-				tDBBoneSlot.templet=this;
-				this.boneSlotDic[tDBBoneSlot.name]=tDBBoneSlot;
-				tDBBoneSlotArr=this.bindBoneBoneSlotDic[tDBBoneSlot.parent];
-				if (tDBBoneSlotArr==null){
-					this.bindBoneBoneSlotDic[tDBBoneSlot.parent]=tDBBoneSlotArr=[];
-				}
-				tDBBoneSlotArr.push(tDBBoneSlot);
-				this.boneSlotArray.push(tDBBoneSlot);
-			};
-			var tNameString=tByte.readUTFString();
-			var tNameArray=tNameString.split("\n");
-			var tNameStartIndex=0;
-			var tSkinDataLen=tByte.getUint8();
-			var tSkinData,tSlotData,tDisplayData;
-			var tSlotDataLen=0,tDisplayDataLen=0;
-			var tBoneLen=0,tUvLen=0,tWeightLen=0,tTriangleLen=0;
-			for (i=0;i < tSkinDataLen;i++){
-				tSkinData=new SkinData();
-				tSkinData.name=tNameArray[tNameStartIndex++];
-				tSlotDataLen=tByte.getUint8();
-				for (j=0;j < tSlotDataLen;j++){
-					tSlotData=new SlotData();
-					tSlotData.name=tNameArray[tNameStartIndex++];
-					tDBBoneSlot=this.boneSlotDic[tSlotData.name];
-					tDisplayDataLen=tByte.getUint8();
-					for (k=0;k < tDisplayDataLen;k++){
-						tDisplayData=new SkinSlotDisplayData();
-						tDisplayData.name=tNameArray[tNameStartIndex++];
-						tDisplayData.transform=new Transform();
-						tDisplayData.transform.scX=tByte.getFloat32();
-						tDisplayData.transform.skX=tByte.getFloat32();
-						tDisplayData.transform.skY=tByte.getFloat32();
-						tDisplayData.transform.scY=tByte.getFloat32();
-						tDisplayData.transform.x=tByte.getFloat32();
-						tDisplayData.transform.y=tByte.getFloat32();
-						tSlotData.displayArr.push(tDisplayData);
-						if(this._aniVersion=="LAYAANIMATION:1.0.0"){
-							tTexture=this.getTexture(tDisplayData.name);
-							if (tTexture){
-								tDisplayData.width=tTexture.sourceWidth;
-								tDisplayData.height=tTexture.sourceHeight;
-								}else {
-								tDisplayData.width=0;
-								tDisplayData.height=0;
-							}
-							}else if (this._aniVersion=="LAYAANIMATION:1.0.1"){
-							tDisplayData.width=tByte.getFloat32();
-							tDisplayData.height=tByte.getFloat32();
-							tDisplayData.type=tByte.getUint8();
-							switch (tDisplayData.type){
-								case 1:
-									break ;
-								case 0:
-									tBoneLen=tByte.getUint16();
-									if (tBoneLen > 0){
-										tDisplayData.bones=[];
-										for (l=0;l < tBoneLen;l++){
-											tDisplayData.bones.push(tByte.getUint16());
-										}
-									}
-									tUvLen=tByte.getUint16();
-									if (tUvLen > 0){
-										tDisplayData.uvs=[];
-										for (l=0;l < tUvLen;l++){
-											tDisplayData.uvs.push(tByte.getFloat32());
-										}
-									}
-									tWeightLen=tByte.getUint16();
-									if (tWeightLen > 0){
-										tDisplayData.weights=[];
-										for (l=0;l < tWeightLen;l++){
-											tDisplayData.weights.push(tByte.getFloat32());
-										}
-									}
-									tTriangleLen=tByte.getUint16();
-									if (tTriangleLen > 0){
-										tDisplayData.triangles=[];
-										for (l=0;l < tTriangleLen;l++){
-											tDisplayData.triangles.push(tByte.getUint16());
-										}
-									}
-									break ;
-								case 2:
-									tBoneLen=tByte.getUint16();
-									tDisplayData.bones=[];
-									tDisplayData.uvs=[];
-									tDisplayData.weights=[];
-									tDisplayData.triangles=[];
-									for (l=0;l < tBoneLen;l++){
-										tDisplayData.bones.push(tByte.getUint16());
-									}
-									tUvLen=tByte.getUint16();
-									for (l=0;l < tUvLen;l++){
-										tDisplayData.uvs.push(tByte.getFloat32());
-									}
-									tWeightLen=tByte.getUint16();
-									for (l=0;l < tWeightLen;l++){
-										tDisplayData.weights.push(tByte.getFloat32());
-									}
-									tTriangleLen=tByte.getUint16();
-									for (l=0;l < tTriangleLen;l++){
-										tDisplayData.triangles.push(tByte.getUint16());
-									}
-									break ;
-								}
-						}
-					}
-					tSkinData.slotArr.push(tSlotData);
-				}
-				if (this._aniVersion=="LAYAANIMATION:1.0.1"){
-					var tReverse=tByte.getUint8();
-					if (tReverse==1){
-						this.yReverseMatrix=new Matrix(1,0,0,-1,0,0);
-					}
-				}
-				this.skinDic[tSkinData.name]=tSkinData;
-				this.skinDataArray.push(tSkinData);
-			}
-			this.showSkinByIndex(this.boneSlotDic,0);
-		}
-
-		/**
-		*得到指定的纹理
-		*@param name 纹理的名字
-		*@return
-		*/
-		__proto.getTexture=function(name){
-			return this.subTextureDic[name];
-		}
-
-		/**
-		*@private
-		*显示指定的皮肤
-		*@param boneSlotDic 插糟字典的引用
-		*@param skinIndex 皮肤的索引
-		*/
-		__proto.showSkinByIndex=function(boneSlotDic,skinIndex){
-			if (skinIndex < 0 && skinIndex >=this.skinDataArray.length)return;
-			var i=0,n=0;
-			var tBoneSlot;
-			var tSlotData;
-			var tSkinData=this.skinDataArray[skinIndex];
-			if (tSkinData){
-				for (i=0,n=tSkinData.slotArr.length;i < n;i++){
-					tSlotData=tSkinData.slotArr[i];
-					if (tSlotData){
-						tBoneSlot=boneSlotDic[tSlotData.name];
-						if (tBoneSlot){
-							tBoneSlot.showSlotData(tSlotData);
-							tBoneSlot.showDisplayByIndex(tBoneSlot.displayIndex);
-						}
-					}
-				}
-			}
-		}
-
-		/**
-		*@private
-		*显示指定的皮肤
-		*@param boneSlotDic 插糟字典的引用
-		*@param skinName 皮肤的名字
-		*/
-		__proto.showSkinByName=function(boneSlotDic,skinName){
-			var i=0,n=0;
-			var tBoneSlot;
-			var tSlotData;
-			var tSkinData=this.skinDic[skinName];
-			if (tSkinData){
-				for (i=0,n=tSkinData.slotArr.length;i < n;i++){
-					tSlotData=tSkinData.slotArr[i];
-					if (tSlotData){
-						tBoneSlot=boneSlotDic[tSlotData.name];
-						if (tBoneSlot){
-							tBoneSlot.showSlotData(tSlotData);
-							tBoneSlot.showDisplayByIndex(tBoneSlot.displayIndex);
-						}
-					}
-				}
-			}
-		}
-
-		/**
-		*@private
-		*得到缓冲数据
-		*@param aniIndex 动画索引
-		*@param frameIndex 帧索引
-		*@return
-		*/
-		__proto.getGrahicsDataWithCache=function(aniIndex,frameIndex){
-			return this._graphicsCache[aniIndex][frameIndex];
-		}
-
-		/**
-		*@private
-		*保存缓冲grahpics
-		*@param aniIndex 动画索引
-		*@param frameIndex 帧索引
-		*@param graphics 要保存的数据
-		*/
-		__proto.setGrahicsDataWithCache=function(aniIndex,frameIndex,graphics){
-			this._graphicsCache[aniIndex][frameIndex]=graphics;
-		}
-
-		/**
-		*预留
-		*/
-		__proto.destroy=function(){
-			if (this.url){
-				delete Templet.TEMPLET_DICTIONARY[this.url];
-			}
-		}
-
-		/**
-		*通过索引得动画名称
-		*@param index
-		*@return
-		*/
-		__proto.getAniNameByIndex=function(index){
-			var tAni=this.getAnimation(index);
-			if (tAni)return tAni.name;
-			return null;
-		}
-
-		__getset(0,__proto,'rate',function(){
-			return this._rate;
-		});
-
-		Templet.TEMPLET_DICTIONARY=null
-		return Templet;
-	})(KeyframesAniTemplet)
-
-
-	/**
-	*...
-	*@author ...
-	*/
-	//class laya.webgl.utils.Buffer extends laya.resource.Resource
-	var Buffer=(function(_super){
-		function Buffer(){
-			this._glBuffer=null;
-			this._buffer=null;
-			this._bufferType=0;
-			this._bufferUsage=0;
-			this._byteLength=0;
-			Buffer.__super.call(this);
-			Buffer._gl=WebGL.mainContext;
-		}
-
-		__class(Buffer,'laya.webgl.utils.Buffer',_super);
-		var __proto=Buffer.prototype;
-		__proto._bind=function(){
-			this.activeResource();
-			(Buffer._bindActive[this._bufferType]===this._glBuffer)|| (Buffer._gl.bindBuffer(this._bufferType,Buffer._bindActive[this._bufferType]=this._glBuffer),Shader.activeShader=null);
-		}
-
-		__proto.recreateResource=function(){
-			this.startCreate();
-			this._glBuffer || (this._glBuffer=Buffer._gl.createBuffer());
-			this.compoleteCreate();
-		}
-
-		__proto.detoryResource=function(){
-			if (this._glBuffer){
-				WebGL.mainContext.deleteBuffer(this._glBuffer);
-				this._glBuffer=null;
-			}
-			this.memorySize=0;
-		}
-
-		__proto.dispose=function(){
-			this.resourceManager.removeResource(this);
-			_super.prototype.dispose.call(this);
-		}
-
-		//TODO:私有
-		__getset(0,__proto,'byteLength',function(){
-			return this._byteLength;
-		});
-
-		__getset(0,__proto,'bufferType',function(){
-			return this._bufferType;
-		});
-
-		__getset(0,__proto,'bufferUsage',function(){
-			return this._bufferUsage;
-		});
-
-		Buffer._gl=null
-		Buffer._bindActive={};
-		return Buffer;
-	})(Resource)
-
-
-	/**
-	*@private
-	*<code>Bitmap</code> 是图片资源类。
-	*/
-	//class laya.resource.Bitmap extends laya.resource.Resource
-	var Bitmap=(function(_super){
-		function Bitmap(){
-			//this._source=null;
-			//this._w=NaN;
-			//this._h=NaN;
-			this.useNum=0;
-			Bitmap.__super.call(this);
-			this._w=0;
-			this._h=0;
-		}
-
-		__class(Bitmap,'laya.resource.Bitmap',_super);
-		var __proto=Bitmap.prototype;
-		/**
-		*彻底清理资源。
-		*/
-		__proto.dispose=function(){
-			this._resourceManager.removeResource(this);
-			_super.prototype.dispose.call(this);
-		}
-
-		/***
-		*HTML Image 或 HTML Canvas 或 WebGL Texture 。
-		*/
-		__getset(0,__proto,'source',function(){
-			return this._source;
-		});
-
-		/***
-		*宽度。
-		*/
-		__getset(0,__proto,'width',function(){
-			return this._w;
-		});
-
-		/***
-		*高度。
-		*/
-		__getset(0,__proto,'height',function(){
-			return this._h;
-		});
-
-		return Bitmap;
-	})(Resource)
 
 
 	/**
@@ -21882,7 +24948,7 @@ window.Laya=(function(window,document){
 		}
 
 		__proto.parseOne=function(attributes,uniforms,words,i,word,b){
-			var one={type:Shader.shaderParamsMap[words[i+1]],name:words[i+2],size:isNaN(Laya.__parseInt(words[i+3]))? 1 :Laya.__parseInt(words[i+3])};
+			var one={type:Shader.shaderParamsMap[words[i+1]],name:words[i+2],size:isNaN(parseInt(words[i+3]))? 1 :parseInt(words[i+3])};
 			if (b){
 				if (word=="attribute"){
 					attributes.push(one);
@@ -21955,6 +25021,570 @@ window.Laya=(function(window,document){
 		['shaderParamsMap',function(){return this.shaderParamsMap={"float":0x1406,"int":0x1404,"bool":0x8B56,"vec2":0x8B50,"vec3":0x8B51,"vec4":0x8B52,"ivec2":0x8B53,"ivec3":0x8B54,"ivec4":0x8B55,"bvec2":0x8B57,"bvec3":0x8B58,"bvec4":0x8B59,"mat2":0x8B5A,"mat3":0x8B5B,"mat4":0x8B5C,"sampler2D":0x8B5E,"samplerCube":0x8B60};},'nameKey',function(){return this.nameKey=new StringKey();}
 		]);
 		return Shader;
+	})(Resource)
+
+
+	/**
+	*动画模板类
+	*/
+	//class laya.ani.bone.Templet extends laya.ani.KeyframesAniTemplet
+	var Templet=(function(_super){
+		function Templet(){
+			this._mainTexture=null;
+			this._textureJson=null;
+			this._graphicsCache=[];
+			this.srcBoneMatrixArr=[];
+			this.ikArr=[];
+			this.boneSlotDic={};
+			this.bindBoneBoneSlotDic={};
+			this.boneSlotArray=[];
+			this.skinDataArray=[];
+			this.skinDic={};
+			this.subTextureDic={};
+			this.isParseFail=false;
+			this.url=null;
+			this.yReverseMatrix=null;
+			this._rate=60;
+			this.aniSectionDic={};
+			this.textureDic={};
+			this._skBufferUrl=null;
+			this._textureDic={};
+			this._loadList=null;
+			this._path=null;
+			this.mRootBone=null;
+			Templet.__super.call(this);
+			this.mBoneArr=[];
+		}
+
+		__class(Templet,'laya.ani.bone.Templet',_super);
+		var __proto=Templet.prototype;
+		__proto.loadAni=function(url){
+			this._skBufferUrl=url;
+			Laya.loader.load(url,Handler.create(this,this.onComplete),null,"arraybuffer");
+		}
+
+		__proto.onComplete=function(){
+			var tSkBuffer=Loader.getRes(this._skBufferUrl);
+			this._path=this._skBufferUrl.slice(0,this._skBufferUrl.lastIndexOf("/"))+"/";
+			this.parseData(null,tSkBuffer);
+		}
+
+		/**
+		*解析骨骼动画数据
+		*@param texture 骨骼动画用到的纹理
+		*@param skeletonData 骨骼动画信息及纹理分块信息
+		*@param playbackRate 缓冲的帧率数据（会根据帧率去分帧）
+		*/
+		__proto.parseData=function(texture,skeletonData,playbackRate){
+			(playbackRate===void 0)&& (playbackRate=60);
+			this._mainTexture=texture;
+			this._rate=playbackRate;
+			this.parse(skeletonData,playbackRate);
+		}
+
+		/**
+		*创建动画
+		*0,使用模板缓冲的数据，模板缓冲的数据，不允许修改 （内存开销小，计算开销小，不支持换装）
+		*1,使用动画自己的缓冲区，每个动画都会有自己的缓冲区，相当耗费内存 （内存开销大，计算开销小，支持换装）
+		*2,使用动态方式，去实时去画 （内存开销小，计算开销大，支持换装,不建议使用）
+		*@param aniMode 0 动画模式，0:不支持换装,1,2支持换装
+		*@return
+		*/
+		__proto.buildArmature=function(aniMode){
+			(aniMode===void 0)&& (aniMode=0);
+			return new Skeleton(this,aniMode);
+		}
+
+		/**
+		*@private
+		*解析动画
+		*@param data 解析的二进制数据
+		*@param playbackRate 帧率
+		*/
+		__proto.parse=function(data,playbackRate){
+			_super.prototype.parse.call(this,data,playbackRate);
+			if (this._aniVersion !=KeyframesAniTemplet.LAYA_ANIMATION_VISION){
+				console.log("[Error] 版本不一致，请使用IDE版本（1.2.0）重新导出");
+				this._loaded=false;
+			}
+			if (this._loaded){
+				if (this._mainTexture){
+					this._parsePublicExtData();
+					}else {
+					this._parseTexturePath();
+				}
+				}else {
+				this.event("error",this);
+				this.isParseFail=true;
+			}
+		}
+
+		__proto._parseTexturePath=function(){
+			var i=0;
+			this._loadList=[];
+			var tByte=new Byte(this.getPublicExtData());
+			var tX=0,tY=0,tWidth=0,tHeight=0;
+			var tFrameX=0,tFrameY=0,tFrameWidth=0,tFrameHeight=0;
+			var tTempleData=0;
+			var tTextureLen=tByte.getUint8();
+			var tTextureName=tByte.readUTFString();
+			var tTextureNameArr=tTextureName.split("\n");
+			var tTexture;
+			var tSrcTexturePath;
+			for (i=0;i < tTextureLen;i++){
+				tSrcTexturePath=this._path+tTextureNameArr[i *2];
+				tTextureName=tTextureNameArr[i *2+1];
+				tX=tByte.getFloat32();
+				tY=tByte.getFloat32();
+				tWidth=tByte.getFloat32();
+				tHeight=tByte.getFloat32();
+				tTempleData=tByte.getFloat32();
+				tFrameX=isNaN(tTempleData)? 0 :tTempleData;
+				tTempleData=tByte.getFloat32();
+				tFrameY=isNaN(tTempleData)? 0 :tTempleData;
+				tTempleData=tByte.getFloat32();
+				tFrameWidth=isNaN(tTempleData)? tWidth :tTempleData;
+				tTempleData=tByte.getFloat32();
+				tFrameHeight=isNaN(tTempleData)? tHeight :tTempleData;
+				if (this._loadList.indexOf(tSrcTexturePath)==-1){
+					this._loadList.push(tSrcTexturePath);
+				}
+			}
+			Laya.loader.load(this._loadList,Handler.create(this,this._textureComplete));
+		}
+
+		/**
+		*纹理加载完成
+		*/
+		__proto._textureComplete=function(){
+			var tTexture;
+			var tTextureName;
+			for (var i=0,n=this._loadList.length;i < n;i++){
+				tTextureName=this._loadList[i];
+				tTexture=this._textureDic[tTextureName]=Loader.getRes(tTextureName);
+			}
+			this._parsePublicExtData();
+		}
+
+		/**
+		*解析自定义数据
+		*/
+		__proto._parsePublicExtData=function(){
+			var i=0,j=0,k=0,l=0,n=0;
+			for (i=0,n=this.getAnimationCount();i < n;i++){
+				this._graphicsCache.push([]);
+			};
+			var tByte=new Byte(this.getPublicExtData());
+			var tX=0,tY=0,tWidth=0,tHeight=0;
+			var tFrameX=0,tFrameY=0,tFrameWidth=0,tFrameHeight=0;
+			var tTempleData=0;
+			var tTextureLen=tByte.getUint8();
+			var tTextureName=tByte.readUTFString();
+			var tTextureNameArr=tTextureName.split("\n");
+			var tTexture;
+			var tSrcTexturePath;
+			for (i=0;i < tTextureLen;i++){
+				tTexture=this._mainTexture;
+				tSrcTexturePath=this._path+tTextureNameArr[i *2];
+				tTextureName=tTextureNameArr[i *2+1];
+				if (this._mainTexture==null){
+					tTexture=this._textureDic[tSrcTexturePath];
+				}
+				tX=tByte.getFloat32();
+				tY=tByte.getFloat32();
+				tWidth=tByte.getFloat32();
+				tHeight=tByte.getFloat32();
+				tTempleData=tByte.getFloat32();
+				tFrameX=isNaN(tTempleData)? 0 :tTempleData;
+				tTempleData=tByte.getFloat32();
+				tFrameY=isNaN(tTempleData)? 0 :tTempleData;
+				tTempleData=tByte.getFloat32();
+				tFrameWidth=isNaN(tTempleData)? tWidth :tTempleData;
+				tTempleData=tByte.getFloat32();
+				tFrameHeight=isNaN(tTempleData)? tHeight :tTempleData;
+				this.subTextureDic[tTextureName]=Texture.create(tTexture,tX,tY,tWidth,tHeight,-tFrameX,-tFrameY,tFrameWidth,tFrameHeight);
+			};
+			var tAniCount=tByte.getUint16();
+			var tSectionArr;
+			for (i=0;i < tAniCount;i++){
+				tSectionArr=[];
+				tSectionArr.push(tByte.getUint16());
+				tSectionArr.push(tByte.getUint16());
+				tSectionArr.push(tByte.getUint16());
+				this.aniSectionDic[i]=tSectionArr;
+			};
+			var tBone;
+			var tParentBone;
+			var tName;
+			var tParentName;
+			var tBoneLen=tByte.getInt16();
+			var tBoneDic={};
+			for (i=0;i < tBoneLen;i++){
+				tBone=new Bone();
+				tName=tByte.readUTFString();
+				tParentName=tByte.readUTFString();
+				tBone.length=tByte.getFloat32();
+				tBone.name=tName;
+				if (tParentName){
+					tParentBone=tBoneDic[tParentName];
+					if (tParentBone){
+						tParentBone.addChild(tBone);
+						}else {
+						this.mRootBone=tBone;
+					}
+				}
+				tBoneDic[tName]=tBone;
+				this.mBoneArr.push(tBone);
+			};
+			var tMatrixDataLen=tByte.getUint16();
+			var tLen=tByte.getUint16();
+			var parentIndex=0;
+			var boneLength=Math.floor(tLen / tMatrixDataLen);
+			var tResultTransform;
+			var tMatrixArray=this.srcBoneMatrixArr;
+			for (i=0;i < boneLength;i++){
+				tResultTransform=new Transform();
+				tResultTransform.scX=tByte.getFloat32();
+				tResultTransform.skX=tByte.getFloat32();
+				tResultTransform.skY=tByte.getFloat32();
+				tResultTransform.scY=tByte.getFloat32();
+				tResultTransform.x=tByte.getFloat32();
+				tResultTransform.y=tByte.getFloat32();
+				tMatrixArray.push(tResultTransform);
+				tBone=this.mBoneArr[i];
+				tBone.transform=tResultTransform;
+			};
+			var tIkConstraintData;
+			var tIkLen=tByte.getUint16();
+			var tIkBoneLen=0;
+			for (i=0;i < tIkLen;i++){
+				tIkConstraintData=new IkConstraintData();
+				tIkBoneLen=tByte.getUint16();
+				for (j=0;j < tIkBoneLen;j++){
+					tIkConstraintData.boneNames.push(tByte.readUTFString());
+					tIkConstraintData.boneIndexs.push(tByte.getInt16());
+				}
+				tIkConstraintData.name=tByte.readUTFString();
+				tIkConstraintData.targetBoneName=tByte.readUTFString();
+				tIkConstraintData.targetBoneIndex=tByte.getInt16();
+				tIkConstraintData.bendDirection=tByte.getFloat32();
+				tIkConstraintData.mix=tByte.getFloat32();
+				this.ikArr.push(tIkConstraintData);
+			};
+			var tBoneSlotLen=tByte.getInt16();
+			var tDBBoneSlot;
+			var tDBBoneSlotArr;
+			for (i=0;i < tBoneSlotLen;i++){
+				tDBBoneSlot=new BoneSlot();
+				tDBBoneSlot.name=tByte.readUTFString();
+				tDBBoneSlot.parent=tByte.readUTFString();
+				tDBBoneSlot.attachmentName=tByte.readUTFString();
+				tDBBoneSlot.srcDisplayIndex=tDBBoneSlot.displayIndex=tByte.getInt16();
+				tDBBoneSlot.templet=this;
+				this.boneSlotDic[tDBBoneSlot.name]=tDBBoneSlot;
+				tDBBoneSlotArr=this.bindBoneBoneSlotDic[tDBBoneSlot.parent];
+				if (tDBBoneSlotArr==null){
+					this.bindBoneBoneSlotDic[tDBBoneSlot.parent]=tDBBoneSlotArr=[];
+				}
+				tDBBoneSlotArr.push(tDBBoneSlot);
+				this.boneSlotArray.push(tDBBoneSlot);
+			};
+			var tNameString=tByte.readUTFString();
+			var tNameArray=tNameString.split("\n");
+			var tNameStartIndex=0;
+			var tSkinDataLen=tByte.getUint8();
+			var tSkinData,tSlotData,tDisplayData;
+			var tSlotDataLen=0,tDisplayDataLen=0;
+			var tUvLen=0,tWeightLen=0,tTriangleLen=0,tVerticeLen=0;
+			for (i=0;i < tSkinDataLen;i++){
+				tSkinData=new SkinData();
+				tSkinData.name=tNameArray[tNameStartIndex++];
+				tSlotDataLen=tByte.getUint8();
+				for (j=0;j < tSlotDataLen;j++){
+					tSlotData=new SlotData();
+					tSlotData.name=tNameArray[tNameStartIndex++];
+					tDBBoneSlot=this.boneSlotDic[tSlotData.name];
+					tDisplayDataLen=tByte.getUint8();
+					for (k=0;k < tDisplayDataLen;k++){
+						tDisplayData=new SkinSlotDisplayData();
+						tDisplayData.name=tNameArray[tNameStartIndex++];
+						tDisplayData.attachmentName=tNameArray[tNameStartIndex++];
+						tDisplayData.transform=new Transform();
+						tDisplayData.transform.scX=tByte.getFloat32();
+						tDisplayData.transform.skX=tByte.getFloat32();
+						tDisplayData.transform.skY=tByte.getFloat32();
+						tDisplayData.transform.scY=tByte.getFloat32();
+						tDisplayData.transform.x=tByte.getFloat32();
+						tDisplayData.transform.y=tByte.getFloat32();
+						tSlotData.displayArr.push(tDisplayData);
+						tDisplayData.width=tByte.getFloat32();
+						tDisplayData.height=tByte.getFloat32();
+						tDisplayData.type=tByte.getUint8();
+						tBoneLen=tByte.getUint16();
+						if (tBoneLen > 0){
+							tDisplayData.bones=[];
+							for (l=0;l < tBoneLen;l++){
+								var tBoneId=tByte.getUint16();
+								tDisplayData.bones.push(tBoneId);
+							}
+						}
+						tUvLen=tByte.getUint16();
+						if (tUvLen > 0){
+							tDisplayData.uvs=[];
+							for (l=0;l < tUvLen;l++){
+								tDisplayData.uvs.push(tByte.getFloat32());
+							}
+						}
+						tWeightLen=tByte.getUint16();
+						if (tWeightLen > 0){
+							tDisplayData.weights=[];
+							for (l=0;l < tWeightLen;l++){
+								tDisplayData.weights.push(tByte.getFloat32());
+							}
+						}
+						tTriangleLen=tByte.getUint16();
+						if (tTriangleLen > 0){
+							tDisplayData.triangles=[];
+							for (l=0;l < tTriangleLen;l++){
+								tDisplayData.triangles.push(tByte.getUint16());
+							}
+						}
+						tVerticeLen=tByte.getUint16();
+						if (tVerticeLen > 0){
+							tDisplayData.vertices=[];
+							for (l=0;l < tVerticeLen;l++){
+								tDisplayData.vertices.push(tByte.getFloat32());
+							}
+						}
+					}
+					tSkinData.slotArr.push(tSlotData);
+				}
+				this.skinDic[tSkinData.name]=tSkinData;
+				this.skinDataArray.push(tSkinData);
+			};
+			var tReverse=tByte.getUint8();
+			if (tReverse==1){
+				this.yReverseMatrix=new Matrix(1,0,0,-1,0,0);
+			}
+			this.showSkinByIndex(this.boneSlotDic,0);
+			this.event("complete",this);
+		}
+
+		/**
+		*得到指定的纹理
+		*@param name 纹理的名字
+		*@return
+		*/
+		__proto.getTexture=function(name){
+			return this.subTextureDic[name];
+		}
+
+		/**
+		*@private
+		*显示指定的皮肤
+		*@param boneSlotDic 插糟字典的引用
+		*@param skinIndex 皮肤的索引
+		*/
+		__proto.showSkinByIndex=function(boneSlotDic,skinIndex){
+			if (skinIndex < 0 && skinIndex >=this.skinDataArray.length)return;
+			var i=0,n=0;
+			var tBoneSlot;
+			var tSlotData;
+			var tSkinData=this.skinDataArray[skinIndex];
+			if (tSkinData){
+				for (i=0,n=tSkinData.slotArr.length;i < n;i++){
+					tSlotData=tSkinData.slotArr[i];
+					if (tSlotData){
+						tBoneSlot=boneSlotDic[tSlotData.name];
+						if (tBoneSlot){
+							tBoneSlot.showSlotData(tSlotData);
+							if (tBoneSlot.attachmentName !="null"){
+								tBoneSlot.showDisplayByName(tBoneSlot.attachmentName);
+								}else {
+								tBoneSlot.showDisplayByIndex(tBoneSlot.displayIndex);
+							}
+						}
+					}
+				}
+			}
+		}
+
+		/**
+		*通过皮肤名字得到皮肤索引
+		*@param skinName 皮肤名称
+		*@return
+		*/
+		__proto.getSkinIndexByName=function(skinName){
+			var tSkinData;
+			for (var i=0,n=this.skinDataArray.length;i < n;i++){
+				tSkinData=this.skinDataArray[i];
+				if (tSkinData.name==skinName){
+					return i;
+				}
+			}
+			return-1;
+		}
+
+		/**
+		*@private
+		*得到缓冲数据
+		*@param aniIndex 动画索引
+		*@param frameIndex 帧索引
+		*@return
+		*/
+		__proto.getGrahicsDataWithCache=function(aniIndex,frameIndex){
+			return this._graphicsCache[aniIndex][frameIndex];
+		}
+
+		/**
+		*@private
+		*保存缓冲grahpics
+		*@param aniIndex 动画索引
+		*@param frameIndex 帧索引
+		*@param graphics 要保存的数据
+		*/
+		__proto.setGrahicsDataWithCache=function(aniIndex,frameIndex,graphics){
+			this._graphicsCache[aniIndex][frameIndex]=graphics;
+		}
+
+		/**
+		*预留
+		*/
+		__proto.destroy=function(){
+			if (this.url){
+				delete Templet.TEMPLET_DICTIONARY[this.url];
+			}
+		}
+
+		/**
+		*通过索引得动画名称
+		*@param index
+		*@return
+		*/
+		__proto.getAniNameByIndex=function(index){
+			var tAni=this.getAnimation(index);
+			if (tAni)return tAni.name;
+			return null;
+		}
+
+		__getset(0,__proto,'rate',function(){
+			return this._rate;
+		});
+
+		Templet.TEMPLET_DICTIONARY=null
+		return Templet;
+	})(KeyframesAniTemplet)
+
+
+	/**
+	*...
+	*@author ...
+	*/
+	//class laya.webgl.utils.Buffer extends laya.resource.Resource
+	var Buffer=(function(_super){
+		function Buffer(){
+			this._glBuffer=null;
+			this._buffer=null;
+			this._bufferType=0;
+			this._bufferUsage=0;
+			this._byteLength=0;
+			Buffer.__super.call(this);
+			Buffer._gl=WebGL.mainContext;
+		}
+
+		__class(Buffer,'laya.webgl.utils.Buffer',_super);
+		var __proto=Buffer.prototype;
+		__proto._bind=function(){
+			this.activeResource();
+			(Buffer._bindActive[this._bufferType]===this._glBuffer)|| (Buffer._gl.bindBuffer(this._bufferType,Buffer._bindActive[this._bufferType]=this._glBuffer),Shader.activeShader=null);
+		}
+
+		__proto.recreateResource=function(){
+			this.startCreate();
+			this._glBuffer || (this._glBuffer=Buffer._gl.createBuffer());
+			this.compoleteCreate();
+		}
+
+		__proto.detoryResource=function(){
+			if (this._glBuffer){
+				WebGL.mainContext.deleteBuffer(this._glBuffer);
+				this._glBuffer=null;
+			}
+			this.memorySize=0;
+		}
+
+		__proto.dispose=function(){
+			this.resourceManager.removeResource(this);
+			_super.prototype.dispose.call(this);
+		}
+
+		//TODO:私有
+		__getset(0,__proto,'byteLength',function(){
+			return this._byteLength;
+		});
+
+		__getset(0,__proto,'bufferType',function(){
+			return this._bufferType;
+		});
+
+		__getset(0,__proto,'bufferUsage',function(){
+			return this._bufferUsage;
+		});
+
+		Buffer._gl=null
+		Buffer._bindActive={};
+		return Buffer;
+	})(Resource)
+
+
+	/**
+	*@private
+	*<code>Bitmap</code> 是图片资源类。
+	*/
+	//class laya.resource.Bitmap extends laya.resource.Resource
+	var Bitmap=(function(_super){
+		function Bitmap(){
+			//this._source=null;
+			//this._w=NaN;
+			//this._h=NaN;
+			this.useNum=0;
+			Bitmap.__super.call(this);
+			this._w=0;
+			this._h=0;
+		}
+
+		__class(Bitmap,'laya.resource.Bitmap',_super);
+		var __proto=Bitmap.prototype;
+		/**
+		*彻底清理资源。
+		*/
+		__proto.dispose=function(){
+			this._resourceManager.removeResource(this);
+			_super.prototype.dispose.call(this);
+		}
+
+		/***
+		*HTML Image 或 HTML Canvas 或 WebGL Texture 。
+		*/
+		__getset(0,__proto,'source',function(){
+			return this._source;
+		});
+
+		/***
+		*宽度。
+		*/
+		__getset(0,__proto,'width',function(){
+			return this._w;
+		});
+
+		/***
+		*高度。
+		*/
+		__getset(0,__proto,'height',function(){
+			return this._h;
+		});
+
+		return Bitmap;
 	})(Resource)
 
 
@@ -22195,6 +25825,119 @@ window.Laya=(function(window,document){
 
 
 	/**
+	*...
+	*@author ...
+	*/
+	//class laya.webgl.shader.d2.fillTexture.FillTextureShaderValue extends laya.webgl.shader.d2.value.Value2D
+	var FillTextureShaderValue=(function(_super){
+		function FillTextureShaderValue(){
+			this.texcoord=null;
+			this.u_texRange=[0,1,0,1];
+			this.u_offset=[0.5,0.5];
+			FillTextureShaderValue.__super.call(this,0,0);
+			var _vlen=8 *CONST3D2D.BYTES_PE;
+			this.position=[2,0x1406,false,_vlen,0];
+			this.texcoord=[2,0x1406,false,_vlen,2 *CONST3D2D.BYTES_PE];
+			this.color=[4,0x1406,false,_vlen,4 *CONST3D2D.BYTES_PE];
+		}
+
+		__class(FillTextureShaderValue,'laya.webgl.shader.d2.fillTexture.FillTextureShaderValue',_super);
+		FillTextureShaderValue.instance=function(){
+			return FillTextureShaderValue._fillTextureShaderValue=FillTextureShaderValue._fillTextureShaderValue|| new FillTextureShaderValue();
+		}
+
+		FillTextureShaderValue._fillTextureShaderValue=null
+		return FillTextureShaderValue;
+	})(Value2D)
+
+
+	/**
+	*...
+	*@author ...
+	*/
+	//class laya.webgl.shader.d2.skinAnishader.aniShaderValue extends laya.webgl.shader.d2.value.Value2D
+	var aniShaderValue1=(function(_super){
+		function aniShaderValue(){
+			this.texcoord=null;
+			aniShaderValue.__super.call(this,0,0);
+			var _vlen=8 *CONST3D2D.BYTES_PE;
+			this.position=[2,0x1406,false,_vlen,0];
+			this.texcoord=[2,0x1406,false,_vlen,2 *CONST3D2D.BYTES_PE];
+			this.color=[4,0x1406,false,_vlen,4 *CONST3D2D.BYTES_PE];
+		}
+
+		__class(aniShaderValue,'laya.webgl.shader.d2.skinAnishader.aniShaderValue',_super,'aniShaderValue1');
+		aniShaderValue.instance=function(){
+			return aniShaderValue._aniShaderValue=aniShaderValue._aniShaderValue|| new aniShaderValue();
+		}
+
+		aniShaderValue._aniShaderValue=null
+		return aniShaderValue;
+	})(Value2D)
+
+
+	//class laya.webgl.shader.d2.value.Color2dSV extends laya.webgl.shader.d2.value.Value2D
+	var Color2dSV=(function(_super){
+		function Color2dSV(args){
+			Color2dSV.__super.call(this,0x02,0);
+			this.color=[];
+		}
+
+		__class(Color2dSV,'laya.webgl.shader.d2.value.Color2dSV',_super);
+		var __proto=Color2dSV.prototype;
+		__proto.setValue=function(value){
+			value.fillStyle&&(this.color=value.fillStyle._color._color);
+			value.strokeStyle&&(this.color=value.strokeStyle._color._color);
+		}
+
+		return Color2dSV;
+	})(Value2D)
+
+
+	//class laya.webgl.shader.d2.value.TextureSV extends laya.webgl.shader.d2.value.Value2D
+	var TextureSV=(function(_super){
+		function TextureSV(subID){
+			this.u_colorMatrix=null;
+			this.strength=0;
+			this.colorMat=null;
+			this.colorAlpha=null;
+			this.texcoord=Value2D._TEXCOORD;
+			(subID===void 0)&& (subID=0);
+			TextureSV.__super.call(this,0x01,subID);
+		}
+
+		__class(TextureSV,'laya.webgl.shader.d2.value.TextureSV',_super);
+		var __proto=TextureSV.prototype;
+		__proto.setValue=function(vo){
+			this.ALPHA=vo.ALPHA;
+			vo.filters && this.setFilters(vo.filters);
+		}
+
+		__proto.clear=function(){
+			this.texture=null;
+			this.shader=null;
+			this.defines.setValue(0);
+		}
+
+		return TextureSV;
+	})(Value2D)
+
+
+	//class laya.webgl.shader.d2.value.PrimitiveSV extends laya.webgl.shader.d2.value.Value2D
+	var PrimitiveSV=(function(_super){
+		function PrimitiveSV(args){
+			this.a_color=null;
+			PrimitiveSV.__super.call(this,0x04,0);
+			this.position=[2,0x1406,false,5 *CONST3D2D.BYTES_PE,0];
+			this.a_color=[3,0x1406,false,5 *CONST3D2D.BYTES_PE,2 *CONST3D2D.BYTES_PE];
+		}
+
+		__class(PrimitiveSV,'laya.webgl.shader.d2.value.PrimitiveSV',_super);
+		return PrimitiveSV;
+	})(Value2D)
+
+
+	/**
 	*@private
 	*audio标签播放声音的音轨控制
 	*/
@@ -22216,7 +25959,7 @@ window.Laya=(function(window,document){
 		__proto.__onEnd=function(){
 			if (this.loops==1){
 				if (this.completeHandler){
-					this.completeHandler.run();
+					Laya.timer.once(10,this,this.__runComplete,[this.completeHandler],false);
 					this.completeHandler=null;
 				}
 				this.stop();
@@ -22359,7 +26102,7 @@ window.Laya=(function(window,document){
 		__proto.__onPlayEnd=function(){
 			if (this.loops==1){
 				if (this.completeHandler){
-					this.completeHandler.run();
+					Laya.timer.once(10,this,this.__runComplete,[this.completeHandler],false);
 					this.completeHandler=null;
 				}
 				this.stop();
@@ -22433,67 +26176,6 @@ window.Laya=(function(window,document){
 		WebAudioSoundChannel._tryCleanFailed=false;
 		return WebAudioSoundChannel;
 	})(SoundChannel)
-
-
-	//class laya.webgl.shader.d2.value.Color2dSV extends laya.webgl.shader.d2.value.Value2D
-	var Color2dSV=(function(_super){
-		function Color2dSV(args){
-			Color2dSV.__super.call(this,0x02,0);
-			this.color=[];
-		}
-
-		__class(Color2dSV,'laya.webgl.shader.d2.value.Color2dSV',_super);
-		var __proto=Color2dSV.prototype;
-		__proto.setValue=function(value){
-			value.fillStyle&&(this.color=value.fillStyle._color._color);
-			value.strokeStyle&&(this.color=value.strokeStyle._color._color);
-		}
-
-		return Color2dSV;
-	})(Value2D)
-
-
-	//class laya.webgl.shader.d2.value.TextureSV extends laya.webgl.shader.d2.value.Value2D
-	var TextureSV=(function(_super){
-		function TextureSV(subID){
-			this.u_colorMatrix=null;
-			this.strength=0;
-			this.colorMat=null;
-			this.colorAlpha=null;
-			this.texcoord=Value2D._TEXCOORD;
-			(subID===void 0)&& (subID=0);
-			TextureSV.__super.call(this,0x01,subID);
-		}
-
-		__class(TextureSV,'laya.webgl.shader.d2.value.TextureSV',_super);
-		var __proto=TextureSV.prototype;
-		__proto.setValue=function(vo){
-			this.ALPHA=vo.ALPHA;
-			vo.filters && this.setFilters(vo.filters);
-		}
-
-		__proto.clear=function(){
-			this.texture=null;
-			this.shader=null;
-			this.defines.setValue(0);
-		}
-
-		return TextureSV;
-	})(Value2D)
-
-
-	//class laya.webgl.shader.d2.value.PrimitiveSV extends laya.webgl.shader.d2.value.Value2D
-	var PrimitiveSV=(function(_super){
-		function PrimitiveSV(args){
-			this.a_color=null;
-			PrimitiveSV.__super.call(this,0x04,0);
-			this.position=[2,0x1406,false,5 *CONST3D2D.BYTES_PE,0];
-			this.a_color=[3,0x1406,false,5 *CONST3D2D.BYTES_PE,2 *CONST3D2D.BYTES_PE];
-		}
-
-		__class(PrimitiveSV,'laya.webgl.shader.d2.value.PrimitiveSV',_super);
-		return PrimitiveSV;
-	})(Value2D)
 
 
 	/**
@@ -22679,8 +26361,9 @@ window.Laya=(function(window,document){
 			},function(value){
 			if (this._width !=value){
 				this._width=value;
+				this.model && this.model.size(this._width,this._height);
 				this.callLater(this.changeSize);
-				if (this._layout.enable && (!isNaN(this._layout.centerX)|| !isNaN(this._layout.right)))this.resetLayoutX();
+				if (this._layout.enable && (!isNaN(this._layout.centerX)|| !isNaN(this._layout.right)|| !isNaN(this._layout.anchorX)))this.resetLayoutX();
 			}
 		});
 
@@ -22750,8 +26433,9 @@ window.Laya=(function(window,document){
 			},function(value){
 			if (this._height !=value){
 				this._height=value;
+				this.model && this.model.size(this._width,this._height);
 				this.callLater(this.changeSize);
-				if (this._layout.enable && (!isNaN(this._layout.centerY)|| !isNaN(this._layout.bottom)))this.resetLayoutY();
+				if (this._layout.enable && (!isNaN(this._layout.centerY)|| !isNaN(this._layout.bottom)|| !isNaN(this._layout.anchorY)))this.resetLayoutY();
 			}
 		});
 
@@ -22928,7 +26612,7 @@ window.Laya=(function(window,document){
 		*@param value 一个 Boolean 值，指定对象是否可使用布局。
 		*/
 		__getset(0,__proto,'layOutEabled',null,function(value){
-			if (this._layout.enable !=value){
+			if (this._layout && this._layout.enable !=value){
 				this._layout.enable=value;
 				if (this.parent){
 					this.onAdded();
@@ -22976,12 +26660,12 @@ window.Laya=(function(window,document){
 	var ArenaEffectView=(function(_super){
 		function ArenaEffectView(){
 			this.effectInfoList=null;
-			this.multyView=null;
 			this.multyNumber=0;
 			this.skillDamageImage=null;
 			this.skillDamegeLable=null;
 			this.skillNumber=0;
 			this.comboEffectImage=null;
+			this.damageViewArray=[];
 			ArenaEffectView.__super.call(this);
 			this.effectInfoList=[];
 			this.skillNumber=0;
@@ -22995,8 +26679,40 @@ window.Laya=(function(window,document){
 			this.effectInfoList.push($effectInfo);
 		}
 
+		__proto.update=function(){
+			this.updateView()
+		}
+
+		__proto.updateView=function(){
+			for (var i=0;i < GameContext.i.arenaContext.gameView.roleView.roleItemViewList.length;i++){
+				var roleItemView=GameContext.i.arenaContext.gameView.roleView.roleItemViewList[i];
+				if (roleItemView.lableArray.length==0){
+					continue ;
+				}
+				for (var j=roleItemView.lableArray.length-1;j >=0;j--){
+					var damagameView=roleItemView.lableArray[j];
+					if (damagameView.showState==true){
+						roleItemView.lableArray.splice(j,1);
+						this.removeChild(damagameView);
+						continue ;
+					};
+					var damagameViewPosNumber=damagameView.changeNumber;
+					damagameView.changeNumber=(roleItemView.lableArray.length-j);
+					if (damagameView.changeNumber > damagameViewPosNumber){
+						damagameView.y-=(damagameView.changeNumber-damagameViewPosNumber)*40
+						if (damagameView.leftOrRight==1){
+							damagameView.x-=(damagameView.changeNumber-damagameViewPosNumber)*20
+							}else{
+							damagameView.x+=(damagameView.changeNumber-damagameViewPosNumber)*20
+						}
+					}
+					damagameView.updateView();
+				}
+			}
+		}
+
 		__proto.delayShowAnmation=function($effectInfoList){
-			for (var i=0;i < $effectInfoList.length;i++){
+			for (var i=($effectInfoList.length-1);i >=0;i--){
 				var effectInfo=$effectInfoList[i];
 				switch(effectInfo.type){
 					case 1:
@@ -23012,117 +26728,64 @@ window.Laya=(function(window,document){
 						this.addOperateMpLable(effectInfo);
 						break ;
 					case 5:
-						this.multyView=new MultyViewUI();
-						this.multyView.multyText.text="1";
-						this.multyView.pos(50,50);
-						this.addChild(this.multyView);
+						GameContext.i.arenaContext.gameView.multyView.visible=true;
+						GameContext.i.arenaContext.gameView.multyView.hitState=0;
+						GameContext.i.arenaContext.gameView.multyView.multyText.text="1";
+						GameContext.i.arenaContext.gameView.multyView.multyText.visible=true;
+						GameContext.i.arenaContext.gameView.multyView.img_hit.visible=true;
+						GameContext.i.arenaContext.gameView.multyView.lab_total_bg.visible=false;
+						GameContext.i.arenaContext.gameView.multyView.lab_total_damge.visible=false;
 						var lableJump=new UtilNumberAnmation();
-						lableJump.showAnmation(this.multyView.multyText,effectInfo.damage,this.multyNumber);
+						lableJump.showAnmation(GameContext.i.arenaContext.gameView.multyView.multyText,effectInfo.damage,this.multyNumber);
 						this.multyNumber=effectInfo.damage;
 						break ;
-					case 6:;
+					case 6:
+						GameContext.i.arenaContext.gameView.multyView.hitState=0;
 						var lableJumps=new UtilNumberAnmation();
-						lableJumps.showAnmation(this.multyView.multyText,effectInfo.damage,this.multyNumber);
+						lableJumps.showAnmation(GameContext.i.arenaContext.gameView.multyView.multyText,effectInfo.damage,this.multyNumber);
 						this.multyNumber=effectInfo.damage;
 						break ;
 					case 7:
-						this.multyView.timer.frameOnce(60,this,this.removeMulty,[this.multyView])
+						GameContext.i.arenaContext.gameView.multyView.hitState=1;
+						GameContext.i.arenaContext.gameView.multyView.hideView();
 						break ;
-					case 8:;
-						var comboView=new ComboViewUI();
-						var number=Math.ceil(effectInfo.sourceRoleInfo.roleVO.attackMulti *10);
-						comboView.lab_multy.text="X"+number/10;
-						comboView.pos(578,420);
-						comboView.scale(1.5,1.5);
-						this.addChild(comboView);
-						var comboImage=new Image();
-						comboImage.skin="combo/img_combo_"+effectInfo.sourceRoleInfo.roleVO.hasAttackAmount+".png";
-						comboImage.pivot(20.5,45.5)
-						comboImage.pos(478,420);
-						comboImage.scale(3,3);
-						this.addChild(comboImage);
-						Tween.to(comboView,{
-							scaleX:1.0,
-							scaleY:1.0
-						},200,null,Handler.create(this,this.changeComboView,[comboView]))
-						Tween.to(comboImage,{
-							scaleX:1.0,
-							scaleY:1.0,
-							rotation:comboImage.rotation+360
-						},200,null,Handler.create(this,this.changeImage,[comboImage]));
-						this.comboEffectImage=new Image();
-					switch(effectInfo.sourceRoleInfo.roleVO.comboEffect){
-						case 1:
-							this.comboEffectImage.skin="combo/img_bad.png";
-							break ;
-						case 2:
-							this.comboEffectImage.skin="combo/img_good.png";
-							break ;
-						case 3:
-							this.comboEffectImage.skin="combo/img_great.png";
-							break ;
-						case 4:
-							this.comboEffectImage.skin="combo/img_perfect.png";
-							break ;
-						}
-					this.comboEffectImage.pos(568,250);
-					this.comboEffectImage.pivot(this.comboEffectImage.width*0.5,this.comboEffectImage.height*0.5);
-					this.comboEffectImage.scale(0,0);
-					this.addChild(this.comboEffectImage);
-					Tween.to(this.comboEffectImage,{
-						scaleX:1.3,
-						scaleY:1.3
-					},200,null,Handler.create(this,this.changeNormalImage,[this.comboEffectImage]));
-					break ;
 					case 9:
-					this.skillNumber=0;
-					if (this.skillDamageImage==null){
-						this.skillDamageImage=new Image();
-					}
-					if (this.skillDamegeLable==null){
-						this.skillDamegeLable=new Label()
-					}
-					this.skillDamageImage.skin="combo/img_totalDamage.png";
-					this.skillDamageImage.pos(448,400);
-					this.addChild(this.skillDamageImage);
-					this.skillDamegeLable.text="0";
-					this.skillDamegeLable.font="comboSH"
-					this.skillDamegeLable.scale(0.5,0.5);
-					this.skillDamegeLable.pos(578,400);
-					this.addChild(this.skillDamegeLable);
-					var lableJumpr=new UtilNumberAnmation();
-					lableJumpr.showAnmation(this.skillDamegeLable,effectInfo.damage,this.skillNumber);
-					this.skillNumber=effectInfo.damage;
-					break ;
-					case 10:;
-					var lableJumpt=new UtilNumberAnmation();
-					lableJumpt.showAnmation(this.skillDamegeLable,(effectInfo.damage+this.skillNumber),this.skillNumber);
-					this.skillNumber+=effectInfo.damage;
-					break ;
-					case 11:
-					this.skillDamegeLable.timer.frameOnce(45,this,this.removeLable,[this.skillDamegeLable]);
-					this.skillDamageImage.timer.frameOnce(45,this,this.removeImage,[this.skillDamageImage]);
-					break ;
-					case 12:{
-						if (this.skillDamageImage==null){
-							this.skillDamageImage=new Image();
-						}
-						if (this.skillDamegeLable==null){
-							this.skillDamegeLable=new Label()
-						}
-						this.skillDamageImage.skin="combo/img_totalDamage.png";
-						this.skillDamageImage.pos(438,400);
-						this.addChild(this.skillDamageImage);
-						this.skillDamegeLable.text=effectInfo.damage.toString();
-						this.skillDamegeLable.font="comboSH"
-						this.skillDamegeLable.scale(0.5,0.5);
-						this.skillDamegeLable.pos(568,400);
-						this.addChild(this.skillDamegeLable);
-						this.skillDamegeLable.timer.frameOnce(60,this,this.removeText,[this.skillDamegeLable])
-						this.skillDamageImage.timer.frameOnce(60,this,this.removeImage,[this.skillDamageImage]);
+						this.skillNumber=0;
+						GameContext.i.arenaContext.gameView.multyView.visible=true;
+						GameContext.i.arenaContext.gameView.multyView.img_hit.visible=false;
+						GameContext.i.arenaContext.gameView.multyView.multyText.visible=false;;
+						GameContext.i.arenaContext.gameView.multyView.lab_total_bg.visible=true;
+						GameContext.i.arenaContext.gameView.multyView.lab_total_damge.visible=true;
+						GameContext.i.arenaContext.gameView.multyView.hitState=0;
+						GameContext.i.arenaContext.gameView.multyView.lab_total_damge.text=""+this.skillNumber;
+						var lableJumpsp=new UtilNumberAnmation();
+						lableJumpsp.showAnmation(GameContext.i.arenaContext.gameView.multyView.lab_total_damge,effectInfo.damage,this.skillNumber)
+						this.skillNumber=effectInfo.damage;
 						break ;
+					case 10:
+						GameContext.i.arenaContext.gameView.multyView.hitState=0;
+						var lableJumpt=new UtilNumberAnmation();
+						lableJumpt.showAnmation(GameContext.i.arenaContext.gameView.multyView.lab_total_damge,(effectInfo.damage+this.skillNumber),this.skillNumber);
+						this.skillNumber+=effectInfo.damage;
+						break ;
+					case 11:
+						GameContext.i.arenaContext.gameView.multyView.hitState=1;
+						GameContext.i.arenaContext.gameView.multyView.hideView();
+						break ;
+					case 12:{
+							GameContext.i.arenaContext.gameView.multyView.visible=true;
+							GameContext.i.arenaContext.gameView.multyView.img_hit.visible=false;
+							GameContext.i.arenaContext.gameView.multyView.multyText.visible=false;;
+							GameContext.i.arenaContext.gameView.multyView.lab_total_bg.visible=true;
+							GameContext.i.arenaContext.gameView.multyView.lab_total_damge.visible=true;
+							GameContext.i.arenaContext.gameView.multyView.lab_total_damge.text="1";
+							var lableJumpsp1=new UtilNumberAnmation();
+							lableJumpsp1.showAnmation(GameContext.i.arenaContext.gameView.multyView.lab_total_damge,effectInfo.damage,1)
+							GameContext.i.arenaContext.gameView.multyView.hitState=1;
+							GameContext.i.arenaContext.gameView.multyView.hideView();
+							break ;
+						}
 					}
-				}
 			}
 			while($effectInfoList.length > 0){
 				$effectInfoList.pop();
@@ -23130,115 +26793,60 @@ window.Laya=(function(window,document){
 		}
 
 		__proto.addNormalLable=function($effectInfo){
-			var showText=new Text();
-			showText.text="-"+$effectInfo.damage.toString();
-			showText.font="font6"
-			showText.align="center";
-			if ($effectInfo.targetRoleInfo !=null && $effectInfo.targetRoleInfo.roleItemView.group==0){
-				showText.pos($effectInfo.targetRoleInfo.roleItemView.x-130,
-				$effectInfo.targetRoleInfo.roleItemView.y-50);
-				this.refreshRoleView($effectInfo.targetRoleInfo);
-				this.refreshRoleView($effectInfo.sourceRoleInfo);
-				}else if($effectInfo.targetRoleInfo !=null && $effectInfo.targetRoleInfo.roleItemView.group==1){
-				showText.pos($effectInfo.targetRoleInfo.roleItemView.x-100,
-				$effectInfo.targetRoleInfo.roleItemView.y-50);
-				this.refreshRoleView($effectInfo.targetRoleInfo);
-				this.refreshRoleView($effectInfo.sourceRoleInfo);
-			}
-			this.addChild(showText);
-			Tween.to(showText,{
-				x:showText.x+50,
-				y:showText.y-80,
-				alpha:0.5,
-				scaleX:0.8,
-				scaleY:0.8
-			},450,null,Handler.create(this,this.removeText,[showText]));
+			this.refreshRoleView($effectInfo.targetRoleLogic);
+			this.refreshRoleView($effectInfo.sourceRoleLogic);
+			this.showRoleHpView($effectInfo.targetRoleLogic);
+			var damageView=new DamageView();
+			damageView.showLableAndImage($effectInfo.damage,"I",$effectInfo,1);
+			damageView.pos($effectInfo.targetRoleLogic.view.x+$effectInfo.targetRoleLogic.view.aniContainer.x,$effectInfo.targetRoleLogic.view.y-60)
+			this.addChild(damageView)
 		}
 
+		//this.damageViewArray.push(damageView);
 		__proto.addCritLable=function($effectInfo){
-			var showText=new Text();
-			showText.text="-"+$effectInfo.damage.toString();
-			showText.font="font7";
-			var showImage=new Image();
-			showImage.loadImage("bmfont/BJ_T_zhandouUI.png");
-			if ($effectInfo.targetRoleInfo !=null && $effectInfo.targetRoleInfo.roleItemView.group==0){
-				showImage.pos($effectInfo.targetRoleInfo.roleItemView.x-150,
-				$effectInfo.targetRoleInfo.roleItemView.y-50);
-				showText.pos($effectInfo.targetRoleInfo.roleItemView.x-70,
-				$effectInfo.targetRoleInfo.roleItemView.y-50);
-				this.refreshRoleView($effectInfo.targetRoleInfo);
-				this.refreshRoleView($effectInfo.sourceRoleInfo);
-				}else if($effectInfo.targetRoleInfo !=null && $effectInfo.targetRoleInfo.roleItemView.group==1){
-				showImage.pos($effectInfo.targetRoleInfo.roleItemView.x-120,
-				$effectInfo.targetRoleInfo.roleItemView.y-50);
-				showText.pos($effectInfo.targetRoleInfo.roleItemView.x-40,
-				$effectInfo.targetRoleInfo.roleItemView.y-50);
-				this.refreshRoleView($effectInfo.targetRoleInfo);
-				this.refreshRoleView($effectInfo.sourceRoleInfo);
-			}
-			this.addChild(showText);
-			this.addChild(showImage);
-			Tween.to(showText,{
-				x:showText.x+50,
-				y:showText.y-80,
-				alpha:0.5,
-				scaleX:0.8,
-				scaleY:0.9
-			},450,null,Handler.create(this,this.removeText,[showText]));
-			Tween.to(showImage,{
-				x:showImage.x+55,
-				y:showImage.y-80,
-				alpha:0.5,
-				scaleX:0.8,
-				scaleY:0.9
-			},450,null,Handler.create(this,this.removeText,[showImage]));
+			var damageView=new DamageView();
+			damageView.showLableAndImage($effectInfo.damage,"H",$effectInfo,2,"bmfont/BJ_T_zhandouUI.png");
+			damageView.pos($effectInfo.targetRoleLogic.view.x+$effectInfo.targetRoleLogic.view.aniContainer.x ,$effectInfo.targetRoleLogic.view.y-60)
+			this.addChild(damageView)
+			this.refreshRoleView($effectInfo.targetRoleLogic);
+			this.refreshRoleView($effectInfo.sourceRoleLogic);
+			this.showRoleHpView($effectInfo.targetRoleLogic);
 		}
 
 		__proto.addParrylLable=function($effectInfo){
-			var showText=new Text();
-			showText.text="-"+$effectInfo.damage.toString();
-			showText.font="font6";
-			var showImage=new Image();
-			showImage.loadImage("buff/ZT_gedang_zhandouUI.png");
-			if ($effectInfo.targetRoleInfo !=null && $effectInfo.targetRoleInfo.roleItemView.group==0){
-				showImage.pos($effectInfo.targetRoleInfo.roleItemView.x-150,
-				$effectInfo.targetRoleInfo.roleItemView.y-50);
-				showText.pos($effectInfo.targetRoleInfo.roleItemView.x-70,
-				$effectInfo.targetRoleInfo.roleItemView.y-50);
-				this.refreshRoleView($effectInfo.targetRoleInfo);
-				this.refreshRoleView($effectInfo.sourceRoleInfo);
-				}else if($effectInfo.targetRoleInfo !=null && $effectInfo.targetRoleInfo.roleItemView.group==1){
-				showImage.pos($effectInfo.targetRoleInfo.roleItemView.x-120,
-				$effectInfo.targetRoleInfo.roleItemView.y-50);
-				showText.pos($effectInfo.targetRoleInfo.roleItemView.x-40,
-				$effectInfo.targetRoleInfo.roleItemView.y-50);
-				this.refreshRoleView($effectInfo.targetRoleInfo);
-				this.refreshRoleView($effectInfo.sourceRoleInfo);
-			}
-			this.addChild(showText);
-			this.addChild(showImage);
-			Tween.to(showText,{
-				x:showText.x+50,
-				y:showText.y-80,
-				alpha:0.5,
-				scaleX:0.8,
-				scaleY:0.9
-			},450,null,Handler.create(this,this.removeText,[showText]));
-			Tween.to(showImage,{
-				x:showImage.x+55,
-				y:showImage.y-80,
-				alpha:0.5,
-				scaleX:0.8,
-				scaleY:0.9
-			},450,null,Handler.create(this,this.removeText,[showImage]));
+			this.refreshRoleView($effectInfo.targetRoleLogic);
+			this.refreshRoleView($effectInfo.sourceRoleLogic);
+			this.showRoleHpView($effectInfo.targetRoleLogic);
+			var damageView=new DamageView();
+			damageView.showLableAndImage($effectInfo.damage,"I",$effectInfo,3,"buff/ZT_gedang_zhandouUI.png");
+			damageView.pos($effectInfo.targetRoleLogic.view.x+$effectInfo.targetRoleLogic.view.aniContainer.x ,$effectInfo.targetRoleLogic.view.y-60)
+			this.addChild(damageView)
 		}
 
+		__proto.showRoleHpView=function($effectInfo){
+			if ($effectInfo.group==0){
+				$effectInfo.view.roleLeftHpView.visible=true;
+				Tween.to($effectInfo.view.roleLeftHpView.img_hp,{
+					scaleX:$effectInfo.roleHp/$effectInfo.roleInfo.hpMax
+				},200,null);
+				$effectInfo.view.roleLeftHpView.refreshView();
+			}
+			else if ($effectInfo.group==1){
+				$effectInfo.view.roleRightHpView.visible=true;
+				Tween.to($effectInfo.view.roleRightHpView.img_hp,{
+					scaleX:$effectInfo.roleHp/$effectInfo.roleInfo.hpMax
+				},200,null);
+				$effectInfo.view.roleRightHpView.refreshView();
+			}
+		}
+
+		//}
 		__proto.addOperateMpLable=function($effectInfo){
-			for (var i=0;i < $effectInfo.sourceRoleInfo.roleVO.roleInfoList.length;i++){
-				var roleInfo=$effectInfo.sourceRoleInfo.roleVO.roleInfoList[i];
+			for (var i=0;i < $effectInfo.sourceRoleLogic.roleInfo.roleVO.roleInfoList.length;i++){
+				var roleInfo=$effectInfo.sourceRoleLogic.roleInfo.roleVO.roleInfoList[i];
 				if (roleInfo.isMe){
-					var mpNumber=roleInfo.mp *0.01;
-					var roleView=GameContext.i.arenaContext.gameView.roleListView["roleItemView"+(roleInfo.position+1)];
+					var mpNumber=roleInfo.roleItemLogic.roleMp *0.01;
+					var roleView=GameContext.i.arenaContext.gameView.arenaFootView.roleListView["roleItemView"+(roleInfo.position+1)];
 					roleView.refreshHP(mpNumber);
 				}
 			}
@@ -23249,31 +26857,39 @@ window.Laya=(function(window,document){
 			$multy=null;
 		}
 
-		__proto.removeText=function($text){
+		__proto.removeText=function($text,$effectInfo){
 			$text.removeSelf();
 		}
 
-		__proto.refreshRoleView=function($roleInfo){
+		__proto.refreshRoleView=function($roleLogic){
 			var hpmax=0;
 			var hp=0;
-			for (var i=0;i < $roleInfo.roleVO.roleInfoList.length;i++){
-				var roleInfo=$roleInfo.roleVO.roleInfoList[i];
-				hpmax+=roleInfo.meta.hpMax;
-				hp+=roleInfo.hp;
+			for (var i=0;i < $roleLogic.roleInfo.roleVO.roleInfoList.length;i++){
+				var roleInfo=$roleLogic.roleInfo.roleVO.roleInfoList[i];
+				hpmax+=roleInfo.hpMax;
+				hp+=roleInfo.roleItemLogic.roleHp;
 				if (roleInfo.isMe){
-					var hpNumber=roleInfo.hp/roleInfo.meta.hpMax;
-					var mpNumber=roleInfo.mp*0.01;
-					var roleView=GameContext.i.arenaContext.gameView.roleListView["roleItemView"+(roleInfo.position+1)];
+					var hpNumber=roleInfo.roleItemLogic.roleHp / roleInfo.hpMax;
+					var mpNumber=roleInfo.roleItemLogic.roleMp / 1000;
+					var roleView=GameContext.i.arenaContext.gameView.arenaFootView.roleListView["roleItemView"+(roleInfo.position+1)];
 					roleView.refreshView(hpNumber,mpNumber);
 				}
 			}
-			if ($roleInfo.isMe){
-				Tween.to(GameContext.i.arenaContext.gameView.leftPlayerInfoView.imgPlayerHp,{
-					scaleX:(hp*1.0)/hpmax
-				},300,null);
+			if ($roleLogic.group==0){
+				var widthSprite2=GameContext.i.arenaContext.gameView.leftZhezhao2Sprite.width;
+				var posXNumber2=Math.ceil((1-(hp*1.0)/hpmax)*widthSprite2);
+				GameContext.i.arenaContext.gameView.leftZhezhao2Sprite.x=posXNumber2;
+				var widthSprite1=GameContext.i.arenaContext.gameView.leftZhezhao1Sprite.width;
+				var posXNumber1=Math.ceil((1-(hp *1.0)/ hpmax)*widthSprite1);
+				Tween.to(GameContext.i.arenaContext.gameView.leftZhezhao1Sprite,{
+					x:posXNumber1
+				},300);
 				}else{
-				Tween.to(GameContext.i.arenaContext.gameView.rightPlayerInfoView.imgPlayerHp,{
-					scaleX:(hp*1.0)/hpmax
+				var widthSprites=GameContext.i.arenaContext.gameView.rightZhezhao1Sprite.width;
+				var posXNumbers=Math.ceil((1-(hp *1.0)/ hpmax)*widthSprites);
+				GameContext.i.arenaContext.gameView.rightZhezhao2Sprite.x=-posXNumbers;
+				Tween.to(GameContext.i.arenaContext.gameView.rightZhezhao1Sprite,{
+					x:-posXNumbers
 				},300,null);
 			}
 		}
@@ -23334,6 +26950,144 @@ window.Laya=(function(window,document){
 	})(Sprite)
 
 
+	//class com.gamepark.casino.game.arena.view.DamageView extends laya.display.Sprite
+	var DamageView=(function(_super){
+		function DamageView(){
+			this.damageLable=null;
+			this.damageImage=null;
+			this.showNumber=0;
+			this.showState=false;
+			this.changeState=false;
+			this.changeNumber=0;
+			this.leftOrRight=0;
+			this.damageType=0;
+			DamageView.__super.call(this);
+			this.showNumber=1;
+			this.showState=false;
+			this.changeState=false;
+			this.changeNumber=1;
+			this.leftOrRight=1;
+			this.width=250;
+			this.height=150;
+			this.pivot(125,75);
+		}
+
+		__class(DamageView,'com.gamepark.casino.game.arena.view.DamageView',_super);
+		var __proto=DamageView.prototype;
+		__proto.showLableAndImage=function($argss,$font,$effectInfo,$args,$url){
+			this.damageType=$args;
+			if ($url !=null){
+				this.damageImage=new Image();
+				this.damageImage.skin=$url;
+				this.damageImage.autoSize=true;
+				this.damageImage.pivot(this.damageImage.width*0.5,this.damageImage.height*0.5);
+				if ($effectInfo.targetRoleLogic !=null && $effectInfo.targetRoleLogic.roleInfo.roleItemLogic.group==0){
+					switch($args){
+						case 1:
+							break ;
+						case 2:
+							this.damageImage.pos(0,
+							0);
+							break ;
+						case 3:
+							this.damageImage.pos(0,0);
+							break ;
+						}
+					}else if($effectInfo.targetRoleLogic !=null && $effectInfo.targetRoleLogic.roleInfo.roleItemLogic.group==1){
+					switch($args){
+						case 1:
+							break ;
+						case 2:
+							this.damageImage.pos(0,0);
+							break ;
+						case 3:
+							this.damageImage.pos(0,0);
+							break ;
+						}
+				}
+				this.addChild(this.damageImage);
+			}
+			this.damageLable=new Label();
+			if($effectInfo.damage > 0){
+				this.damageLable.text="+"+$effectInfo.damage;
+			}
+			else{
+				this.damageLable.text=""+$effectInfo.damage;
+			}
+			this.damageLable.font=$font
+			this.damageLable.align="center";
+			this.damageLable.autoSize=true;
+			this.damageLable.pivot(this.damageLable.width*0.5,this.damageLable.height*0.5);
+			this.addChild(this.damageLable);
+			if ($effectInfo.targetRoleLogic !=null && $effectInfo.targetRoleLogic.roleInfo.roleItemLogic.group==0){
+				this.leftOrRight=1;
+				switch($args){
+					case 1:
+						this.damageLable.pos(this.width*0.15,0);
+						break ;
+					case 2:
+						this.damageLable.pos(this.damageImage.width*0.5+this.damageLable.width*0.5,0);
+						break ;
+					case 3:
+						this.damageLable.pos(this.damageImage.width*0.5+this.damageLable.width*0.5,0);
+						break ;
+					}
+				}else if($effectInfo.targetRoleLogic !=null && $effectInfo.targetRoleLogic.roleInfo.roleItemLogic.group==1){
+				this.leftOrRight=2;
+				switch($args){
+					case 1:
+						this.damageLable.pos(this.width*0.1,0);
+						break ;
+					case 2:
+						this.damageLable.pos(this.damageImage.width *0.5+this.damageLable.width*0.5,0);
+						break ;
+					case 3:
+						this.damageLable.pos(this.damageImage.width*0.5+this.damageLable.width*0.5,0);
+						break ;
+					}
+			}
+			this.autoSize=true;
+			this.pivot(this.width*0.5,this.height*0.5);
+			$effectInfo.targetRoleLogic.view.lableArray.push(this);
+		}
+
+		__proto.showImage=function($url,$effectInfo){
+			this.damageImage=new Image();
+			this.damageImage.skin=$url;
+		}
+
+		__proto.addRoleItemView=function($effectInfo){
+			$effectInfo.targetRoleLogic.view.lableArray.push()
+		}
+
+		__proto.updateView=function(){
+			if (this.showNumber < 20){
+				if (this.damageType==2){
+					this.updateCrit();
+				}
+				}else if(this.showNumber > 41 && this.showNumber <=61){
+				this.alpha=1-(this.showNumber-40)/20
+				if (this.leftOrRight==1){
+					this.x-=1;
+					}else{
+					this.x+=1;
+				}
+				this.y-=2.0;
+				}else if(this.showNumber >62){
+				this.showState=true;
+			}
+			this.showNumber++
+		}
+
+		__proto.updateCrit=function(){
+			var scalNumber=this.showNumber < 11 ?(this.showNumber/30)+0.8 :(20-this.showNumber)/30+1;
+			this.scale(scalNumber,scalNumber);
+		}
+
+		return DamageView;
+	})(Sprite)
+
+
 	//class com.gamepark.casino.game.arena.view.RoleItemView extends laya.display.Sprite
 	var RoleItemView=(function(_super){
 		function RoleItemView($group,$position){
@@ -23341,118 +27095,198 @@ window.Laya=(function(window,document){
 			this.position=0;
 			this.roleInfo=null;
 			this.factory=null;
-			this.roleAni=null;
-			this.status=0;
-			this.secondStatus=0;
+			this.imgSelect=null;
+			this.aniContainer=null;
+			this.imgTouch=null;
+			this.roleLeftHpView=null;
+			this.roleRightHpView=null;
+			this._roleAni=null;
+			this._effectAni=null;
+			this.logic=null;
+			this.lableArray=[];
+			this._hurtActionName=null;
 			RoleItemView.__super.call(this);
 			this.group=$group;
 			this.position=$position;
-			this.timer.frameLoop(1,this,this.enterFrameHandler);
+			this.imgSelect=new Image("res/img_lock.png");
+			this.imgSelect.autoSize=true;
+			this.imgSelect.pivot(this.imgSelect.width *0.5,this.imgSelect.height *0.5);
+			this.imgSelect.pos(0,-30);
+			this.addChild(this.imgSelect);
+			this.imgSelect.visible=false;
+			this.aniContainer=new Sprite();
+			this.addChild(this.aniContainer);
+			this.imgTouch=new Image("res/img_role_touch.png")
+			this.imgTouch.autoSize=true;
+			this.imgTouch.pivot(this.imgTouch.width *0.5,this.imgTouch.height);
+			this.addChild(this.imgTouch);
+			if ($group==0){
+				this.roleLeftHpView=new AreanRoleLeftHpView();
+				this.roleLeftHpView.pos(0,-140);
+				this.roleLeftHpView.autoSize=true;
+				this.roleLeftHpView.pivot(this.roleLeftHpView.width *0.5,this.roleLeftHpView.height *0.5);
+				this.roleLeftHpView.visible=false;
+				this.aniContainer.addChild(this.roleLeftHpView);
+				}else if($group==1){
+				this.roleRightHpView=new AreanRoleRightHpView();
+				this.roleRightHpView.pos(0,-140);
+				this.roleRightHpView.autoSize=true;
+				this.roleRightHpView.pivot(this.roleRightHpView.width *0.5,this.roleRightHpView.height *0.5);
+				this.roleRightHpView.visible=false;
+				this.aniContainer.addChild(this.roleRightHpView);
+			}
+			if(this.group==0){
+				this.faceRight();
+			}
+			else{
+				this.faceLeft();
+			}
 		}
 
 		__class(RoleItemView,'com.gamepark.casino.game.arena.view.RoleItemView',_super);
 		var __proto=RoleItemView.prototype;
+		// this.timer.frameLoop(1,this,enterFrameHandler);
 		__proto.showRoleView=function(){
-			if(this.roleAni !=null){
-				if(this.roleAni !=null){
-					this.removeChild(this.roleAni);
-					this.roleAni.off("enterframe",this,this.onAnimationEnterFrameHandler);
-					this.roleAni.off("stopped",this,this.onAnimationFinish);
-					this.roleAni=null;
-				}
+			if(this._roleAni !=null){
+				this.aniContainer.removeChild(this._roleAni);
+				this._roleAni.off("enterframe",this,this.onAnimationEnterFrameHandler);
+				this._roleAni.off("stopped",this,this.onAnimationFinish);
+				this._roleAni=null;
 			};
-			var texture=Loader.getRes(this.roleInfo.meta.resAniTexture);
-			var data=Loader.getRes(this.roleInfo.meta.resAniData);
-			this.status=1;
-			this.secondStatus=1;
+			var texture=Loader.getRes(this.roleInfo.meta.modelResMeta.resAniTexture);
+			var data=Loader.getRes(this.roleInfo.meta.modelResMeta.resAniData);
 			this.factory=new Templet();
 			this.factory.on("complete",this,this.onSkeletonDataParsed);
 			this.factory.parseData(texture,data,24);
 		}
 
 		__proto.onSkeletonDataParsed=function(){
-			this.roleAni=this.factory.buildArmature(2);
-			console.log(1,"roleAni",this.roleAni);
-			if(this.group==0){
-				this.roleAni.scaleX=0.3;
-			}
-			else{
-				this.roleAni.scaleX=-0.3;
-			}
-			this.roleAni.scaleY=0.3;
-			this.addChild(this.roleAni);
-			switch(this.roleInfo.meta.id){
-				case 1:
-					break ;
-				case 2:
-					break ;
-				case 3:
-					break ;
-				}
-			this.roleAni.on("enterframe",this,this.onAnimationEnterFrameHandler);
-			this.roleAni.on("stopped",this,this.onAnimationFinish);
-			this.timer.frameLoop(1,this,this.enterFrameHandler);
+			this._roleAni=this.factory.buildArmature(0);
+			this._roleAni.scaleY=0.5;
+			this.aniContainer.addChild(this._roleAni);
+			this._roleAni.on("enterframe",this,this.onAnimationEnterFrameHandler);
+			this._roleAni.on("stopped",this,this.onAnimationFinish);
+			this.showEffectView();
+		}
+
+		__proto.showEffectView=function(){
+			if(this._effectAni !=null){
+				this.aniContainer.removeChild(this._effectAni);
+				this._effectAni=null;
+			};
+			var texture=Loader.getRes("res/skeleton/qingqizhuqiang_effect/qingqizhuqiang_effect.png");
+			var data=Loader.getRes("res/skeleton/qingqizhuqiang_effect/qingqizhuqiang_effect.sk");
+			this.factory=new Templet();
+			this.factory.on("complete",this,this.onEffectSkeletonDataParsed);
+			this.factory.parseData(texture,data,24);
+		}
+
+		__proto.onEffectSkeletonDataParsed=function(){
+			this._effectAni=this.factory.buildArmature(0);
+			this._effectAni.scaleY=0.5;
+			this._effectAni.blendMode="add";
+			this.aniContainer.addChild(this._effectAni);
+			this.changeSpeed();
 			this.playIdle();
 		}
 
+		__proto.faceLeft=function(){
+			this.aniContainer.scaleX=0-0.5;
+		}
+
+		__proto.faceRight=function(){
+			this.aniContainer.scaleX=0.5;
+		}
+
+		__proto.turnFace=function(){
+			this.aniContainer.scaleX=0-this.aniContainer.scaleX;
+		}
+
+		// trace("turnFace, scaleX is " ,this.aniContainer.scaleX);
+		__proto.changeSpeed=function(){
+			console.log(2,"GameContext.i.arenaContext.data.speed : ",GameContext.i.arenaContext.data.speed);
+			switch(GameContext.i.arenaContext.data.speed){
+				case 1:
+					this._roleAni.playbackRate(1);
+					this._effectAni.playbackRate(1);
+					break ;
+				case 2:
+					this._roleAni.playbackRate(1.5);
+					this._effectAni.playbackRate(1.5);
+					break ;
+				case 3:
+					this._roleAni.playbackRate(2);
+					this._effectAni.playbackRate(2);
+					break ;
+				}
+		}
+
 		__proto.onAnimationEnterFrameHandler=function(){
-			if(this.secondStatus==607){
-				var animationMeta;
+			if(this.logic.secondStatus==507){
+				var keyFrameList;
 				var currentAnimationFrame=0;
-				if(this.status==5){
-					animationMeta=this.roleInfo.meta.attackAnimationMeta;
+				if(this.logic.firstStatus==5){
+					if(this.logic.actionRoleInfo.useSkillFlag==0){
+						keyFrameList=this.roleInfo.meta.modelResMeta["attack"+this.logic.actionRoleInfo.attackType+"KeyFrameList"];
+					}
+					else{
+						keyFrameList=this.roleInfo.meta.modelResMeta.skillKeyFrameList;
+					}
 				}
 				else{
-					animationMeta=this.roleInfo.meta.superUniqueSkillAnimationMeta;
+					keyFrameList=this.roleInfo.meta.modelResMeta.superUniqueSkillKeyFrameList;
 				}
-				currentAnimationFrame=animationMeta.infoList[this.roleInfo.actionInfo.animationIndex];
-				if(this.roleAni.player.currentKeyframeIndex >=currentAnimationFrame){
+				currentAnimationFrame=keyFrameList[this.roleInfo.actionInfo.animationIndex];
+				if(this._roleAni.player.currentKeyframeIndex >=currentAnimationFrame){
 					var i=0;
-					var targetRoleInfo;
+					var j=0;
 					var effectInfo;
 					var totalDamage=0;
-					for(i=0;i < this.roleInfo.currentTargetRoleInfoList.length;i++){
-						targetRoleInfo=this.roleInfo.currentTargetRoleInfoList[i];
-						if(targetRoleInfo.hp <=0){
-							if(this.roleInfo.actionInfo.animationIndex >=(animationMeta.infoList.length-1)){
-								targetRoleInfo.roleItemView.doDie();
+					var battleTargetRoleInfo;
+					var changePropertyInfo;
+					var roleStatus=0;
+					for(i=0;i < this.logic.actionRoleInfo.targetRoleInfoList.length;i++){
+						battleTargetRoleInfo=this.logic.actionRoleInfo.targetRoleInfoList[i];
+						if(battleTargetRoleInfo.logic.roleStatus==4){
+							if(this.roleInfo.actionInfo.animationIndex >=(keyFrameList.length-1)){
+								battleTargetRoleInfo.logic.doFullFall();
 							}
 							else{
-								targetRoleInfo.roleItemView.doHurt();
+								battleTargetRoleInfo.logic.doHurt(this.logic.actionRoleInfo,this.roleInfo.actionInfo.animationIndex);
 							}
 						}
 						else{
-							switch(targetRoleInfo.actionInfo.type){
+							switch(battleTargetRoleInfo.damageType){
 								case 1:
 								case 3:
-									targetRoleInfo.roleItemView.doHurt();
+									battleTargetRoleInfo.logic.doHurt(this.logic.actionRoleInfo,this.roleInfo.actionInfo.animationIndex);
 									break ;
 								case 2:
-									targetRoleInfo.roleItemView.doFall();
+									battleTargetRoleInfo.logic.doHurt(this.logic.actionRoleInfo,this.roleInfo.actionInfo.animationIndex);
 									break ;
 								}
 						}
 						effectInfo=new EffectItemInfo();
-						effectInfo.damage=Math.round(targetRoleInfo.actionInfo.damage / animationMeta.infoList.length);
-						effectInfo.type=targetRoleInfo.actionInfo.type;
-						effectInfo.sourceRoleInfo=this.roleInfo;
-						effectInfo.targetRoleInfo=targetRoleInfo;
+						effectInfo.damage=Math.round(battleTargetRoleInfo.damage / keyFrameList.length);
+						effectInfo.type=battleTargetRoleInfo.damageType;
+						effectInfo.sourceRoleLogic=this.logic;
+						effectInfo.targetRoleLogic=battleTargetRoleInfo.logic;
 						GameContext.i.arenaContext.gameView.effectView.addEffect(effectInfo);
-						totalDamage+=Math.round(targetRoleInfo.actionInfo.damage / animationMeta.infoList.length *(i+1));
+						totalDamage+=Math.round((0-battleTargetRoleInfo.damage)/ keyFrameList.length *(i+1));
 					}
 					if(this.roleInfo.isMe){
 						effectInfo=new EffectItemInfo();
-						effectInfo.damage=(this.roleInfo.actionInfo.animationIndex+1)*this.roleInfo.currentTargetRoleInfoList.length;
+						effectInfo.damage=(this.roleInfo.actionInfo.animationIndex+1)*this.logic.actionRoleInfo.targetRoleInfoList.length;
 						if(this.roleInfo.actionInfo.animationIndex==0){
 							effectInfo.type=5;
 						}
 						else{
 							effectInfo.type=6;
 						}
-						effectInfo.sourceRoleInfo=this.roleInfo;
+						effectInfo.sourceRoleLogic=this.logic;
 						GameContext.i.arenaContext.gameView.effectView.addEffect(effectInfo);
 						effectInfo=new EffectItemInfo();
-						if(this.status==4){
+						if(this.logic.firstStatus==4){
 							effectInfo.damage=totalDamage;
 							if(this.roleInfo.actionInfo.animationIndex==0){
 								effectInfo.type=9;
@@ -23460,24 +27294,23 @@ window.Laya=(function(window,document){
 							else{
 								effectInfo.type=10;
 							}
-							effectInfo.sourceRoleInfo=this.roleInfo;
+							effectInfo.sourceRoleLogic=this.logic;
 							GameContext.i.arenaContext.gameView.effectView.addEffect(effectInfo);
 						}
 						else{
 						}
 						this.roleInfo.actionInfo.animationIndex++;
-						if(this.roleInfo.actionInfo.animationIndex >=animationMeta.infoList.length){
+						if(this.roleInfo.actionInfo.animationIndex >=keyFrameList.length){
 							effectInfo=new EffectItemInfo();
-							effectInfo.damage=(this.roleInfo.actionInfo.animationIndex)*this.roleInfo.currentTargetRoleInfoList.length;
+							effectInfo.damage=(this.roleInfo.actionInfo.animationIndex)*this.logic.actionRoleInfo.targetRoleInfoList.length;
 							effectInfo.type=7;
-							effectInfo.sourceRoleInfo=this.roleInfo;
+							effectInfo.sourceRoleLogic=this.logic;
 							GameContext.i.arenaContext.gameView.effectView.addEffect(effectInfo);
-							console.log("")
-							if(this.status==4){
+							if(this.logic.firstStatus==4){
 								effectInfo=new EffectItemInfo();
 								effectInfo.damage=totalDamage;
 								effectInfo.type=11;
-								effectInfo.sourceRoleInfo=this.roleInfo;
+								effectInfo.sourceRoleLogic=this.logic;
 								GameContext.i.arenaContext.gameView.effectView.addEffect(effectInfo);
 							}
 						}
@@ -23485,402 +27318,347 @@ window.Laya=(function(window,document){
 					else{
 						this.roleInfo.actionInfo.animationIndex++;
 					}
-					console.log(2,"enter function onAnimationEnterFrameHandler, play target animation frame index is : ",this.roleAni.player.currentKeyframeIndex);
+				}
+			}
+			else if(this.logic.secondStatus==602){
+				var nextAttackRoleInfo;
+				var moveDistanceX=NaN;
+				var step=0;
+				console.log("playing _hurtActionName ： ",this._hurtActionName);
+				switch(this._hurtActionName){
+					case "hurt2":
+						if(this._roleAni.player.currentKeyframeIndex <=this.logic.roleInfo.meta.modelResMeta.hurt2StopOnSkyKeyFrame){
+							moveDistanceX=130 *0.5 / this.logic.roleInfo.meta.modelResMeta.hurt2StopOnSkyKeyFrame *this._roleAni.player.currentKeyframeIndex;
+							step=1;
+						}
+						else{
+							moveDistanceX=130 *0.5 / (this._roleAni.total-this.logic.roleInfo.meta.modelResMeta.hurt2StopOnSkyKeyFrame)*this._roleAni.player.currentKeyframeIndex;
+							step=2;
+						}
+						if(this.group==0){
+							this.aniContainer.x=0-moveDistanceX;
+						}
+						else{
+							this.aniContainer.x=moveDistanceX;
+						}
+						console.log("hurt2, x : ",this.aniContainer.x);
+						console.log("hurt2, currentKeyframeIndex : ",this._roleAni.player.currentKeyframeIndex);
+						console.log("hurt2, hurt2StopOnSkyKeyFrame : ",this.logic.roleInfo.meta.modelResMeta.hurt2StopOnSkyKeyFrame);
+						if(this._roleAni.player.currentKeyframeIndex==this.logic.roleInfo.meta.modelResMeta.hurt2StopOnSkyKeyFrame){
+							nextAttackRoleInfo=ArenaUtil.getNextBattleAttackRoleInfo(this.logic.attackerRoleInfo,this.logic.roleInfo.id);
+							if(nextAttackRoleInfo !=null){
+							switch(nextAttackRoleInfo.attackType){
+								case 3:
+								case 4:
+									if(this.group==0){
+										this.aniContainer.x=(0-130 *0.5);
+									}
+									else{
+										this.aniContainer.x=130 *0.5;
+									}
+									console.log("hurt2 to hurt idle, x : ",this.aniContainer.x);
+									this.logic.doHurtIdle(1);
+									break ;
+								}
+						}
+						else{
+						}
+					}
+					break ;
+					case "hurt4":
+					moveDistanceX=130 *0.5 / this._roleAni.total *this._roleAni.player.currentKeyframeIndex;
+					if(this.group==0){
+						this.aniContainer.x=0-moveDistanceX;
+					}
+					else{
+						this.aniContainer.x=moveDistanceX;
+					}
+					break ;
+				}
+			}
+			else if(this.logic.secondStatus==608){
+				moveDistanceX=130 *2 *0.5 / this._roleAni.total;
+				if(this.group==0){
+					this.aniContainer.x=0-moveDistanceX;
+				}
+				else{
+					this.aniContainer.x=moveDistanceX;
+				}
+			}
+			else if(this.logic.secondStatus==604){
+				moveDistanceX=130 *0.5 / (this._roleAni.total-this.logic.roleInfo.meta.modelResMeta.hurt2StopOnSkyKeyFrame)*this._roleAni.player.currentKeyframeIndex;
+				if(this.group==0){
+					this.aniContainer.x=0-moveDistanceX;
+				}
+				else{
+					this.aniContainer.x=moveDistanceX;
 				}
 			}
 		}
 
 		__proto.onAnimationFinish=function(){
-			console.log(1,"enter function onAnimationFinish");
-			if(this.secondStatus==607){
-				this.doRunBackAttack();
-				this.parent.setChildIndex(this,(this.group *6+this.position));
-			}
-			else if(this.secondStatus==602){
-				this.doIdle();
-			}
-			else if(this.secondStatus==604){
-				if(this.status==7){
-					console.log(1,"play die and falling animation finished");
-					this.secondStatus=701;
+			if(this.logic.secondStatus==507){
+				if(this.logic.firstStatus==4){
 				}
 				else{
-					this.doIdle();
+					if(this.logic.actionRoleInfo.useSkillFlag==0){
+						if(this.logic.actionRoleInfo.attackType==3){
+							if(this.logic.group==0){
+								this.aniContainer.x+=(this.logic.roleInfo.meta.modelResMeta.attack3JumpDistance *0.5);
+							}
+							else{
+								this.aniContainer.x-=(this.logic.roleInfo.meta.modelResMeta.attack3JumpDistance *0.5);
+							}
+						}
+						else if(this.logic.actionRoleInfo.attackType==5){
+							if(this.logic.group==0){
+								this.aniContainer.x+=(this.logic.roleInfo.meta.modelResMeta.attack5JumpDistance *0.5);
+							}
+							else{
+								this.aniContainer.x-=(this.logic.roleInfo.meta.modelResMeta.attack5JumpDistance *0.5);
+							}
+						}
+					}
+				}
+				this.logic.doRunBackAttack();
+				this.parent.setChildIndex(this,(this.group *6+this.position));
+			}
+			else if(this.logic.secondStatus==602){
+				var actionIndex=0;
+				var actionName;
+				var nextAttackRoleInfo;
+				var moveDistanceX=NaN;
+				console.log(2,"play complete _hurtActionName : ",this._hurtActionName);
+				switch(this._hurtActionName){
+					case "hurt2":
+					case "hurt4":
+					case "hurt5":
+						if((this._hurtActionName=="hurt2")|| (this._hurtActionName=="hurt4")){
+							console.log("this.aniContainer.x : ",this.aniContainer.x);
+							if(this.logic.group==0){
+								if(this.aniContainer.x <=(0-130 *0.5 *2)){
+									this.aniContainer.x=(0-130 *0.5 *2);
+								}
+							}
+							else{
+								if(this.aniContainer.x >=(130 *0.5 *2)){
+									this.aniContainer.x=130 *0.5 *2;
+								}
+							}
+						}
+						nextAttackRoleInfo=ArenaUtil.getNextBattleAttackRoleInfo(this.logic.attackerRoleInfo,this.logic.roleInfo.id);
+						console.log("nextAttackRoleInfo : ",nextAttackRoleInfo);
+						if(nextAttackRoleInfo !=null){
+							this.logic.doHurtIdle(2);
+						}
+						else{
+							console.log("logic roleStatus : ",this.logic.roleStatus);
+							if(this.logic.roleStatus==4){
+								console.log("dodie");
+								this.logic.doDie();
+							}
+							else{
+								this.logic.doRunBackHurt();
+							}
+						}
+						break ;
+					case "hurt3":
+						nextAttackRoleInfo=ArenaUtil.getNextBattleAttackRoleInfo(this.logic.attackerRoleInfo,this.logic.roleInfo.id);
+						if(nextAttackRoleInfo !=null){
+							this.logic.doHurtIdle(1);
+						}
+						else{
+							this.logic.doFall();
+						}
+						break ;
+					case "hurt1a":
+					case "hurt1b":
+						if(this.logic.attackerRoleInfo.logic.firstStatus==4){
+							this.logic.doIdle();
+						}
+						else{
+							nextAttackRoleInfo=ArenaUtil.getNextBattleAttackRoleInfo(this.logic.attackerRoleInfo,this.logic.roleInfo.id);
+							if(nextAttackRoleInfo !=null){
+								this.logic.doIdle();
+							}
+							else{
+								if(this.logic.roleStatus==4){
+									this.logic.doFullFall();
+								}
+								else{
+									this.logic.doIdle();
+								}
+							}
+						}
+						break ;
+					}
+			}
+			else if(this.logic.secondStatus==608){
+				if(this.logic.roleStatus==4){
+					this.logic.doDie();
+					console.log("ready to show die animation");
+				}
+				else{
+					this.logic.doRunBackHurt();
 				}
 			}
-			else if(this.secondStatus==702){
-				console.log(1,"play die animation finished");
-				this.secondStatus=703;
+			else if(this.logic.secondStatus==604){
+				if(this.logic.roleStatus==4){
+					this.logic.doDie();
+					console.log("ready to show die animation");
+				}
+				else{
+					this.logic.doRunBackHurt();
+				}
 			}
+			this.hideEffect();
 		}
 
-		__proto.enterFrameHandler=function(){
-			switch(this.status){
-				case 1:
-				switch(this.secondStatus){
-					case 1:
-						this.secondStatus=2;
-						this.playRun();
-						break ;
-					case 2:
-						if(this.group==0){
-							this.roleAni.x+=18;
-							if(this.roleAni.x >=0){
-								this.roleAni.x=0;
-								this.secondStatus=3;
-							}
-						}
-						else{
-							this.roleAni.x-=18;
-							if(this.roleAni.x <=0){
-								this.roleAni.x=0;
-								this.secondStatus=3;
-							}
-						}
-						break ;
-					case 3:
-						this.playIdle();
-						break ;
-					}
-				break ;
-				case 4:
-				case 5:
-				switch(this.secondStatus){
-					case 604:
-						console.log(1,"this.roleInfo.currentTargetRoleInfoList.length : ",this.roleInfo.currentTargetRoleInfoList.length);
-						var targetView=this.roleInfo.currentTargetRoleInfoList[0].roleItemView;
-						var distanceX=targetView.x-this.x;
-						var distanceY=targetView.y-this.y;
-						var wayRadians=NaN;
-						if(this.group==0){
-							distanceX-=130;
-							wayRadians=Math.atan2(distanceY,distanceX);
-						}
-						else{
-							distanceX+=130;
-							wayRadians=Math.atan2(distanceY,distanceX);
-						};
-						var unitDistanceX=18 *Math.cos(wayRadians);
-						var unitDistanceY=18 *Math.sin(wayRadians);
-						if(this.group==0){
-							this.roleAni.x+=unitDistanceX;
-							this.roleAni.y+=unitDistanceY;
-							if(this.roleAni.x >=distanceX){
-								this.roleAni.x=distanceX;
-								this.roleAni.y=distanceY;
-								this.secondStatus=607;
-								this.doAttacking();
-							}
-						}
-						else{
-							this.roleAni.x+=unitDistanceX;
-							this.roleAni.y+=unitDistanceY;
-							if(this.roleAni.x <=distanceX){
-								this.roleAni.x=distanceX;
-								this.roleAni.y=distanceY;
-								this.secondStatus=607;
-								this.doAttacking();
-							}
-						}
-						break ;
-					case 607:
-						break ;
-					case 609:;
-						var targetView=this.roleInfo.currentTargetRoleInfoList[0].roleItemView;
-						var distanceX=this.x-targetView.x;
-						var distanceY=this.y-targetView.y;
-						var wayRadians=NaN;
-						if(this.group==0){
-							distanceX+=130;
-							wayRadians=Math.atan2(distanceY,distanceX);
-						}
-						else{
-							distanceX-=130;
-							wayRadians=Math.atan2(distanceY,distanceX);
-						};
-						var unitDistanceX=18 *Math.cos(wayRadians);
-						var unitDistanceY=18 *Math.sin(wayRadians);
-						if(this.group==0){
-							this.roleAni.x+=unitDistanceX;
-							this.roleAni.y+=unitDistanceY;
-							if(this.roleAni.x <=0){
-								this.roleAni.x=0;
-								this.roleAni.y=0;
-								this.roleAni.scaleX=0-this.roleAni.scaleX;
-								this.doIdle();
-							}
-						}
-						else{
-							this.roleAni.x+=unitDistanceX;
-							this.roleAni.y+=unitDistanceY;
-							if(this.roleAni.x >=0){
-								this.roleAni.x=0;
-								this.roleAni.y=0;
-								this.roleAni.scaleX=0-this.roleAni.scaleX;
-								this.doIdle();
-							}
-						}
-						break ;
-					}
-				break ;
-				case 6:
-				switch(this.secondStatus){
-					case 601:
-						this.secondStatus=602;
-						this.playHurt();
-						break ;
-					case 602:
-						break ;
-					}
-				break ;
-				case 604:
-				switch(this.secondStatus){
-					case 603:
-						this.secondStatus=604;
-						this.playFall();
-						break ;
-					case 604:
-						break ;
-					}
-				break ;
-				case 7:
-				switch(this.secondStatus){
-					case 603:
-						this.secondStatus=604;
-						this.playFall();
-						break ;
-					case 604:
-						break ;
-					case 701:
-						console.log("show die animation");
-						this.secondStatus=702;
-						this.playDie();
-						break ;
-					case 702:
-						break ;
-					case 703:
-						Tween.to(this.roleAni,{alpha :0},1000);
-						break ;
-					}
-				break ;
-				case 8:
-				switch(this.secondStatus){
-					case 801:
-						this.playResult();
-						this.secondStatus=802;
-						break ;
-					}
-				break ;
-			}
-		}
-
-		__proto.doEnter=function(){
-			this.status=1;
-			this.secondStatus=1;
+		__proto.initEnterPos=function(){
 			if(this.group==0){
-				this.roleAni.x=-568;
+				this.aniContainer.x=-568;
 			}
 			else{
-				this.roleAni.x=568;
+				this.aniContainer.x=568;
 			}
-		}
-
-		// this.playRun();
-		__proto.doIdle=function(){
-			this.status=2;
-			this.playIdle();
-			console.log("enter function doIdle");
-		}
-
-		__proto.doSuperUniqueSkill=function(){
-			this.status=4;
-		}
-
-		__proto.doAttack=function(){
-			this.status=5;
-			this.secondStatus=604;
-			console.log(1,"enter function do attack");
 		}
 
 		__proto.playIdle=function(){
-			this.roleAni.play("idle",true);
+			this._roleAni.play("idle",true);
 		}
 
+		// this.roleAni.play(ArenaRoleAniNameEnum.DIE,false);
 		__proto.playRun=function(){
-			this.roleAni.play("run",true);
+			this._roleAni.play("run",true);
 		}
 
 		__proto.playAttack=function(){
-			if(this.status==4){
-				this.roleAni.play("superUniqueSkill",false);
+			if(this.logic.firstStatus==4){
+				this._roleAni.play("superUniqueSkill",false);
+				this.playEffect("superUniqueSkill");
 			}
 			else{
-				this.roleAni.play("attack",false);
+				if(this.logic.actionRoleInfo.useSkillFlag==0){
+					this._roleAni.play(ArenaRoleAniNameEnum.ATTACK_LIST[this.logic.actionRoleInfo.attackType],false);
+					this.playEffect(ArenaRoleAniNameEnum.ATTACK_LIST[this.logic.actionRoleInfo.attackType]);
+				}
+				else{
+					this._roleAni.play("skill",false);
+					this.playEffect("skill");
+					console.log("play skill animation");
+				}
 			}
 		}
 
 		//
 		__proto.isCompleteEntering=function(){
-			if(this.status==1){
-				if(this.secondStatus==3){
+			if(this.logic.firstStatus==1){
+				if(this.logic.secondStatus==103){
 					return true;
 				}
 			}
 			return false;
 		}
 
-		__proto.doRunToAttack=function(){
-			this.secondStatus=604;
-			this.playRun();
-			console.log(1,"role item view status : ",this.status);
-			console.log(1,"role item view secondStatus : ",this.secondStatus);
-		}
-
-		__proto.doAttacking=function(){
-			if(this.status==5){
-				if(this.roleInfo.roleVO.hasAttackAmount > 0){
-					var randomCombo=Math.random();
-					if(randomCombo < 0.25){
-						this.roleInfo.roleVO.comboEffect=1;
-						this.roleInfo.roleVO.attackMulti+=0.05;
-					}
-					else if(randomCombo < 0.5){
-						this.roleInfo.roleVO.comboEffect=2;
-						this.roleInfo.roleVO.attackMulti+=0.1;
-					}
-					else if(randomCombo < 0.75){
-						this.roleInfo.roleVO.comboEffect=3;
-						this.roleInfo.roleVO.attackMulti+=0.15;
+		__proto.playHurt=function(){
+			var actionIndex=0;
+			var actionName;
+			switch(this.logic.attackerRoleInfo.attackType){
+				case 1:
+					actionIndex=this.logic.attackerRoleInfo.roleInfo.meta.modelResMeta.attack1HurtActionList[this.roleInfo.actionInfo.animationIndex];
+					actionName=(actionIndex==1)? "hurt1a" :"hurt1b";
+					break ;
+				case 2:
+					if(this.roleInfo.actionInfo.animationIndex==this.logic.attackerRoleInfo.roleInfo.meta.modelResMeta.attack2HurtActionList.length){
+						actionName="hurt2";
+						console.log("play animation hurt2!");
 					}
 					else{
-						this.roleInfo.roleVO.comboEffect=4;
-						this.roleInfo.roleVO.attackMulti+=0.2;
+						actionIndex=this.logic.attackerRoleInfo.roleInfo.meta.modelResMeta.attack2HurtActionList[this.roleInfo.actionInfo.animationIndex];
+						actionName=(actionIndex==1)? "hurt1a" :"hurt1b";
+						console.log("error !!! should play animation hurt2, but not!");
 					}
+					break ;
+				case 3:
+					actionName="hurt3";
+					break ;
+				case 4:
+					actionName="hurt4";
+					break ;
+				case 5:
+					actionName="hurt5";
+					break ;
+				default :
+					actionName="hurt1a";
+					break ;
 				}
-			};
-			var targetRoleInfo;
-			var actionInfo;
-			var i=0;
-			for(i=0;i < this.roleInfo.currentTargetRoleInfoList.length;i++){
-				targetRoleInfo=this.roleInfo.currentTargetRoleInfoList[i];
-				var cuitPercent=(this.roleInfo.meta.crit-targetRoleInfo.meta.resist)/ 100000;
-				var isCuit=Math.random()<=cuitPercent;
-				var parryPercent=(targetRoleInfo.meta.parry-this.roleInfo.meta.breakParry)/ 100000;
-				var isParry=Math.random()<=parryPercent;
-				var damage=(this.roleInfo.meta.attack-targetRoleInfo.meta.deffence);
-				var actionType=1;
-				if(isCuit){
-					damage=damage *1.5;
-					actionType=2;
+			this._hurtActionName=actionName;
+			this._roleAni.play(actionName,false);
+			this.playEffect(actionName);
+			console.log(1,"ready to playHurt _hurtActionName : ",this._hurtActionName);
+		}
+
+		__proto.playHurtIdle=function(){
+			switch(this.logic.secondStatus){
+				case 801:
+					this._roleAni.play("hurtidle1",true);
+					break ;
+				case 802:
+					this._roleAni.play("hurtidle2",true);
+					break ;
 				}
-				if(isParry){
-					damage=damage *0.5;
-					actionType=3;
-				};
-				var randomDamageParam=0.8+Math.random()*0.4;
-				damage=damage *randomDamageParam;
-				damage=Math.round(damage *this.roleInfo.roleVO.attackMulti);
-				targetRoleInfo.hp-=damage;
-				console.log(1,"attack target hp is : ",targetRoleInfo.hp," position is : ",targetRoleInfo.position);
-				if(targetRoleInfo.hp <=0){
-					targetRoleInfo.hp=0;
-					console.log(1,"attack target is die");
-				}
-				targetRoleInfo.mp+=Math.round(damage / targetRoleInfo.meta.hpMax *100);
-				if(targetRoleInfo.mp > 100){
-					targetRoleInfo.mp=100;
-				}
-				actionInfo=new ActionInfo();
-				actionInfo.damage=damage;
-				actionInfo.type=actionType;
-				actionInfo.sourceRoleInfo=this.roleInfo;
-				targetRoleInfo.actionInfo=actionInfo;
-				if(this.status==5){
-					this.roleInfo.roleVO.totalDamage+=damage;
-				}
-			}
-			actionInfo=new ActionInfo();
-			actionInfo.type=1;
-			actionInfo.sourceRoleInfo=this.roleInfo;
-			this.roleInfo.actionInfo=actionInfo;
-			if(this.status==5){
-				if(this.roleInfo.isMe){
-					if(this.roleInfo.roleVO.hasAttackAmount > 0){
-						var effectInfo=new EffectItemInfo();
-						effectInfo.type=8;
-						effectInfo.sourceRoleInfo=this.roleInfo;
-						GameContext.i.arenaContext.gameView.effectView.addEffect(effectInfo);
-					}
-				}
-				this.roleInfo.roleVO.hasAttackAmount++;
-				this.roleInfo.addMp(30);
-				effectInfo=new EffectItemInfo();
-				effectInfo.type=4;
-				effectInfo.sourceRoleInfo=this.roleInfo;
-			}
-			else{
-				this.roleInfo.reduceMp(100);
-				effectInfo=new EffectItemInfo();
-				effectInfo.type=4;
-				effectInfo.sourceRoleInfo=this.roleInfo;
-			}
-			this.secondStatus=607;
-			this.playAttack();
-			this.parent.setChildIndex(this,this.parent.numChildren-1);
-		}
-
-		__proto.doRunBackAttack=function(){
-			this.secondStatus=609;
-			this.playRun();
-			this.roleAni.scaleX=0-this.roleAni.scaleX;
-		}
-
-		__proto.isFinishAttacking=function(){
-			return (this.secondStatus==609);
-		}
-
-		__proto.isFinishLastAttacking=function(){
-			return (this.status==2);
-		}
-
-		__proto.isFinishSuperUniqueSkill=function(){
-			return (this.status==2);
-		}
-
-		__proto.doHurt=function(){
-			this.status=6;
-			this.secondStatus=601;
-		}
-
-		__proto.playHurt=function(){
-			this.roleAni.play("hurt",false);
-		}
-
-		__proto.doFall=function(){
-			this.status=6;
-			this.secondStatus=603;
 		}
 
 		__proto.playFall=function(){
-			this.roleAni.play("die",false);
+			this._roleAni.play("hurt2",false);
+			this._roleAni.index=this.roleInfo.meta.modelResMeta.hurt2StopOnSkyKeyFrame+1;
+			this._roleAni.resume();
 		}
 
-		__proto.doDie=function(){
-			this.status=7;
-			this.secondStatus=603;
+		__proto.playFullFall=function(){
+			this._roleAni.play("hurt2",false);
 		}
 
 		__proto.playDie=function(){
-			this.roleAni.play("fall",false);
-		}
-
-		__proto.doResult=function(){
-			this.status=8;
-			this.secondStatus=801;
+			console.log("enter function playDie");
+			this._roleAni.play("hurtidle2",false);
 		}
 
 		__proto.playResult=function(){
-			this.roleAni.play("win",false);
+			this._roleAni.play("win",false);
+			this.playEffect("win");
+		}
+
+		__proto.playEffect=function($aniName){
+			this._effectAni.play($aniName,false);
+			this._effectAni.visible=true;
+		}
+
+		__proto.hideEffect=function(){
+			this._effectAni.stop();
+			this._effectAni.visible=false;
+		}
+
+		__proto.pause=function(){
+			this._roleAni.paused();
+			if(this._effectAni.aniClipIndex !=-1){
+				this._effectAni.paused();
+			}
+		}
+
+		__proto.resume=function(){
+			this._roleAni.resume();
+			if(this._effectAni.aniClipIndex !=-1){
+				this._effectAni.resume();
+			}
+		}
+
+		__proto.showSelect=function(){
+			this.imgSelect.visible=true;
+		}
+
+		__proto.hideSelect=function(){
+			this.imgSelect.visible=false;
 		}
 
 		return RoleItemView;
@@ -23896,10 +27674,7 @@ window.Laya=(function(window,document){
 			new Point(310,270),new Point(270,350),new Point(230,430),
 			new Point(710,270),new Point(750,350),new Point(790,430),
 			new Point(840,270),new Point(880,350),new Point(920,430)];
-			this.status=0;
-			this.secondStatus=0;
-			this.attackPlayer=null;
-			this.defensePlayer=null;
+			this.logic=null;
 			RoleListView.__super.call(this);
 			var roleItemView;
 			var roleItemViewPosition;
@@ -23916,238 +27691,51 @@ window.Laya=(function(window,document){
 
 		__class(RoleListView,'com.gamepark.casino.game.arena.view.RoleListView',_super);
 		var __proto=RoleListView.prototype;
-		__proto.showRoleListByPlayer=function($playerInfo,$group){
-			this.timer.frameLoop(1,this,this.enterFrameHandler);
+		__proto.changeSpeed=function(){
 			var roleItemView;
-			var roleInfo;
 			var i=0;
-			for(i=0;i < $playerInfo.roleVO.roleInfoList.length;i++){
-				roleInfo=$playerInfo.roleVO.roleInfoList[i];
-				roleItemView=this.roleItemViewList[$group *6+roleInfo.position];
-				roleInfo.roleItemView=roleItemView;
-				roleItemView.roleInfo=roleInfo;
-				roleItemView.showRoleView();
+			for(i=0;i < 12;i++){
+				roleItemView=this.roleItemViewList[i];
+				roleItemView.changeSpeed();
 			}
 		}
 
-		__proto.enterFrameHandler=function(){}
-		__proto.doEnter=function(){
+		__proto.getTargetViewByBattleTargetRoleInfo=function($targetRoleInfo){
 			var roleItemView;
-			var roleInfo;
 			var i=0;
-			for(i=0;i < this.roleItemViewList.length;i++){
+			for(i=0;i < 12;i++){
 				roleItemView=this.roleItemViewList[i];
-				roleItemView.doEnter();
-			}
-		}
-
-		// roleItemView.showRoleView();
-		__proto.isCompleteEntering=function(){
-			var isCompleteEntering=true;
-			var roleItemView;
-			var roleInfo;
-			var i=0;
-			for(i=0;i < this.roleItemViewList.length;i++){
-				roleItemView=this.roleItemViewList[i];
-				if(!roleItemView.isCompleteEntering()){
-					isCompleteEntering=false;
-					break ;
+				if(roleItemView.roleInfo.playerInfo.id==$targetRoleInfo.playerId){
+					if(roleItemView.roleInfo.id==$targetRoleInfo.roleId){
+						return roleItemView;
+					}
 				}
 			}
-			return isCompleteEntering;
+			return null;
 		}
 
-		__proto.doIdle=function(){
+		__proto.showFirstSelect=function(){
 			var roleItemView;
-			var roleInfo;
 			var i=0;
-			for(i=0;i < this.roleItemViewList.length;i++){
+			for(i=6;i < 12;i++){
 				roleItemView=this.roleItemViewList[i];
-				roleItemView.doIdle();
+				if(!roleItemView.logic.isDie()){
+					roleItemView.showSelect();
+					return;
+				}
 			}
 		}
 
-		// roleItemView.showRoleView();
-		__proto.canSuperUniqueSkill=function(){
-			return this.attackPlayer.roleVO.canSuperUniqueSkill();
-		}
-
-		__proto.calcSuperUniqueSkillRoleAndTarget=function(){
-			this.attackPlayer.roleVO.calcSuperUniqueSkillRoleAndTarget(this.defensePlayer.roleVO);
-		}
-
-		__proto.isFinishSuperUniqueSkill=function(){
-			if(this.attackPlayer.roleVO.actionRoleInfo.roleItemView.isFinishSuperUniqueSkill()){
-				return true;
+		__proto.hideAllSelect=function(){
+			var roleItemView;
+			var i=0;
+			for(i=0;i < 12;i++){
+				roleItemView=this.roleItemViewList[i];
+				roleItemView.hideSelect();
 			}
-			return false;
-		}
-
-		__proto.canAttack=function(){
-			return this.attackPlayer.roleVO.canAttack();
-		}
-
-		__proto.preAttack=function(){
-			this.attackPlayer.roleVO.preAttack();
-		}
-
-		__proto.calcAttackRoleAndTarget=function(){
-			this.attackPlayer.roleVO.calcAttackRoleAndTarget(this.defensePlayer.roleVO);
-		}
-
-		__proto.doRunToAttack=function(){
-			this.attackPlayer.roleVO.actionRoleInfo.roleItemView.doRunToAttack();
-		}
-
-		__proto.isFinishAttacking=function(){
-			if(this.attackPlayer.roleVO.actionRoleInfo.roleItemView.isFinishAttacking()){
-				return true;
-			}
-			return false;
-		}
-
-		__proto.showResult=function(){
-			this.attackPlayer.roleVO.showReulst();
-		}
-
-		__proto.isFinishLastAttacking=function(){
-			if(this.attackPlayer.roleVO.actionRoleInfo.roleItemView.isFinishLastAttacking()){
-				return true;
-			}
-			return false;
 		}
 
 		return RoleListView;
-	})(Sprite)
-
-
-	//class com.gamepark.casino.view.CardView extends laya.display.Sprite
-	var CardView=(function(_super){
-		function CardView($gameId,$playerId,$deskPosition,$index){
-			this._playerId=0;
-			this._deskPosition=0;
-			this._index=0;
-			this._cardVO=null;
-			this.cardBackAtlas=null;
-			this.cardFrontAtlasPrefix=null;
-			this.imgBack=null;
-			this.imgFrontRes=null;
-			this.cardContainer=null;
-			this._isSelected=false;
-			this._gameId=0;
-			this._isHalf=false;
-			this._percentage=0.0;
-			CardView.__super.call(this);
-			this._gameId=$gameId;
-			switch($gameId){
-				case 101:
-					this.cardBackAtlas=GameContext.i.baccaratContext.gameView.cardBackAtlas;
-					this.cardFrontAtlasPrefix=GameContext.i.baccaratContext.gameView.cardFrontAtlasPrefix;
-					break ;
-				}
-			this._playerId=$playerId;
-			this._deskPosition=$deskPosition;
-			this._index=$index;
-			this.imgBack=new Image(this.cardBackAtlas);
-			this.imgBack.pivot(this.imgBack.width / 2,this.imgBack.height / 2);
-			this.addChild(this.imgBack);
-			this.imgBack.on("complete",this,this.imgBackPlayCompleteHandler);
-			this.cardContainer=new Sprite();
-			this.addChild(this.cardContainer);
-		}
-
-		__class(CardView,'com.gamepark.casino.view.CardView',_super);
-		var __proto=CardView.prototype;
-		__proto.imgBackPlayCompleteHandler=function(){
-			this.showFront();
-		}
-
-		__proto.showBack=function(){
-			this.imgBack.visible=true;
-			this.imgBack.scaleX=1;
-			this.cardContainer.visible=false;
-			console.log(1,"showBack");
-		}
-
-		__proto.showFront=function(){
-			this.imgBack.visible=false;
-			this.cardContainer.visible=true;
-			this.cardContainer.removeChildren();
-			if(this._cardVO){
-				var index=0;
-				if(this._cardVO.type < 4){
-					index=this._cardVO.number *4+this._cardVO.type;
-				}
-				else if(this._cardVO.type==4){
-					index=52;
-				}
-				else if(this._cardVO.type==5){
-					index=53;
-				};
-				var gameContext=GameContext.i;
-				this.imgFrontRes=new Image(this.cardFrontAtlasPrefix+""+index+".png");
-				this.imgFrontRes.pivot(this.imgFrontRes.width / 2,this.imgFrontRes.height / 2);
-				this.cardContainer.addChild(this.imgFrontRes);
-			}
-		}
-
-		__proto.turnToFront=function(){
-			Tween.to(this.imgBack,{scaleX :0},500,null,Handler.create(this,this.backPlayCompleteHandler));
-		}
-
-		__proto.backPlayCompleteHandler=function(){
-			this.imgBack.visible=false;
-			this.cardContainer.visible=true;
-			this.cardContainer.removeChildren();
-			if(this._cardVO){
-				var index=0;
-				if(this._cardVO.type < 4){
-					index=this._cardVO.number *4+this._cardVO.type;
-				}
-				else if(this._cardVO.type==4){
-					index=52;
-				}
-				else if(this._cardVO.type==5){
-					index=53;
-				};
-				var gameContext=GameContext.i;
-				this.imgFrontRes=new Image(this.cardFrontAtlasPrefix+""+index+".png");
-				this.imgFrontRes.pivot(this.imgFrontRes.width / 2,this.imgFrontRes.height / 2);
-				this.cardContainer.addChild(this.imgFrontRes);
-				this.imgFrontRes.scaleX=0;
-				Tween.to(this.imgFrontRes,{scaleX :1},500);
-			}
-		}
-
-		__getset(0,__proto,'playerId',function(){
-			return this._playerId;
-		});
-
-		__getset(0,__proto,'deskPosition',function(){
-			return this._deskPosition;
-		});
-
-		__getset(0,__proto,'index',function(){
-			return this._index;
-			},function(value){
-			this._index=value;
-		});
-
-		__getset(0,__proto,'width',function(){
-			return this.imgFrontRes.width;
-		},_super.prototype._$set_width);
-
-		__getset(0,__proto,'cardVO',function(){
-			return this._cardVO;
-			},function(value){
-			this._cardVO=value;
-		});
-
-		__getset(0,__proto,'isSelected',function(){
-			return this._isSelected;
-		});
-
-		return CardView;
 	})(Sprite)
 
 
@@ -24290,6 +27878,7 @@ window.Laya=(function(window,document){
 			this._pause=true;
 			this._aniClipIndex=-1;
 			this._clipIndex=-1;
+			this._skinIndex=0;
 			this._aniMode=0;
 			this._graphicsCache=null;
 			this._boneSlotDic=null;
@@ -24303,8 +27892,11 @@ window.Laya=(function(window,document){
 			this._complete=null;
 			this._loadAniMode=0;
 			this._yReverseMatrix=null;
+			this._ikArr=null;
+			this._rootBone=null;
+			this._boneList=null;
+			this._aniSectionDic=null;
 			Skeleton.__super.call(this);
-			this._tempTransform=new Transform();
 			(aniMode===void 0)&& (aniMode=0);
 			if (templet)this.init(templet,aniMode);
 		}
@@ -24334,6 +27926,10 @@ window.Laya=(function(window,document){
 			this._player.templet=templet;
 			this._player.play();
 			this._parseSrcBoneMatrix();
+			this._ikArr=templet.ikArr;
+			this._boneList=templet.mBoneArr;
+			this._rootBone=templet.mRootBone;
+			this._aniSectionDic=templet.aniSectionDic;
 			this._player.on("played",this,this._onPlay);
 			this._player.on("stopped",this,this._onStop);
 			this._player.on("paused",this,this._onPause);
@@ -24419,7 +28015,7 @@ window.Laya=(function(window,document){
 		}
 
 		/**
-		*创建骨骼的矩阵，保证每次计算的最终结果
+		*创建骨骼的矩阵，保存每次计算的最终结果
 		*/
 		__proto._parseSrcBoneMatrix=function(){
 			var i=0,n=0;
@@ -24463,7 +28059,7 @@ window.Laya=(function(window,document){
 			};
 			var tCurrTime=Laya.timer.currTimer;
 			if (autoKey){
-				this._player.update(tCurrTime-this._lastTime);
+				this._player.update(tCurrTime-this._lastTime)
 			}
 			this._lastTime=tCurrTime;
 			this._aniClipIndex=this._player.currentAnimationClipIndex;
@@ -24474,12 +28070,14 @@ window.Laya=(function(window,document){
 				tGraphics=this._templet.getGrahicsDataWithCache(this._aniClipIndex,this._clipIndex);
 				if (tGraphics){
 					this.graphics=tGraphics;
+					this.event("enterframe");
 					return;
 				}
 				}else if (this._aniMode==1){
 				tGraphics=this._getGrahicsDataWithCache(this._aniClipIndex,this._clipIndex);
 				if (tGraphics){
 					this.graphics=tGraphics;
+					this.event("enterframe");
 					return;
 				}
 			}
@@ -24493,50 +28091,31 @@ window.Laya=(function(window,document){
 		__proto._createGraphics=function(){
 			var bones=this._templet.getNodes(this._aniClipIndex);
 			this._templet.getOriginalData(this._aniClipIndex,this._curOriginalData,this._clipIndex,this._player.currentFrameTime);
+			var tSectionArr=this._aniSectionDic[this._aniClipIndex];
 			var tParentMatrix;
 			var tResultMatrix;
 			var tStartIndex=0;
 			var i=0,j=0,k=0,n=0;
 			var tDBBoneSlot;
 			var tDBBoneSlotArr;
-			var tTempMatrix;
 			var tParentTransform;
+			var tSrcBone;
 			var boneCount=this._templet.srcBoneMatrixArr.length;
-			for (i=0;i < boneCount;i++){
+			for (i=0,n=tSectionArr[0];i < boneCount;i++){
+				tSrcBone=this._boneList[i];
 				tResultMatrix=this._boneMatrixArray[i];
 				tParentTransform=this._templet.srcBoneMatrixArr[i];
-				this._tempTransform.scX=tParentTransform.scX *this._curOriginalData[tStartIndex++];
-				this._tempTransform.skX=tParentTransform.skX+this._curOriginalData[tStartIndex++];
-				this._tempTransform.skY=tParentTransform.skY+this._curOriginalData[tStartIndex++];
-				this._tempTransform.scY=tParentTransform.scY *this._curOriginalData[tStartIndex++];
-				this._tempTransform.x=tParentTransform.x+this._curOriginalData[tStartIndex++];
-				this._tempTransform.y=tParentTransform.y+this._curOriginalData[tStartIndex++];
-				tTempMatrix=this._tempTransform.getMatrix();
-				var tBone=bones[i];
-				if (tBone.parentIndex !=-1){
-					tParentMatrix=this._boneMatrixArray[tBone.parentIndex];
-					Matrix.mul(tTempMatrix,tParentMatrix,tResultMatrix);
-					}else {
-					if (this._yReverseMatrix){
-						Matrix.mul(tTempMatrix,this._yReverseMatrix,tResultMatrix);
-						}else {
-						tTempMatrix.copyTo(tResultMatrix);
-					}
-				}
-				tDBBoneSlotArr=this._bindBoneBoneSlotDic[tBone.name];
-				if (tDBBoneSlotArr){
-					for (j=0,n=tDBBoneSlotArr.length;j < n;j++){
-						tDBBoneSlot=tDBBoneSlotArr[j];
-						if (tDBBoneSlot){
-							tDBBoneSlot.setParentMatrix(tResultMatrix);
-						}
-					}
-				}
+				tSrcBone.resultTransform.scX=tParentTransform.scX *this._curOriginalData[tStartIndex++];
+				tSrcBone.resultTransform.skX=tParentTransform.skX+this._curOriginalData[tStartIndex++];
+				tSrcBone.resultTransform.skY=tParentTransform.skY+this._curOriginalData[tStartIndex++];
+				tSrcBone.resultTransform.scY=tParentTransform.scY *this._curOriginalData[tStartIndex++];
+				tSrcBone.resultTransform.x=tParentTransform.x+this._curOriginalData[tStartIndex++];
+				tSrcBone.resultTransform.y=tParentTransform.y+this._curOriginalData[tStartIndex++];
 			};
 			var tSlotDic={};
 			var tSlotAlphaDic={};
 			var tBoneData;
-			for (;i < bones.length;i++){
+			for (n+=tSectionArr[1];i < n;i++){
 				tBoneData=bones[i];
 				tSlotDic[tBoneData.name]=this._curOriginalData[tStartIndex++];
 				tSlotAlphaDic[tBoneData.name]=this._curOriginalData[tStartIndex++];
@@ -24545,11 +28124,66 @@ window.Laya=(function(window,document){
 				this._curOriginalData[tStartIndex++];
 				this._curOriginalData[tStartIndex++];
 			};
+			var tBendDirectionDic={};
+			var tMixDic={};
+			for (n+=tSectionArr[2];i < n;i++){
+				tBoneData=bones[i];
+				tBendDirectionDic[tBoneData.name]=this._curOriginalData[tStartIndex++];
+				tMixDic[tBoneData.name]=this._curOriginalData[tStartIndex++];
+				this._curOriginalData[tStartIndex++];
+				this._curOriginalData[tStartIndex++];
+				this._curOriginalData[tStartIndex++];
+			}
+			if (this._yReverseMatrix){
+				this._rootBone.update(this._yReverseMatrix);
+				}else {
+				this._rootBone.update(Matrix.TEMP.identity());
+			};
+			var tIkConstraintData;
+			var tTargetBone;
+			var tParentBone;
+			var tChildBone;
+			for (i=0,n=this._ikArr.length;i < n;i++){
+				tIkConstraintData=this._ikArr[i];
+				tTargetBone=this._boneList[tIkConstraintData.targetBoneIndex];
+				switch(tIkConstraintData.boneIndexs.length){
+					case 1:
+						tChildBone=this._boneList[tIkConstraintData.boneIndexs[0]];
+						this._applyIk1(tChildBone,tTargetBone.resultMatrix.tx,tTargetBone.resultMatrix.ty,tIkConstraintData.mix);
+						break ;
+					case 2:
+						tParentBone=this._boneList[tIkConstraintData.boneIndexs[0]];
+						tChildBone=this._boneList[tIkConstraintData.boneIndexs[1]];
+						if (tBendDirectionDic[tIkConstraintData.name]){
+							this._applyIk2(tParentBone,tChildBone,tTargetBone.resultMatrix.tx,tTargetBone.resultMatrix.ty,tBendDirectionDic[tIkConstraintData.name],tMixDic[tIkConstraintData.name]);
+							}else {
+							this._applyIk2(tParentBone,tChildBone,tTargetBone.resultMatrix.tx,tTargetBone.resultMatrix.ty,tIkConstraintData.bendDirection,tIkConstraintData.mix);
+						}
+						break ;
+					}
+			}
+			for (i=0,k=this._boneList.length;i < k;i++){
+				tSrcBone=this._boneList[i];
+				tDBBoneSlotArr=this._bindBoneBoneSlotDic[tSrcBone.name];
+				tSrcBone.resultMatrix.copyTo(this._boneMatrixArray[i]);
+				if (tDBBoneSlotArr){
+					for (j=0,n=tDBBoneSlotArr.length;j < n;j++){
+						tDBBoneSlot=tDBBoneSlotArr[j];
+						if (tDBBoneSlot){
+							tDBBoneSlot.setParentMatrix(tSrcBone.resultMatrix);
+						}
+					}
+				}
+			};
 			var tGraphics;
 			if (this._aniMode==0 || this._aniMode==1){
-				this.graphics=new Graphics();
+				this.graphics=new GraphicsAni();
 				}else {
-				this.graphics.clear();
+				if ((this.graphics instanceof laya.ani.GraphicsAni )){
+					this.graphics.clear();
+					}else {
+					this.graphics=new GraphicsAni();
+				}
 			}
 			tGraphics=this.graphics;
 			var tSlotData2=NaN;
@@ -24565,7 +28199,7 @@ window.Laya=(function(window,document){
 				if (!isNaN(tSlotData2)){
 					tDBBoneSlot.showDisplayByIndex(tSlotData2);
 				}
-				tDBBoneSlot.draw(tGraphics,this._boneMatrixArray,this._aniMode==2);
+				tDBBoneSlot.draw(tGraphics,this._boneMatrixArray,this,this._aniMode==2);
 				if (!isNaN(tSlotData3)){
 					tGraphics.restore();
 				}
@@ -24575,6 +28209,167 @@ window.Laya=(function(window,document){
 				}else if (this._aniMode==1){
 				this._setGrahicsDataWithCache(this._aniClipIndex,this._clipIndex,tGraphics);
 			}
+		}
+
+		__proto._applyIk1=function(bone,targetX,targetY,alpha){
+			var pp=bone._parent;
+			var id=1 / (pp.resultMatrix.a *pp.resultMatrix.d-pp.resultMatrix.b *pp.resultMatrix.c);
+			var x=targetX-pp.resultMatrix.tx;
+			var y=targetY-pp.resultMatrix.ty;
+			var tx=(x *pp.resultMatrix.d-y *pp.resultMatrix.b)*id-bone.transform.x;
+			var ty=(y *pp.resultMatrix.a-x *pp.resultMatrix.c)*id-bone.transform.y;
+			var rotationIK=Math.atan2(ty,tx)*Skeleton.radDeg-0-bone.transform.skX;
+			if (bone.transform.scX < 0)rotationIK+=180;
+			if (rotationIK > 180)
+				rotationIK-=360;
+			else if (rotationIK <-180)rotationIK+=360;
+			bone.transform.skX=bone.transform.skY=bone.transform.skX+rotationIK *alpha;
+			bone.update();
+		}
+
+		__proto._applyIk2=function(parent,child,targetX,targetY,bendDir,alpha){
+			if (alpha==0){
+				return;
+			};
+			var px=parent.resultTransform.x,py=parent.resultTransform.y;
+			var psx=parent.resultTransform.scX,psy=parent.resultTransform.scY;
+			var csx=child.resultTransform.scX;
+			var os1=0,os2=0,s2=0;
+			if (psx < 0){
+				psx=-psx;
+				os1=180;
+				s2=-1;
+				}else {
+				os1=0;
+				s2=1;
+			}
+			if (psy < 0){
+				psy=-psy;
+				s2=-s2;
+			}
+			if (csx < 0){
+				csx=-csx;
+				os2=180;
+				}else {
+				os2=0
+			};
+			var cx=child.resultTransform.x,cy=NaN,cwx=NaN,cwy=NaN;
+			var a=parent.resultMatrix.a,b=parent.resultMatrix.b;
+			var c=parent.resultMatrix.c,d=parent.resultMatrix.d;
+			var u=Math.abs(psx-psy)<=0.0001;
+			if (!u){
+				cy=0;
+				cwx=a *cx+parent.resultMatrix.tx;
+				cwy=c *cx+parent.resultMatrix.ty;
+				}else {
+				cy=child.resultTransform.y;
+				cwx=a *cx+b *cy+parent.resultMatrix.tx;
+				cwy=c *cx+d *cy+parent.resultMatrix.ty;
+			};
+			var pp=parent._parent;
+			a=pp.resultMatrix.a;
+			b=pp.resultMatrix.b;
+			c=pp.resultMatrix.c;
+			d=pp.resultMatrix.d;
+			var id=1 / (a *d-b *c);
+			var x=targetX-pp.resultMatrix.tx,y=targetY-pp.resultMatrix.ty;
+			var tx=(x *d-y *b)*id-px;
+			var ty=(y *a-x *c)*id-py;
+			x=cwx-pp.resultMatrix.tx;
+			y=cwy-pp.resultMatrix.ty;
+			var dx=(x *d-y *b)*id-px;
+			var dy=(y *a-x *c)*id-py;
+			var l1=Math.sqrt(dx *dx+dy *dy);
+			var l2=child.length *csx;
+			var a1=NaN,a2=NaN;
+			if (u){
+				l2 *=psx;
+				var cos=(tx *tx+ty *ty-l1 *l1-l2 *l2)/ (2 *l1 *l2);
+				if (cos <-1)
+					cos=-1;
+				else if (cos > 1)cos=1;
+				a2=Math.acos(cos)*bendDir;
+				a=l1+l2 *cos;
+				b=l2 *Math.sin(a2);
+				a1=Math.atan2(ty *a-tx *b,tx *a+ty *b);
+				}else {
+				a=psx *l2;
+				b=psy *l2;
+				var aa=a *a,bb=b *b,dd=tx *tx+ty *ty,ta=Math.atan2(ty,tx);
+				c=bb *l1 *l1+aa *dd-aa *bb;
+				var c1=-2 *bb *l1,c2=bb-aa;
+				d=c1 *c1-4 *c2 *c;
+				if (d > 0){
+					var q=Math.sqrt(d);
+					if (c1 < 0)q=-q;
+					q=-(c1+q)/ 2;
+					var r0=q / c2,r1=c / q;
+					var r=Math.abs(r0)< Math.abs(r1)?r0:r1;
+					if (r *r <=dd){
+						y=Math.sqrt(dd-r *r)*bendDir;
+						a1=ta-Math.atan2(y,r);
+						a2=Math.atan2(y / psy,(r-l1)/ psx);
+					}
+				};
+				var minAngle=0,minDist=Number.MAX_VALUE,minX=0,minY=0;
+				var maxAngle=0,maxDist=0,maxX=0,maxY=0;
+				x=l1+a;
+				d=x *x;
+				if (d > maxDist){
+					maxAngle=0;
+					maxDist=d;
+					maxX=x;
+				}
+				x=l1-a;
+				d=x *x;
+				if (d < minDist){
+					minAngle=Math.PI;
+					minDist=d;
+					minX=x;
+				};
+				var angle=Math.acos(-a *l1 / (aa-bb));
+				x=a *Math.cos(angle)+l1;
+				y=b *Math.sin(angle);
+				d=x *x+y *y;
+				if (d < minDist){
+					minAngle=angle;
+					minDist=d;
+					minX=x;
+					minY=y;
+				}
+				if (d > maxDist){
+					maxAngle=angle;
+					maxDist=d;
+					maxX=x;
+					maxY=y;
+				}
+				if (dd <=(minDist+maxDist)/ 2){
+					a1=ta-Math.atan2(minY *bendDir,minX);
+					a2=minAngle *bendDir;
+					}else {
+					a1=ta-Math.atan2(maxY *bendDir,maxX);
+					a2=maxAngle *bendDir;
+				}
+			};
+			var os=Math.atan2(cy,cx)*s2;
+			var rotation=parent.transform.skX;
+			a1=(a1-os)*Skeleton.radDeg+os1-rotation;
+			if (a1 > 180)
+				a1-=360;
+			else if (a1 <-180)a1+=360;
+			parent.resultTransform.x=px;
+			parent.resultTransform.y=py;
+			parent.resultTransform.skX=parent.resultTransform.skY=rotation+a1 *alpha;
+			rotation=child.transform.skX;
+			rotation=rotation % 360;
+			a2=((a2+os)*Skeleton.radDeg-0)*s2+os2-rotation;
+			if (a2 > 180)
+				a2-=360;
+			else if (a2 <-180)a2+=360;
+			child.resultTransform.x=cx;
+			child.resultTransform.y=cy;
+			child.resultTransform.skX=child.resultTransform.skY=child.resultTransform.skY+a2 *alpha;
+			parent.update();
 		}
 
 		/**
@@ -24607,8 +28402,8 @@ window.Laya=(function(window,document){
 		*@param name 皮肤的名字
 		*/
 		__proto.showSkinByName=function(name){
-			this._templet.showSkinByName(this._boneSlotDic,name);
-			this._clearCache();
+			this._skinIndex=this._templet.getSkinIndexByName(name);
+			this.showSkinByIndex(this._skinIndex);
 		}
 
 		/**
@@ -24616,6 +28411,7 @@ window.Laya=(function(window,document){
 		*@param skinIndex 皮肤索引
 		*/
 		__proto.showSkinByIndex=function(skinIndex){
+			this._skinIndex=skinIndex;
 			this._templet.showSkinByIndex(this._boneSlotDic,skinIndex);
 			this._clearCache();
 		}
@@ -24690,8 +28486,8 @@ window.Laya=(function(window,document){
 				if (force || this._pause || this._currAniIndex !=index){
 					this._currAniIndex=index;
 					this._curOriginalData=new Float32Array(this._templet.getTotalkeyframesLength(index));
-					this._player.play(index,1,duration);
-					this._templet.showSkinByIndex(this._boneSlotDic,0);
+					this._player.play(index,this._player.playbackRate,duration);
+					this._templet.showSkinByIndex(this._boneSlotDic,this._skinIndex);
 					if (this._pause){
 						this._pause=false;
 						this._lastTime=Browser.now();
@@ -24827,6 +28623,10 @@ window.Laya=(function(window,document){
 			this.load(path);
 		});
 
+		__getset(0,__proto,'aniClipIndex',function(){
+			return this._aniClipIndex;
+		});
+
 		/**
 		*得到总帧数据
 		*/
@@ -24839,6 +28639,9 @@ window.Laya=(function(window,document){
 			return this._total;
 		});
 
+		__static(Skeleton,
+		['radDeg',function(){return this.radDeg=180 / Math.PI;},'degRad',function(){return this.degRad=Math.PI / 180;}
+		]);
 		return Skeleton;
 	})(Sprite)
 
@@ -25173,12 +28976,18 @@ window.Laya=(function(window,document){
 		}
 
 		__proto.evalTextSize=function(){
-			this._textWidth=Math.max.apply(this,this._lineWidths);
+			var nw=NaN,nh=NaN;
+			nw=Math.max.apply(this,this._lineWidths);
 			if (this._currBitmapFont)
-				this._textHeight=this._lines.length *(this._currBitmapFont.getMaxHeight()+this.leading)+this.padding[0]+this.padding[2];
+				nh=this._lines.length *(this._currBitmapFont.getMaxHeight()+this.leading)+this.padding[0]+this.padding[2];
 			else
-			this._textHeight=this._lines.length *(this._charSize.height+this.leading)+this.padding[0]+this.padding[2];
-			this.model && this.model.size(this._textWidth,this._textHeight);
+			nh=this._lines.length *(this._charSize.height+this.leading)+this.padding[0]+this.padding[2];
+			if (nw !=this._textWidth || nh !=this._textHeight){
+				this._textWidth=nw;
+				this._textHeight=nh;
+				if(!this._width||!this._height)
+					this.model&&this.model.size(this._width||this._textWidth,this._height||this._textHeight);
+			}
 		}
 
 		__proto.checkEnabledViewportOrNot=function(){
@@ -25549,7 +29358,6 @@ window.Laya=(function(window,document){
 			return this._getCSSStyle().backgroundColor;
 			},function(value){
 			this._getCSSStyle().backgroundColor=value;
-			this.model && this.model.bgColor(value);
 			this.isChanged=true;
 		});
 
@@ -25560,7 +29368,6 @@ window.Laya=(function(window,document){
 			return this._getCSSStyle().borderColor;
 			},function(value){
 			this._getCSSStyle().borderColor=value;
-			this.model && this.model.border(value);
 			this.isChanged=true;
 		});
 
@@ -25694,14 +29501,14 @@ window.Laya=(function(window,document){
 			this._labels=null;
 			this._controlNode=null;
 			AnimationPlayerBase.__super.call(this);
-			this.interval=Config.animationInterval;
+			this._interval=Config.animationInterval;
 		}
 
 		__class(AnimationPlayerBase,'laya.display.AnimationPlayerBase',_super);
 		var __proto=AnimationPlayerBase.prototype;
 		/**
 		*播放动画。
-		*@param start 开始播放的动画索引。
+		*@param start 开始播放的动画索引或label。
 		*@param loop 是否循环。
 		*@param name 如果name为空(可选)，则播放当前动画，如果不为空，则播放全局缓存动画（如果有）
 		*/
@@ -25710,11 +29517,20 @@ window.Laya=(function(window,document){
 			(loop===void 0)&& (loop=true);
 			(name===void 0)&& (name="");
 			this._isPlaying=true;
-			this.index=start;
+			this.index=((typeof start=='string'))?this._getFrameByLabel(start):start;
 			this.loop=loop;
 			if (this.interval > 0){
 				this.timerLoop(this.interval,this,this._frameLoop,null,true);
 			}
+		}
+
+		/**@private */
+		__proto._getFrameByLabel=function(label){
+			var i=0;
+			for (i=0;i < this._count;i++){
+				if (this._labels[i]==label)return i;
+			}
+			return 0;
 		}
 
 		/**@private */
@@ -25791,10 +29607,10 @@ window.Laya=(function(window,document){
 
 		/**
 		*切换到某帧并停止
-		*@param index 帧索引
+		*@param position 帧索引或label
 		*/
-		__proto.gotoAndStop=function(index){
-			this.index=index;
+		__proto.gotoAndStop=function(position){
+			this.index=((typeof position=='string'))?this._getFrameByLabel(position):position;
 			this.stop();
 		}
 
@@ -25811,6 +29627,22 @@ window.Laya=(function(window,document){
 			this._labels=null;
 		}
 
+		/**动画长度。*/
+		__getset(0,__proto,'count',function(){
+			return this._count;
+		});
+
+		/**播放间隔(单位：毫秒)。*/
+		/**播放间隔(单位：毫秒)。*/
+		__getset(0,__proto,'interval',function(){
+			return this._interval;
+			},function(v){
+			this._interval=v;
+			if (this._isPlaying && v > 0){
+				this.timerLoop(v,this,this._frameLoop,null,true);
+			}
+		});
+
 		/**当前播放索引。*/
 		__getset(0,__proto,'index',function(){
 			return this._index;
@@ -25818,11 +29650,6 @@ window.Laya=(function(window,document){
 			this._index=value;
 			this._displayToIndex(value);
 			if (this._labels && this._labels[value])this.event("label",this._labels[value]);
-		});
-
-		/**动画长度。*/
-		__getset(0,__proto,'count',function(){
-			return this._count;
 		});
 
 		return AnimationPlayerBase;
@@ -25842,6 +29669,7 @@ window.Laya=(function(window,document){
 			this.desginWidth=0;
 			this.desginHeight=0;
 			this.canvasRotation=false;
+			this.canvasDegree=0;
 			this.renderingEnabled=true;
 			this._screenMode="none";
 			this._scaleMode="noscale";
@@ -25910,14 +29738,6 @@ window.Laya=(function(window,document){
 		*/
 		__proto._isInputting=function(){
 			return (Browser.onMobile && Input.isInputting);
-		}
-
-		/**设置场景设计宽高*/
-		__proto.size=function(width,height){
-			this.desginWidth=this.width=width;
-			this.desginHeight=this.height=height;
-			Laya.timer.callLater(this,this._changeCanvasSize);
-			return this;
 		}
 
 		/**@private */
@@ -26017,20 +29837,25 @@ window.Laya=(function(window,document){
 			else if (this._alignV==="bottom")this.offset.y=screenHeight-realHeight;
 			else this.offset.y=(screenHeight-realHeight)*0.5 / pixelRatio;
 			if (!this._offset){
-				this._offset=new Point(Laya.__parseInt(canvasStyle.left)|| 0,Laya.__parseInt(canvasStyle.top)|| 0);
+				this._offset=new Point(parseInt(canvasStyle.left)|| 0,parseInt(canvasStyle.top)|| 0);
 				canvasStyle.left=canvasStyle.top="0px";
 			}
 			this.offset.x+=this._offset.x;
 			this.offset.y+=this._offset.y;
+			this.offset.x=Math.round(this.offset.x);
+			this.offset.y=Math.round(this.offset.y);
 			canvasStyle.top=this._safariOffsetY+"px";
 			mat.translate(this.offset.x,this.offset.y);
+			this.canvasDegree=0;
 			if (rotation){
 				if (this._screenMode==="horizontal"){
 					mat.rotate(Math.PI / 2);
 					mat.translate(screenHeight / pixelRatio,0);
+					this.canvasDegree=90;
 					}else {
 					mat.rotate(-Math.PI / 2);
 					mat.translate(0,screenWidth / pixelRatio);
+					this.canvasDegree=-90;
 				}
 			}
 			if (mat.a < 0.00000000000001)mat.a=mat.d=0;
@@ -26068,7 +29893,7 @@ window.Laya=(function(window,document){
 			var frameMode=this.frameRate==="mouse" ? (((Browser.now()-this._mouseMoveTime)< 2000)? "fast" :"slow"):this.frameRate;
 			var isFastMode=(frameMode!=="slow");
 			var isDoubleLoop=(this._renderCount % 2===0);
-			var ctx=Render.context;
+			var ctx=context;
 			Stat.renderSlow=!isFastMode;
 			if (isFastMode || isDoubleLoop){
 				Stat.loopCount++;
@@ -26089,10 +29914,11 @@ window.Laya=(function(window,document){
 			if (Render.isConchNode)return;
 			if (this.renderingEnabled && (isFastMode || !isDoubleLoop)){
 				Render.isWebGL && RunDriver.clear(this._bgColor);
-				RunDriver.benginFlush();
+				RunDriver.beginFlush();
 				context.flush();
 				RunDriver.endFinish();
 			}
+			VectorGraphManager.instance && VectorGraphManager.getInstance().endDispose();
 		}
 
 		/**@private */
@@ -26125,6 +29951,43 @@ window.Laya=(function(window,document){
 				document.webkitExitFullscreen();
 			}
 		}
+
+		/**
+		*垂直对齐方式。
+		*<p><ul>取值范围：
+		*<li>"top" ：居顶部对齐；</li>
+		*<li>"middle" ：居中对齐；</li>
+		*<li>"bottom" ：居底部对齐；</li>
+		*</ul></p>
+		*/
+		__getset(0,__proto,'alignV',function(){
+			return this._alignV;
+			},function(value){
+			this._alignV=value;
+			Laya.timer.callLater(this,this._changeCanvasSize);
+		});
+
+		__getset(0,__proto,'width',_super.prototype._$get_width,function(value){
+			this.desginWidth=value;
+			_super.prototype._$set_width.call(this,value);
+			Laya.timer.callLater(this,this._changeCanvasSize);
+		});
+
+		__getset(0,__proto,'height',_super.prototype._$get_height,function(value){
+			this.desginHeight=value;
+			_super.prototype._$set_height.call(this,value);
+			Laya.timer.callLater(this,this._changeCanvasSize);
+		});
+
+		/**鼠标在 Stage 上的 X 轴坐标。*/
+		__getset(0,__proto,'mouseX',function(){
+			return Math.round(MouseManager.instance.mouseX / this.clientScaleX);
+		});
+
+		/**鼠标在 Stage 上的 Y 轴坐标。*/
+		__getset(0,__proto,'mouseY',function(){
+			return Math.round(MouseManager.instance.mouseY / this.clientScaleY);
+		});
 
 		/**
 		*<p>缩放模式。</p>
@@ -26162,21 +30025,6 @@ window.Laya=(function(window,document){
 			Laya.timer.callLater(this,this._changeCanvasSize);
 		});
 
-		/**
-		*垂直对齐方式。
-		*<p><ul>取值范围：
-		*<li>"top" ：居顶部对齐；</li>
-		*<li>"middle" ：居中对齐；</li>
-		*<li>"bottom" ：居底部对齐；</li>
-		*</ul></p>
-		*/
-		__getset(0,__proto,'alignV',function(){
-			return this._alignV;
-			},function(value){
-			this._alignV=value;
-			Laya.timer.callLater(this,this._changeCanvasSize);
-		});
-
 		/**舞台的背景颜色，默认为黑色，null为透明。*/
 		__getset(0,__proto,'bgColor',function(){
 			return this._bgColor;
@@ -26188,16 +30036,6 @@ window.Laya=(function(window,document){
 				}else {
 				Render.canvas.style.background="none";
 			}
-		});
-
-		/**鼠标在 Stage 上的 X 轴坐标。*/
-		__getset(0,__proto,'mouseX',function(){
-			return Math.round(MouseManager.instance.mouseX / this.clientScaleX);
-		});
-
-		/**鼠标在 Stage 上的 Y 轴坐标。*/
-		__getset(0,__proto,'mouseY',function(){
-			return Math.round(MouseManager.instance.mouseY / this.clientScaleY);
 		});
 
 		/**当前视窗由缩放模式导致的 X 轴缩放系数。*/
@@ -26266,6 +30104,141 @@ window.Laya=(function(window,document){
 		Stage.FRAME_MOUSE="mouse";
 		return Stage;
 	})(Sprite)
+
+
+	/**
+	*
+	*@author ww
+	*@version 1.0
+	*
+	*@created 2016-8-16 上午10:27:04
+	*/
+	//class laya.scene.Scene2D extends laya.display.Sprite
+	var Scene2D=(function(_super){
+		function Scene2D(){
+			Scene2D.__super.call(this);
+			this.createChildren();
+		}
+
+		__class(Scene2D,'laya.scene.Scene2D',_super);
+		var __proto=Scene2D.prototype;
+		/**
+		*<p>创建并添加控件子节点。</p>
+		*@internal 子类可在此函数内创建并添加子节点。
+		*/
+		__proto.createChildren=function(){}
+		__proto.createView=function(sceneData){
+			ClassUtils.createByJson(sceneData,this,this);
+		}
+
+		return Scene2D;
+	})(Sprite)
+
+
+	/**
+	*...
+	*@author ...
+	*/
+	//class laya.webgl.shader.d2.fillTexture.FillTextureShader extends laya.webgl.shader.Shader
+	var FillTextureShader=(function(_super){
+		function FillTextureShader(){
+			var vs="attribute vec2 position;\nattribute vec2 texcoord;\nattribute vec4 color;\nuniform vec2 size;\nuniform mat4 mmat;\nvarying vec2 v_texcoord;\nvarying vec4 v_color;\nvoid main() {\n  vec4 pos=mmat*vec4(position.x,position.y,0,1 );\n  gl_Position = vec4((pos.x/size.x-0.5)*2.0,(0.5-pos.y/size.y)*2.0,pos.z,1.0);\n  v_color = color;\n  v_texcoord = texcoord;  \n}";
+			var ps="precision mediump float;\nvarying vec2 v_texcoord;\nvarying vec4 v_color;\nuniform sampler2D texture;\nuniform vec4 u_texRange;\nuniform vec2 u_offset;\nvoid main() {\n	vec2 newTexCoord;\n	newTexCoord.x = mod(((u_offset.x + v_texcoord.x) * u_texRange.y),u_texRange.y) + u_texRange.x;\n	newTexCoord.y = mod(((u_offset.y + v_texcoord.y) * u_texRange.w),u_texRange.w) + u_texRange.z;\n	vec4 t_color = texture2D(texture, newTexCoord);\n	gl_FragColor = t_color.rgba;\n}";
+			FillTextureShader.__super.call(this,vs,ps,"fillTextureShader");
+		}
+
+		__class(FillTextureShader,'laya.webgl.shader.d2.fillTexture.FillTextureShader',_super);
+		__static(FillTextureShader,
+		['shader',function(){return this.shader=new FillTextureShader();}
+		]);
+		return FillTextureShader;
+	})(Shader)
+
+
+	/**
+	*...
+	*@author laya
+	*/
+	//class laya.webgl.shader.d2.Shader2X extends laya.webgl.shader.Shader
+	var Shader2X=(function(_super){
+		function Shader2X(vs,ps,saveName,nameMap){
+			this._params2dQuick1=null;
+			this._params2dQuick2=null;
+			this._shaderValueWidth=NaN;
+			this._shaderValueHeight=NaN;
+			Shader2X.__super.call(this,vs,ps,saveName,nameMap);
+		}
+
+		__class(Shader2X,'laya.webgl.shader.d2.Shader2X',_super);
+		var __proto=Shader2X.prototype;
+		__proto.upload2dQuick1=function(shaderValue){
+			this.upload(shaderValue,this._params2dQuick1 || this._make2dQuick1());
+		}
+
+		__proto._make2dQuick1=function(){
+			if (!this._params2dQuick1){
+				this.activeResource();
+				this._params2dQuick1=[];
+				var params=this._params,one;
+				for (var i=0,n=params.length;i < n;i++){
+					one=params[i];
+					if (!Render.isFlash && (one.name==="size" || one.name==="mmat" || one.name==="position" || one.name==="texcoord"))continue ;
+					this._params2dQuick1.push(one);
+				}
+			}
+			return this._params2dQuick1;
+		}
+
+		__proto.detoryResource=function(){
+			_super.prototype.detoryResource.call(this);
+			this._params2dQuick1=null;
+			this._params2dQuick2=null;
+		}
+
+		__proto.upload2dQuick2=function(shaderValue){
+			this.upload(shaderValue,this._params2dQuick2 || this._make2dQuick2());
+		}
+
+		__proto._make2dQuick2=function(){
+			if (!this._params2dQuick2){
+				this.activeResource();
+				this._params2dQuick2=[];
+				var params=this._params,one;
+				for (var i=0,n=params.length;i < n;i++){
+					one=params[i];
+					if (!Render.isFlash && (one.name==="size"))continue ;
+					this._params2dQuick2.push(one);
+				}
+			}
+			return this._params2dQuick2;
+		}
+
+		Shader2X.create=function(vs,ps,saveName,nameMap){
+			return new Shader2X(vs,ps,saveName,nameMap);
+		}
+
+		return Shader2X;
+	})(Shader)
+
+
+	/**
+	*...
+	*@author ...
+	*/
+	//class laya.webgl.shader.d2.skinAnishader.SkinAniShader extends laya.webgl.shader.Shader
+	var SkinAniShader1=(function(_super){
+		function SkinAniShader(){
+			var vs="attribute vec2 position;\nattribute vec2 texcoord;\nattribute vec4 color;\nuniform vec2 size;\nuniform mat4 mmat;\nvarying vec2 v_texcoord;\nvarying vec4 v_color;\nvoid main() {\n  vec4 pos=mmat*vec4(position.x,position.y,0,1 );\n  gl_Position = vec4((pos.x/size.x-0.5)*2.0,(0.5-pos.y/size.y)*2.0,pos.z,1.0);\n  v_color = color;\n  v_texcoord = texcoord;  \n}";
+			var ps="precision mediump float;\nvarying vec2 v_texcoord;\nvarying vec4 v_color;\nuniform sampler2D texture;\nvoid main() {\n	vec4 t_color = texture2D(texture, v_texcoord);\n	gl_FragColor = t_color.rgba;\n}";
+			SkinAniShader.__super.call(this,vs,ps,"SpineShader");
+		}
+
+		__class(SkinAniShader,'laya.webgl.shader.d2.skinAnishader.SkinAniShader',_super,'SkinAniShader1');
+		__static(SkinAniShader,
+		['shader',function(){return this.shader=new SkinAniShader();}
+		]);
+		return SkinAniShader;
+	})(Shader)
 
 
 	/**
@@ -26457,7 +30430,7 @@ window.Laya=(function(window,document){
 		Buffer2D.FLOAT0="FLOAT0";
 		Buffer2D.UVAGEX="UVAGEX";
 		Buffer2D.CAMERAPOS="CAMERAPOS";
-		Buffer2D.LUMINANCE="LUMINANCE";
+		Buffer2D.ALBEDO="ALBEDO";
 		Buffer2D.ALPHATESTVALUE="ALPHATESTVALUE";
 		Buffer2D.FOGCOLOR="FOGCOLOR";
 		Buffer2D.FOGSTART="FOGSTART";
@@ -26798,7 +30771,7 @@ window.Laya=(function(window,document){
 			if (bIsConchApp){
 				var nFontSize=char.fontSize;
 				if (xs !=1 || ys !=1){
-					nFontSize=Laya.__parseInt(nFontSize*((xs>ys)?xs:ys)+"");
+					nFontSize=parseInt(nFontSize*((xs>ys)?xs:ys)+"");
 				};
 				var sFont="normal 100 "+nFontSize+"px Arial";
 				if (char.borderColor){
@@ -26878,169 +30851,6 @@ window.Laya=(function(window,document){
 		});
 
 		return WebGLCharImage;
-	})(Bitmap)
-
-
-	/**
-	*...
-	*@author laya
-	*/
-	//class laya.webgl.resource.WebGLImageCube extends laya.resource.Bitmap
-	var WebGLImageCube=(function(_super){
-		function WebGLImageCube(srcs,size){
-			this._texCount=6;
-			//this._loadedImgCount=0;
-			//this._images=null;
-			//this._srcs=null;
-			this._recreateLock=false;
-			this._needReleaseAgain=false;
-			//this.repeat=false;
-			//this.mipmap=false;
-			//this.minFifter=0;
-			//this.magFifter=0;
-			WebGLImageCube.__super.call(this);
-			if (srcs.length < this._texCount)
-				throw new Error("srcs路径数组长度小于6！");
-			this._loadedImgCount=0;
-			this.repeat=true;
-			this.mipmap=false;
-			this.minFifter=-1;
-			this.magFifter=-1;
-			this._srcs=srcs;
-			this._w=size;
-			this._h=size;
-			this._images=[];
-			for (var i=0;i < this._texCount;i++){
-				Laya.loader.load(this._srcs[i],Handler.create(this,this._onSubCubeTextureLoaded,[i],true),null,"nativeimage",1,false);
-			}
-		}
-
-		__class(WebGLImageCube,'laya.webgl.resource.WebGLImageCube',_super);
-		var __proto=WebGLImageCube.prototype;
-		__proto._onSubCubeTextureLoaded=function(index,img){
-			this._images[index]=img;
-			this._loadedImgCount++;
-			if (this._loadedImgCount==this._texCount)
-				this.event("loaded",this);
-		}
-
-		__proto._createWebGlTexture=function(){
-			var i=0;
-			for (i=0;i < this._texCount;i++){
-				if (!this._images[i]){
-					throw "create GLTextur err:no data:"+this._images[i];
-				}
-			};
-			var gl=WebGL.mainContext;
-			var glTex=this._source=gl.createTexture();
-			var preTarget=WebGLContext.curBindTexTarget;
-			var preTexture=WebGLContext.curBindTexValue;
-			WebGLContext.bindTexture(gl,0x8513,glTex);
-			gl.texImage2D(0x8515,0,0x1908,0x1908,0x1401,this._images[0]);
-			gl.texImage2D(0x8516,0,0x1908,0x1908,0x1401,this._images[1]);
-			gl.texImage2D(0x8517,0,0x1908,0x1908,0x1401,this._images[2]);
-			gl.texImage2D(0x8518,0,0x1908,0x1908,0x1401,this._images[3]);
-			gl.texImage2D(0x8519,0,0x1908,0x1908,0x1401,this._images[4]);
-			gl.texImage2D(0x851A,0,0x1908,0x1908,0x1401,this._images[5]);
-			var minFifter=this.minFifter;
-			var magFifter=this.magFifter;
-			var repeat=this.repeat ? 0x2901 :0x812F;
-			var isPOT=Arith.isPOT(this._w,this._h);
-			if (isPOT){
-				if (this.mipmap)
-					(minFifter!==-1)|| (minFifter=0x2703);
-				else
-				(minFifter!==-1)|| (minFifter=0x2601);
-				(magFifter!==-1)|| (magFifter=0x2601);
-				gl.texParameteri(0x8513,0x2801,minFifter);
-				gl.texParameteri(0x8513,0x2800,magFifter);
-				gl.texParameteri(0x8513,0x2802,repeat);
-				gl.texParameteri(0x8513,0x2803,repeat);
-				this.mipmap && gl.generateMipmap(0x8513);
-				}else {
-				(minFifter!==-1)|| (minFifter=0x2601);
-				(magFifter!==-1)|| (magFifter=0x2601);
-				gl.texParameteri(0x8513,0x2801,minFifter);
-				gl.texParameteri(0x8513,0x2800,magFifter);
-				gl.texParameteri(0x8513,0x2802,0x812F);
-				gl.texParameteri(0x8513,0x2803,0x812F);
-			}
-			(preTarget && preTexture)&& (WebGLContext.bindTexture(gl,preTarget,preTexture));
-			for (i=0;i < 6;i++){
-				this._images[i].onload=null;
-				this._images[i]=null;
-			}
-			if (isPOT)
-				this.memorySize=this._w *this._h *4 *(1+1 / 3)*this._texCount;
-			else
-			this.memorySize=this._w *this._h *4 *this._texCount;
-			this._recreateLock=false;
-		}
-
-		__proto.recreateResource=function(){
-			var _$this=this;
-			if (this._srcs==null)
-				return;
-			this._needReleaseAgain=false;
-			if (!this._images[0]){
-				this._recreateLock=true;
-				this.startCreate();
-				var _this=this;
-				for (var i=0;i < this._texCount;i++){
-					this._images[i]=new Browser.window.Image();
-					this._images[i].crossOrigin="";
-					var index=i;
-					this._images[index].onload=function (){
-						var j=0;
-						if (_this._needReleaseAgain){
-							for (j=0;j < _$this._texCount;j++)
-							if (!_this._images[j].complete)
-								return;
-							_this._needReleaseAgain=false;
-							for (j=0;j < _$this._texCount;j++){
-								_this._images[j].onload=null;
-								_this._images[j]=null;
-							}
-							return;
-						}
-						for (j=0;j < _$this._texCount;j++)
-						if (!_this._images[j].complete)
-							return;
-						_this._createWebGlTexture();
-						_this.compoleteCreate();
-					};
-					this._images[i].src=this._srcs[i];
-				}
-				}else {
-				if (this._recreateLock){
-					return;
-				}
-				this.startCreate();
-				this._createWebGlTexture();
-				this.compoleteCreate();
-			}
-		}
-
-		//处理创建完成后相关操作
-		__proto.detoryResource=function(){
-			if (this._recreateLock){
-				this._needReleaseAgain=true;
-			}
-			if (this._source){
-				WebGL.mainContext.deleteTexture(this._source);
-				this._source=null;
-				this.memorySize=0;
-			}
-		}
-
-		/**
-		*文件路径全名。
-		*/
-		__getset(0,__proto,'srcs',function(){
-			return this._srcs;
-		});
-
-		return WebGLImageCube;
 	})(Bitmap)
 
 
@@ -27160,72 +30970,6 @@ window.Laya=(function(window,document){
 
 		return WebGLRenderTarget;
 	})(Bitmap)
-
-
-	/**
-	*...
-	*@author laya
-	*/
-	//class laya.webgl.shader.d2.Shader2X extends laya.webgl.shader.Shader
-	var Shader2X=(function(_super){
-		function Shader2X(vs,ps,saveName,nameMap){
-			this._params2dQuick1=null;
-			this._params2dQuick2=null;
-			this._shaderValueWidth=NaN;
-			this._shaderValueHeight=NaN;
-			Shader2X.__super.call(this,vs,ps,saveName,nameMap);
-		}
-
-		__class(Shader2X,'laya.webgl.shader.d2.Shader2X',_super);
-		var __proto=Shader2X.prototype;
-		__proto.upload2dQuick1=function(shaderValue){
-			this.upload(shaderValue,this._params2dQuick1 || this._make2dQuick1());
-		}
-
-		__proto._make2dQuick1=function(){
-			if (!this._params2dQuick1){
-				this.activeResource();
-				this._params2dQuick1=[];
-				var params=this._params,one;
-				for (var i=0,n=params.length;i < n;i++){
-					one=params[i];
-					if (!Render.isFlash && (one.name==="size" || one.name==="mmat" || one.name==="position" || one.name==="texcoord"))continue ;
-					this._params2dQuick1.push(one);
-				}
-			}
-			return this._params2dQuick1;
-		}
-
-		__proto.detoryResource=function(){
-			_super.prototype.detoryResource.call(this);
-			this._params2dQuick1=null;
-			this._params2dQuick2=null;
-		}
-
-		__proto.upload2dQuick2=function(shaderValue){
-			this.upload(shaderValue,this._params2dQuick2 || this._make2dQuick2());
-		}
-
-		__proto._make2dQuick2=function(){
-			if (!this._params2dQuick2){
-				this.activeResource();
-				this._params2dQuick2=[];
-				var params=this._params,one;
-				for (var i=0,n=params.length;i < n;i++){
-					one=params[i];
-					if (!Render.isFlash && (one.name==="size"))continue ;
-					this._params2dQuick2.push(one);
-				}
-			}
-			return this._params2dQuick2;
-		}
-
-		Shader2X.create=function(vs,ps,saveName,nameMap){
-			return new Shader2X(vs,ps,saveName,nameMap);
-		}
-
-		return Shader2X;
-	})(Shader)
 
 
 	//class laya.webgl.shader.d2.value.TextSV extends laya.webgl.shader.d2.value.TextureSV
@@ -27413,10 +31157,8 @@ window.Laya=(function(window,document){
 
 		/**@inheritDoc */
 		__proto.initialize=function(){
-			if (Browser.onPC){
-				this.on("mouseover",this,this.onMouse);
-				this.on("mouseout",this,this.onMouse);
-			}
+			this.on("mouseover",this,this.onMouse);
+			this.on("mouseout",this,this.onMouse);
 			this.on("mousedown",this,this.onMouse);
 			this.on("mouseup",this,this.onMouse);
 			this.on("click",this,this.onMouse);
@@ -28164,7 +31906,7 @@ window.Laya=(function(window,document){
 		/**@inheritDoc */
 		__getset(0,__proto,'dataSource',_super.prototype._$get_dataSource,function(value){
 			this._dataSource=value;
-			if (((typeof value=='number')&& Math.floor(value)==value)|| (typeof value=='string'))this.index=Laya.__parseInt(value);
+			if (((typeof value=='number')&& Math.floor(value)==value)|| (typeof value=='string'))this.index=parseInt(value);
 			else _super.prototype._$set_dataSource.call(this,value);
 		});
 
@@ -28370,7 +32112,7 @@ window.Laya=(function(window,document){
 			var py=p.y+this._colorButton.height;
 			py=py+this._colorPanel.height <=Laya.stage.height ? py :p.y-this._colorPanel.height;
 			this._colorPanel.pos(px,py);
-			Laya.stage.addChild(this._colorPanel);
+			Laya.stageBox.addChild(this._colorPanel);
 			Laya.stage.on("mousedown",this,this.removeColorBox);
 		}
 
@@ -28911,7 +32653,7 @@ window.Laya=(function(window,document){
 					var py=p.y+this._button.height;
 					py=py+this._listHeight <=Laya.stage.height ? py :p.y-this._listHeight;
 					this._list.pos(p.x,py);
-					Laya.stage.addChild(this._list);
+					Laya.stageBox.addChildAt(this._list,0);
 					Laya.stage.once("mousedown",this,this.removeList);
 					this._list.selectedIndex=this._selectedIndex;
 					}else {
@@ -28965,7 +32707,7 @@ window.Laya=(function(window,document){
 		/**@inheritDoc */
 		__getset(0,__proto,'dataSource',_super.prototype._$get_dataSource,function(value){
 			this._dataSource=value;
-			if (((typeof value=='number')&& Math.floor(value)==value)|| (typeof value=='string'))this.selectedIndex=Laya.__parseInt(value);
+			if (((typeof value=='number')&& Math.floor(value)==value)|| (typeof value=='string'))this.selectedIndex=parseInt(value);
 			else if ((value instanceof Array))this.labels=(value).join(",");
 			else _super.prototype._$set_dataSource.call(this,value);
 		});
@@ -29026,575 +32768,6 @@ window.Laya=(function(window,document){
 
 
 	/**
-	*<p><code>Input</code> 类用于创建显示对象以显示和输入文本。</p>
-	*
-	*@example 以下示例代码，创建了一个 <code>Text</code> 实例。
-	*<listing version="3.0">
-	*package
-	*{
-		*import laya.display.Input;
-		*import laya.events.Event;
-		*public class Input_Example
-		*{
-			*private var input:Input;
-			*public function Input_Example()
-			*{
-				*Laya.init(640,800);//设置游戏画布宽高、渲染模式。
-				*Laya.stage.bgColor="#efefef";//设置画布的背景颜色。
-				*onInit();
-				*}
-			*private function onInit():void
-			*{
-				*input=new Input();//创建一个 Input 类的实例对象 input 。
-				*input.text="这个是一个 Input 文本示例。";
-				*input.color="#008fff";//设置 input 的文本颜色。
-				*input.font="Arial";//设置 input 的文本字体。
-				*input.bold=true;//设置 input 的文本显示为粗体。
-				*input.fontSize=30;//设置 input 的字体大小。
-				*input.wordWrap=true;//设置 input 的文本自动换行。
-				*input.x=100;//设置 input 对象的属性 x 的值，用于控制 input 对象的显示位置。
-				*input.y=100;//设置 input 对象的属性 y 的值，用于控制 input 对象的显示位置。
-				*input.width=300;//设置 input 的宽度。
-				*input.height=200;//设置 input 的高度。
-				*input.italic=true;//设置 input 的文本显示为斜体。
-				*input.borderColor="#fff000";//设置 input 的文本边框颜色。
-				*Laya.stage.addChild(input);//将 input 添加到显示列表。
-				*input.on(Event.FOCUS,this,onFocus);//给 input 对象添加获得焦点事件侦听。
-				*input.on(Event.BLUR,this,onBlur);//给 input 对象添加失去焦点事件侦听。
-				*input.on(Event.INPUT,this,onInput);//给 input 对象添加输入字符事件侦听。
-				*input.on(Event.ENTER,this,onEnter);//给 input 对象添加敲回车键事件侦听。
-				*}
-			*private function onFocus():void
-			*{
-				*trace("输入框 input 获得焦点。");
-				*}
-			*private function onBlur():void
-			*{
-				*trace("输入框 input 失去焦点。");
-				*}
-			*private function onInput():void
-			*{
-				*trace("用户在输入框 input 输入字符。文本内容：",input.text);
-				*}
-			*private function onEnter():void
-			*{
-				*trace("用户在输入框 input 内敲回车键。");
-				*}
-			*}
-		*}
-	*</listing>
-	*<listing version="3.0">
-	*var input;
-	*Input_Example();
-	*function Input_Example()
-	*{
-		*Laya.init(640,800);//设置游戏画布宽高、渲染模式。
-		*Laya.stage.bgColor="#efefef";//设置画布的背景颜色。
-		*onInit();
-		*}
-	*function onInit()
-	*{
-		*input=new laya.display.Input();//创建一个 Input 类的实例对象 input 。
-		*input.text="这个是一个 Input 文本示例。";
-		*input.color="#008fff";//设置 input 的文本颜色。
-		*input.font="Arial";//设置 input 的文本字体。
-		*input.bold=true;//设置 input 的文本显示为粗体。
-		*input.fontSize=30;//设置 input 的字体大小。
-		*input.wordWrap=true;//设置 input 的文本自动换行。
-		*input.x=100;//设置 input 对象的属性 x 的值，用于控制 input 对象的显示位置。
-		*input.y=100;//设置 input 对象的属性 y 的值，用于控制 input 对象的显示位置。
-		*input.width=300;//设置 input 的宽度。
-		*input.height=200;//设置 input 的高度。
-		*input.italic=true;//设置 input 的文本显示为斜体。
-		*input.borderColor="#fff000";//设置 input 的文本边框颜色。
-		*Laya.stage.addChild(input);//将 input 添加到显示列表。
-		*input.on(laya.events.Event.FOCUS,this,onFocus);//给 input 对象添加获得焦点事件侦听。
-		*input.on(laya.events.Event.BLUR,this,onBlur);//给 input 对象添加失去焦点事件侦听。
-		*input.on(laya.events.Event.INPUT,this,onInput);//给 input 对象添加输入字符事件侦听。
-		*input.on(laya.events.Event.ENTER,this,onEnter);//给 input 对象添加敲回车键事件侦听。
-		*}
-	*function onFocus()
-	*{
-		*console.log("输入框 input 获得焦点。");
-		*}
-	*function onBlur()
-	*{
-		*console.log("输入框 input 失去焦点。");
-		*}
-	*function onInput()
-	*{
-		*console.log("用户在输入框 input 输入字符。文本内容：",input.text);
-		*}
-	*function onEnter()
-	*{
-		*console.log("用户在输入框 input 内敲回车键。");
-		*}
-	*</listing>
-	*<listing version="3.0">
-	*import Input=laya.display.Input;
-	*class Input_Example {
-		*private input:Input;
-		*constructor(){
-			*Laya.init(640,800);//设置游戏画布宽高、渲染模式。
-			*Laya.stage.bgColor="#efefef";//设置画布的背景颜色。
-			*this.onInit();
-			*}
-		*private onInit():void {
-			*this.input=new Input();//创建一个 Input 类的实例对象 input 。
-			*this.input.text="这个是一个 Input 文本示例。";
-			*this.input.color="#008fff";//设置 input 的文本颜色。
-			*this.input.font="Arial";//设置 input 的文本字体。
-			*this.input.bold=true;//设置 input 的文本显示为粗体。
-			*this.input.fontSize=30;//设置 input 的字体大小。
-			*this.input.wordWrap=true;//设置 input 的文本自动换行。
-			*this.input.x=100;//设置 input 对象的属性 x 的值，用于控制 input 对象的显示位置。
-			*this.input.y=100;//设置 input 对象的属性 y 的值，用于控制 input 对象的显示位置。
-			*this.input.width=300;//设置 input 的宽度。
-			*this.input.height=200;//设置 input 的高度。
-			*this.input.italic=true;//设置 input 的文本显示为斜体。
-			*this.input.borderColor="#fff000";//设置 input 的文本边框颜色。
-			*Laya.stage.addChild(this.input);//将 input 添加到显示列表。
-			*this.input.on(laya.events.Event.FOCUS,this,this.onFocus);//给 input 对象添加获得焦点事件侦听。
-			*this.input.on(laya.events.Event.BLUR,this,this.onBlur);//给 input 对象添加失去焦点事件侦听。
-			*this.input.on(laya.events.Event.INPUT,this,this.onInput);//给 input 对象添加输入字符事件侦听。
-			*this.input.on(laya.events.Event.ENTER,this,this.onEnter);//给 input 对象添加敲回车键事件侦听。
-			*}
-		*private onFocus():void {
-			*console.log("输入框 input 获得焦点。");
-			*}
-		*private onBlur():void {
-			*console.log("输入框 input 失去焦点。");
-			*}
-		*private onInput():void {
-			*console.log("用户在输入框 input 输入字符。文本内容：",this.input.text);
-			*}
-		*private onEnter():void {
-			*console.log("用户在输入框 input 内敲回车键。");
-			*}
-		*}
-	*</listing>
-	*/
-	//class laya.display.Input extends laya.display.Text
-	var Input=(function(_super){
-		function Input(){
-			this._focus=false;
-			this._multiline=false;
-			this._editable=true;
-			this._restrictPattern=null;
-			this.inputElementXAdjuster=0;
-			this.inputElementYAdjuster=0;
-			this._prompt='';
-			this._promptColor="#A9A9A9";
-			this._originColor="#000000";
-			this._content='';
-			Input.__super.call(this);
-			this._maxChars=1E5;
-			this._width=100;
-			this._height=20;
-			this.multiline=false;
-			this.overflow=Text.SCROLL;
-			this.on("mousedown",this,this._onMouseDown);
-			this.on("undisplay",this,this._onUnDisplay);
-		}
-
-		__class(Input,'laya.display.Input',_super);
-		var __proto=Input.prototype;
-		/**@private */
-		__proto._onUnDisplay=function(e){
-			this.focus=false;
-		}
-
-		/**@private */
-		__proto._onMouseDown=function(e){
-			this.focus=true;
-			Browser.document.addEventListener(Browser.enableTouch ? "touchstart" :"mousedown",laya.display.Input._checkBlur);
-		}
-
-		/**@inheritDoc*/
-		__proto.render=function(context,x,y){
-			laya.display.Sprite.prototype.render.call(this,context,x,y);
-		}
-
-		/**
-		*在输入期间，如果 Input 实例的位置改变，调用该方法同步输入框的位置。
-		*/
-		__proto._syncInputTransform=function(){
-			var style=this.nativeInput.style;
-			var stage=Laya.stage;
-			var rec;
-			rec=Utils.getGlobalPosAndScale(this);
-			var a=stage._canvasTransform.a,d=stage._canvasTransform.d;
-			var x=(rec.x+this.padding[3]+this.inputElementXAdjuster)*stage.clientScaleX *a+stage.offset.x;
-			var y=(rec.y+this.padding[0]+this.inputElementYAdjuster)*stage.clientScaleY *d+stage.offset.y;
-			Input.inputContainer.setPos(x,y);
-			var inputWid=this._width-this.padding[1]-this.padding[3];
-			var inputHei=this._height-this.padding[0]-this.padding[2];
-			this.nativeInput.setSize(inputWid,inputHei);
-			if (Render.isConchApp){
-				this.nativeInput.setPos(x,y);
-			}
-			if (!this._getVisible())this.focus=false;
-			if (stage.transform || rec.width !=1 || rec.height !=1 || a !=1 || d !=1){
-				x=stage.clientScaleX *a *rec.width;
-				y=stage.clientScaleY *d *rec.height;
-				var ts="scale("+x+","+y+")";
-				if (ts !=style.transform){
-					style.transform=ts;
-					if (Render.isConchApp){
-						this.nativeInput.setScale(x,y);
-					}
-				}
-			}
-		}
-
-		/**@private */
-		__proto._getVisible=function(){
-			var target=this;
-			while (target){
-				if (target.visible===false)return false;
-				target=target.parent;
-			}
-			return true;
-		}
-
-		/**选中所有文本。*/
-		__proto.select=function(){
-			this.nativeInput.select();
-		}
-
-		/**@private 设置输入法（textarea或input）*/
-		__proto._setInputMethod=function(){
-			Input.input.parentElement && (Input.inputContainer.removeChild(Input.input));
-			Input.area.parentElement && (Input.inputContainer.removeChild(Input.area));
-			Input.inputElement=(this._multiline ? Input.area :Input.input);
-			Input.inputContainer.appendChild(Input.inputElement);
-		}
-
-		/**@private */
-		__proto._focusIn=function(){
-			var input=this.nativeInput;
-			this._focus=true;
-			var cssStyle=input.style;
-			cssStyle.whiteSpace=(this.wordWrap ? "pre-wrap" :"nowrap");
-			this._setPromptColor();
-			input.readOnly=!this._editable;
-			input.maxLength=this._maxChars;
-			var padding=this.padding;
-			input.value=this._content;
-			input.type=this.asPassword ? "password" :"text";
-			input.placeholder=this._prompt;
-			Laya.stage.off("keydown",this,this._onKeyDown);
-			Laya.stage.on("keydown",this,this._onKeyDown);
-			Laya.stage.focus=this;
-			this.event("focus");
-			if (Browser.onPC){
-				input.focus();
-				var temp=this._text;
-				this._text=null;
-				this.typeset();
-				input.setColor(this._originColor);
-				input.setFontSize(this.fontSize);
-				input.setFontFace(this.font);
-				if (Render.isConchApp){
-					input.setMultiAble&&input.setMultiAble(this._multiline);
-				}
-				cssStyle.lineHeight=(this.leading+this.fontSize)+"px";
-				cssStyle.fontStyle=(this.italic ? "italic" :"normal");
-				cssStyle.fontWeight=(this.bold ? "bold" :"normal");
-				cssStyle.textAlign=this.align;
-				this._syncInputTransform();
-				if (!Render.isConchApp)
-					Laya.timer.frameLoop(1,this,this._syncInputTransform);
-			}
-			else{
-				cssStyle.height=Input.inputContainer.style.height=45+"px";
-				cssStyle.width=Browser.window.innerWidth-Input.confirmButton.offsetWidth-10+'px';
-				Input.inputContainer.style.width=Browser.window.innerWidth+'px';
-			}
-		}
-
-		// 设置DOM输入框提示符颜色。
-		__proto._setPromptColor=function(){
-			Input.promptStyleDOM=Browser.getElementById("promptStyle");
-			if (!Input.promptStyleDOM){
-				Input.promptStyleDOM=Browser.createElement("style");
-				Browser.document.head.appendChild(Input.promptStyleDOM);
-			}
-			Input.promptStyleDOM.innerText="input::-webkit-input-placeholder, textarea::-webkit-input-placeholder {"+"color:"+this._promptColor+"}"+"input:-moz-placeholder, textarea:-moz-placeholder {"+"color:"+this._promptColor+"}"+"input::-moz-placeholder, textarea::-moz-placeholder {"+"color:"+this._promptColor+"}"+"input:-ms-input-placeholder, textarea:-ms-input-placeholder {"+"color:"+this._promptColor+"}";
-		}
-
-		/**@private */
-		__proto._focusOut=function(){
-			this._focus=false;
-			this._text=null;
-			this._content=Input.inputElement.value;
-			if (!this._content){
-				_super.prototype._$set_text.call(this,this._prompt);
-				_super.prototype._$set_color.call(this,this._promptColor);
-			}
-			else{
-				_super.prototype._$set_text.call(this,this._content);
-				_super.prototype._$set_color.call(this,this._originColor);
-			}
-			Laya.stage.off("keydown",this,this._onKeyDown);
-			Laya.stage.focus=null;
-			this.event("blur");
-			if (Render.isConchApp)this.nativeInput.blur();
-			Browser.onPC && Laya.timer.clear(this,this._syncInputTransform);
-			Browser.document.removeEventListener(Browser.enableTouch ? "touchstart" :"mousedown",laya.display.Input._checkBlur);
-		}
-
-		/**@private */
-		__proto._onKeyDown=function(e){
-			if (e.keyCode===13){
-				if (Browser.onMobile && !this._multiline)
-					this.focus=false;
-				this.event("enter");
-			}
-		}
-
-		/**表示是否是多行输入框。*/
-		__getset(0,__proto,'multiline',function(){
-			return this._multiline;
-			},function(value){
-			this._multiline=value;
-			this.valign=value ? "top" :"middle";
-		});
-
-		/**@inheritDoc */
-		__getset(0,__proto,'color',_super.prototype._$get_color,function(value){
-			if (this._focus)
-				this.nativeInput.setColor(value);
-			_super.prototype._$set_color.call(this,this._content?value:this._promptColor);
-			this._originColor=value;
-		});
-
-		/**
-		*设置输入提示符颜色。
-		*/
-		__getset(0,__proto,'promptColor',function(){
-			return this._promptColor;
-			},function(value){
-			this._promptColor=value;
-			if (!this._content)_super.prototype._$set_color.call(this,value);
-		});
-
-		/**
-		*获取对输入框的引用实例。
-		*/
-		__getset(0,__proto,'nativeInput',function(){
-			return this._multiline ? Input.area :Input.input;
-		});
-
-		// 因此 调用focus接口是无法都在移动平台立刻弹出键盘的
-		/**
-		*表示焦点是否在显示对象上。
-		*/
-		__getset(0,__proto,'focus',function(){
-			return this._focus;
-			},function(value){
-			var input=this.nativeInput;
-			if (this._focus!==value){
-				laya.display.Input.isInputting=value;
-				if (value){
-					input.target && (input.target.focus=false);
-					input.target=this;
-					this._setInputMethod();
-					Browser.container.appendChild(Input.inputContainer);
-					this._focusIn();
-				}
-				else{
-					input.target=null;
-					this._focusOut();
-					Browser.container.removeChild(Input.inputContainer);
-					if (Render.isConchApp){
-						input.setPos(-10000,-10000);
-					}
-				}
-			}
-		});
-
-		/**@inheritDoc */
-		__getset(0,__proto,'text',function(){
-			if (this._focus)
-				return this.nativeInput.value;
-			else
-			return this._text || "";
-			},function(value){
-			_super.prototype._$set_color.call(this,this._originColor);
-			value+='';
-			if (this._focus){
-				this.nativeInput.value=value || '';
-				this.event("change");
-			}
-			else{
-				if (!this._multiline)
-					value=value.replace(/\r?\n/g,'');
-				this._content=value;
-				_super.prototype._$set_text.call(this,value||this._prompt);
-			}
-		});
-
-		/**
-		*字符数量限制，默认为10000。
-		*设置字符数量限制时，小于等于0的值将会限制字符数量为10000。
-		*/
-		__getset(0,__proto,'maxChars',function(){
-			return this._maxChars;
-			},function(value){
-			if (value <=0)
-				value=1E5;
-			this._maxChars=value;
-		});
-
-		/**
-		*设置输入提示符。
-		*/
-		__getset(0,__proto,'prompt',function(){
-			return this._prompt;
-			},function(value){
-			if (!this._text && value)
-				_super.prototype._$set_color.call(this,this._promptColor);
-			this.promptColor=this._promptColor;
-			_super.prototype._$set_text.call(this,this._text||value);
-			this._prompt=value;
-		});
-
-		/**限制输入的字符。*/
-		__getset(0,__proto,'restrict',function(){
-			if (this._restrictPattern){
-				return this._restrictPattern.source;
-			}
-			return "";
-			},function(pattern){
-			if (pattern){
-				pattern="[^"+pattern+"]";
-				if (pattern.indexOf("^^")>-1)
-					pattern=pattern.replace("^^","");
-				this._restrictPattern=new RegExp(pattern,"g");
-			}
-			else
-			this._restrictPattern=null;
-		});
-
-		/**
-		*是否可编辑。
-		*/
-		__getset(0,__proto,'editable',function(){
-			return this._editable;
-			},function(value){
-			this._editable=value;
-		});
-
-		Input.__init__=function(){
-			Input._createInputElement();
-			if (Browser.onMobile){
-				Browser.document.addEventListener("touchend",Input._popupInputMethod);
-			}
-		}
-
-		Input._popupInputMethod=function(){
-			if (!laya.display.Input.isInputting)return;
-			var input=laya.display.Input.inputElement;
-			input.selectionStart=input.selectionEnd=input.value.length;
-			input.focus();
-			if (Browser.onAndriod && Browser.onWeiXin && !Browser.onMQQBrowser){
-				laya.display.Input.inputContainer.style.top='40px';
-			}
-		}
-
-		Input._createInputElement=function(){
-			Input._initInput(Input.area=Browser.createElement("textarea"));
-			Input._initInput(Input.input=Browser.createElement("input"));
-			Input.inputContainer=Browser.createElement("div");
-			Input.inputContainer.appendChild(Input.input);
-			Input.inputContainer.appendChild(Input.area);
-			Input.inputContainer.setPos=function (x,y){Input.inputContainer.style.left=x+'px';Input.inputContainer.style.top=y+'px';};
-			if (Browser.onMobile){
-				var style=Input.inputContainer.style;
-				style.position='fixed';
-				style.bottom='0px';
-				style.boxSizing='border-box';
-				style.border="1px solid gray";
-				style.backgroundColor="white";
-				Input.confirmButton=Browser.createElement("button");
-				Input.inputContainer.appendChild(Input.confirmButton);
-				Input.confirmButton.innerText="确定";
-				style=Input.confirmButton.style;
-				style.float='right';
-				style.width='50px';
-				style.top='1px';
-				style.height=45-2+'px';
-				style.border='none';
-				style.background="rgb(221,221,221)";
-				Input.confirmButton.onclick=function (){laya.display.Input.inputElement.target.focus=false;}
-			}
-			else{
-				Input.inputContainer.style.position="absolute";
-			}
-		}
-
-		Input._initInput=function(input){
-			var style=input.style;
-			style.cssText="position:absolute;overflow:hidden;resize:none;z-index:999;transform-origin:0 0;-webkit-transform-origin:0 0;-moz-transform-origin:0 0;-o-transform-origin:0 0;";
-			style.resize='none';
-			style.backgroundColor='transparent';
-			style.border='none';
-			style.outline='none';
-			if (Browser.onMobile){
-				style.paddingLeft='5px';
-				style.lineHeight='29px';
-				style.fontFamily='Arial,Helvetica,sans-serif';
-				style.fontSize='20px';
-				style.background='transparent';
-				style.border='none';
-			}
-			input.addEventListener('input',Input._processInputting);
-			if(!Render.isConchApp){
-				input.setColor=function (color){input.style.color=color;};
-				input.setFontSize=function (fontSize){input.style.fontSize=fontSize+'px';};
-				input.setSize=function (w,h){input.style.width=w+'px';input.style.height=h+'px';};
-			}
-			input.setFontFace=function (fontFace){input.style.fontFamily=fontFace;};
-		}
-
-		Input._processInputting=function(e){
-			var input=laya.display.Input.inputElement.target;
-			var value=laya.display.Input.inputElement.value;
-			if (input._restrictPattern){
-				value=value.replace(input._restrictPattern,"");
-				laya.display.Input.inputElement.value=value;
-			}
-			if(Browser.onPC)
-				input._text=value;
-			else
-			input.__super.prototype._$set_text.call(input,value);
-			input.event("input");
-		}
-
-		Input._stopEvent=function(e){
-			e.stopPropagation && e.stopPropagation();
-		}
-
-		Input._checkBlur=function(e){
-			if (e.target !=laya.display.Input.input && e.target !=laya.display.Input.area && e.target !=Input.confirmButton){
-				laya.display.Input.inputElement.target.focus=false;
-			}
-		}
-
-		Input.input=null
-		Input.area=null
-		Input.inputElement=null
-		Input.inputContainer=null
-		Input.confirmButton=null
-		Input.promptStyleDOM=null
-		Input.inputHeight=45;
-		Input.isInputting=false;
-		return Input;
-	})(Text)
-
-
-	/**
 	*<code>ScrollBar</code> 组件是一个滚动条组件。
 	*<p>当数据太多以至于显示区域无法容纳时，最终用户可以使用 <code>ScrollBar</code> 组件控制所显示的数据部分。</p>
 	*<p> 滚动条由四部分组成：两个箭头按钮、一个轨道和一个滑块。 </p> *
@@ -29610,11 +32783,11 @@ window.Laya=(function(window,document){
 			this.autoHide=false;
 			this.elasticDistance=0;
 			this.elasticBackTime=500;
+			this.upButton=null;
+			this.downButton=null;
+			this.slider=null;
 			this._scrollSize=1;
 			this._skin=null;
-			this._upButton=null;
-			this._downButton=null;
-			this._slider=null;
 			this._thumbPercent=1;
 			this._target=null;
 			this._lastPoint=null;
@@ -29639,29 +32812,29 @@ window.Laya=(function(window,document){
 		__proto.destroy=function(destroyChild){
 			(destroyChild===void 0)&& (destroyChild=true);
 			_super.prototype.destroy.call(this,destroyChild);
-			this._upButton && this._upButton.destroy(destroyChild);
-			this._downButton && this._downButton.destroy(destroyChild);
-			this._slider && this._slider.destroy(destroyChild);
-			this._upButton=this._downButton=null;
-			this._slider=null;
+			this.upButton && this.upButton.destroy(destroyChild);
+			this.downButton && this.downButton.destroy(destroyChild);
+			this.slider && this.slider.destroy(destroyChild);
+			this.upButton=this.downButton=null;
+			this.slider=null;
 			this.changeHandler=null;
 			this._offsets=null;
 		}
 
 		/**@inheritDoc */
 		__proto.createChildren=function(){
-			this.addChild(this._slider=new Slider());
-			this.addChild(this._upButton=new Button());
-			this.addChild(this._downButton=new Button());
+			this.addChild(this.slider=new Slider());
+			this.addChild(this.upButton=new Button());
+			this.addChild(this.downButton=new Button());
 		}
 
 		/**@inheritDoc */
 		__proto.initialize=function(){
-			this._slider.showLabel=false;
-			this._slider.on("change",this,this.onSliderChange);
-			this._slider.setSlider(0,0,0);
-			this._upButton.on("mousedown",this,this.onButtonMouseDown);
-			this._downButton.on("mousedown",this,this.onButtonMouseDown);
+			this.slider.showLabel=false;
+			this.slider.on("change",this,this.onSliderChange);
+			this.slider.setSlider(0,0,0);
+			this.upButton.on("mousedown",this,this.onButtonMouseDown);
+			this.downButton.on("mousedown",this,this.onButtonMouseDown);
 		}
 
 		/**
@@ -29669,7 +32842,7 @@ window.Laya=(function(window,document){
 		*滑块位置发生改变的处理函数。
 		*/
 		__proto.onSliderChange=function(){
-			this.value=this._slider.value;
+			this.value=this.slider.value;
 		}
 
 		/**
@@ -29677,7 +32850,7 @@ window.Laya=(function(window,document){
 		*向上和向下按钮的 <code>Event.MOUSE_DOWN</code> 事件侦听处理函数。
 		*/
 		__proto.onButtonMouseDown=function(e){
-			var isUp=e.currentTarget===this._upButton;
+			var isUp=e.currentTarget===this.upButton;
 			this.slide(isUp);
 			Laya.timer.once(Styles.scrollBarDelayTime,this,this.startLoop,[isUp]);
 			Laya.stage.once("mouseup",this,this.onStageMouseUp);
@@ -29708,14 +32881,14 @@ window.Laya=(function(window,document){
 		*更改对象的皮肤及位置。
 		*/
 		__proto.changeScrollBar=function(){
-			this._upButton.visible=this._showButtons;
-			this._downButton.visible=this._showButtons;
+			this.upButton.visible=this._showButtons;
+			this.downButton.visible=this._showButtons;
 			if (this._showButtons){
-				this._upButton.skin=this._skin.replace(".png","$up.png");
-				this._downButton.skin=this._skin.replace(".png","$down.png");
+				this.upButton.skin=this._skin.replace(".png","$up.png");
+				this.downButton.skin=this._skin.replace(".png","$down.png");
 			}
-			if (this._slider.isVertical)this._slider.y=this._showButtons ? this._upButton.height :0;
-			else this._slider.x=this._showButtons ? this._upButton.width :0;
+			if (this.slider.isVertical)this.slider.y=this._showButtons ? this.upButton.height :0;
+			else this.slider.x=this._showButtons ? this.upButton.width :0;
 			this.resetPositions();
 		}
 
@@ -29729,15 +32902,15 @@ window.Laya=(function(window,document){
 
 		/**@private */
 		__proto.resetPositions=function(){
-			if (this._slider.isVertical)this._slider.height=this.height-(this._showButtons ? (this._upButton.height+this._downButton.height):0);
-			else this._slider.width=this.width-(this._showButtons ? (this._upButton.width+this._downButton.width):0);
+			if (this.slider.isVertical)this.slider.height=this.height-(this._showButtons ? (this.upButton.height+this.downButton.height):0);
+			else this.slider.width=this.width-(this._showButtons ? (this.upButton.width+this.downButton.width):0);
 			this.resetButtonPosition();
 		}
 
 		/**@private */
 		__proto.resetButtonPosition=function(){
-			if (this._slider.isVertical)this._downButton.y=this._slider.y+this._slider.height;
-			else this._downButton.x=this._slider.x+this._slider.width;
+			if (this.slider.isVertical)this.downButton.y=this.slider.y+this.slider.height;
+			else this.downButton.x=this.slider.x+this.slider.width;
 		}
 
 		/**
@@ -29748,8 +32921,8 @@ window.Laya=(function(window,document){
 		*/
 		__proto.setScroll=function(min,max,value){
 			this.runCallLater(this.changeSize);
-			this._slider.setSlider(min,max,value);
-			this._slider.bar.visible=max > 0;
+			this.slider.setSlider(min,max,value);
+			this.slider.bar.visible=max > 0;
 			if (!this._hide && this.autoHide)this.visible=false;
 		}
 
@@ -29861,13 +33034,14 @@ window.Laya=(function(window,document){
 			if (!this.hide && this.autoHide){
 				Tween.to(this,{alpha:0},500);
 			}
+			this.event("end");
 		}
 
 		/**@private */
 		__proto.tweenMove=function(){
 			this._lastOffset *=0.95;
 			this.value-=this._lastOffset;
-			if (Math.abs(this._lastOffset)< 1){
+			if (Math.abs(this._lastOffset)< 1 || this.value==this.max || this.value==this.min){
 				Laya.timer.clear(this,this.tweenMove);
 				this.event("end");
 				if (!this.hide && this.autoHide){
@@ -29890,9 +33064,9 @@ window.Laya=(function(window,document){
 		*<p>默认值为：true。</p>
 		*/
 		__getset(0,__proto,'isVertical',function(){
-			return this._slider.isVertical;
+			return this.slider.isVertical;
 			},function(value){
-			this._slider.isVertical=value;
+			this.slider.isVertical=value;
 		});
 
 		/**
@@ -29903,7 +33077,7 @@ window.Laya=(function(window,document){
 			},function(value){
 			if (this._skin !=value){
 				this._skin=value;
-				this._slider.skin=this._skin;
+				this.slider.skin=this._skin;
 				this.callLater(this.changeScrollBar);
 			}
 		});
@@ -29912,9 +33086,9 @@ window.Laya=(function(window,document){
 		*获取或设置表示最高滚动位置的数字。
 		*/
 		__getset(0,__proto,'max',function(){
-			return this._slider.max;
+			return this.slider.max;
 			},function(value){
-			this._slider.max=value;
+			this.slider.max=value;
 		});
 
 		/**获取或设置一个值，该值表示按下滚动条轨道时页面滚动的增量。 */
@@ -29926,13 +33100,13 @@ window.Laya=(function(window,document){
 
 		/**@inheritDoc */
 		__getset(0,__proto,'measureHeight',function(){
-			if (this._slider.isVertical)return 100;
-			return this._slider.height;
+			if (this.slider.isVertical)return 100;
+			return this.slider.height;
 		});
 
 		/**@inheritDoc */
 		__getset(0,__proto,'measureWidth',function(){
-			if (this._slider.isVertical)return this._slider.width;
+			if (this.slider.isVertical)return this.slider.width;
 			return 100;
 		});
 
@@ -29943,18 +33117,18 @@ window.Laya=(function(window,document){
 		*@see laya.ui.AutoBitmap.sizeGrid
 		*/
 		__getset(0,__proto,'sizeGrid',function(){
-			return this._slider.sizeGrid;
+			return this.slider.sizeGrid;
 			},function(value){
-			this._slider.sizeGrid=value;
+			this.slider.sizeGrid=value;
 		});
 
 		/**
 		*获取或设置表示最低滚动位置的数字。
 		*/
 		__getset(0,__proto,'min',function(){
-			return this._slider.min;
+			return this.slider.min;
 			},function(value){
-			this._slider.min=value;
+			this.slider.min=value;
 		});
 
 		/**
@@ -29966,8 +33140,8 @@ window.Laya=(function(window,document){
 			if (v!==this._value){
 				if (this._isElastic)this._value=v;
 				else {
-					this._slider.value=v;
-					this._value=this._slider.value;
+					this.slider.value=v;
+					this._value=this.slider.value;
 				}
 				this.event("change");
 				this.changeHandler && this.changeHandler.runWith(this.value);
@@ -29990,8 +33164,8 @@ window.Laya=(function(window,document){
 			value=value >=1 ? 0.99 :value;
 			this._thumbPercent=value;
 			if (this.scaleBar){
-				if (this._slider.isVertical)this._slider.bar.height=Math.max(this._slider.height *value,Styles.scrollBarMinNum);
-				else this._slider.bar.width=Math.max(this._slider.width *value,Styles.scrollBarMinNum);
+				if (this.slider.isVertical)this.slider.bar.height=Math.max(this.slider.height *value,Styles.scrollBarMinNum);
+				else this.slider.bar.width=Math.max(this.slider.width *value,Styles.scrollBarMinNum);
 			}
 		});
 
@@ -30073,6 +33247,7 @@ window.Laya=(function(window,document){
 			this._tx=NaN;
 			this._ty=NaN;
 			this._maxMove=NaN;
+			this._globalSacle=null;
 			Slider.__super.call(this);
 			this.skin=skin;
 		}
@@ -30111,6 +33286,8 @@ window.Laya=(function(window,document){
 		*@param e
 		*/
 		__proto.onBarMouseDown=function(e){
+			this._globalSacle || (this._globalSacle=new Point());
+			this._globalSacle.setTo(this.globalScaleX,this.globalScaleY);
 			this._maxMove=this.isVertical ? (this.height-this._bar.height):(this.width-this._bar.width);
 			this._tx=Laya.stage.mouseX;
 			this._ty=Laya.stage.mouseY;
@@ -30163,12 +33340,12 @@ window.Laya=(function(window,document){
 		__proto.mouseMove=function(e){
 			var oldValue=this._value;
 			if (this.isVertical){
-				this._bar.y+=Laya.stage.mouseY-this._ty;
+				this._bar.y+=(Laya.stage.mouseY-this._ty)/ this._globalSacle.y;
 				if (this._bar.y > this._maxMove)this._bar.y=this._maxMove;
 				else if (this._bar.y < 0)this._bar.y=0;
 				this._value=this._bar.y / this._maxMove *(this._max-this._min)+this._min;
 				}else {
-				this._bar.x+=Laya.stage.mouseX-this._tx;
+				this._bar.x+=(Laya.stage.mouseX-this._tx)/ this._globalSacle.x;
 				if (this._bar.x > this._maxMove)this._bar.x=this._maxMove;
 				else if (this._bar.x < 0)this._bar.x=0;
 				this._value=this._bar.x / this._maxMove *(this._max-this._min)+this._min;
@@ -31204,6 +34381,555 @@ window.Laya=(function(window,document){
 
 
 	/**
+	*<p><code>Input</code> 类用于创建显示对象以显示和输入文本。</p>
+	*
+	*@example 以下示例代码，创建了一个 <code>Text</code> 实例。
+	*<listing version="3.0">
+	*package
+	*{
+		*import laya.display.Input;
+		*import laya.events.Event;
+		*public class Input_Example
+		*{
+			*private var input:Input;
+			*public function Input_Example()
+			*{
+				*Laya.init(640,800);//设置游戏画布宽高、渲染模式。
+				*Laya.stage.bgColor="#efefef";//设置画布的背景颜色。
+				*onInit();
+				*}
+			*private function onInit():void
+			*{
+				*input=new Input();//创建一个 Input 类的实例对象 input 。
+				*input.text="这个是一个 Input 文本示例。";
+				*input.color="#008fff";//设置 input 的文本颜色。
+				*input.font="Arial";//设置 input 的文本字体。
+				*input.bold=true;//设置 input 的文本显示为粗体。
+				*input.fontSize=30;//设置 input 的字体大小。
+				*input.wordWrap=true;//设置 input 的文本自动换行。
+				*input.x=100;//设置 input 对象的属性 x 的值，用于控制 input 对象的显示位置。
+				*input.y=100;//设置 input 对象的属性 y 的值，用于控制 input 对象的显示位置。
+				*input.width=300;//设置 input 的宽度。
+				*input.height=200;//设置 input 的高度。
+				*input.italic=true;//设置 input 的文本显示为斜体。
+				*input.borderColor="#fff000";//设置 input 的文本边框颜色。
+				*Laya.stage.addChild(input);//将 input 添加到显示列表。
+				*input.on(Event.FOCUS,this,onFocus);//给 input 对象添加获得焦点事件侦听。
+				*input.on(Event.BLUR,this,onBlur);//给 input 对象添加失去焦点事件侦听。
+				*input.on(Event.INPUT,this,onInput);//给 input 对象添加输入字符事件侦听。
+				*input.on(Event.ENTER,this,onEnter);//给 input 对象添加敲回车键事件侦听。
+				*}
+			*private function onFocus():void
+			*{
+				*trace("输入框 input 获得焦点。");
+				*}
+			*private function onBlur():void
+			*{
+				*trace("输入框 input 失去焦点。");
+				*}
+			*private function onInput():void
+			*{
+				*trace("用户在输入框 input 输入字符。文本内容：",input.text);
+				*}
+			*private function onEnter():void
+			*{
+				*trace("用户在输入框 input 内敲回车键。");
+				*}
+			*}
+		*}
+	*</listing>
+	*<listing version="3.0">
+	*var input;
+	*Input_Example();
+	*function Input_Example()
+	*{
+		*Laya.init(640,800);//设置游戏画布宽高、渲染模式。
+		*Laya.stage.bgColor="#efefef";//设置画布的背景颜色。
+		*onInit();
+		*}
+	*function onInit()
+	*{
+		*input=new laya.display.Input();//创建一个 Input 类的实例对象 input 。
+		*input.text="这个是一个 Input 文本示例。";
+		*input.color="#008fff";//设置 input 的文本颜色。
+		*input.font="Arial";//设置 input 的文本字体。
+		*input.bold=true;//设置 input 的文本显示为粗体。
+		*input.fontSize=30;//设置 input 的字体大小。
+		*input.wordWrap=true;//设置 input 的文本自动换行。
+		*input.x=100;//设置 input 对象的属性 x 的值，用于控制 input 对象的显示位置。
+		*input.y=100;//设置 input 对象的属性 y 的值，用于控制 input 对象的显示位置。
+		*input.width=300;//设置 input 的宽度。
+		*input.height=200;//设置 input 的高度。
+		*input.italic=true;//设置 input 的文本显示为斜体。
+		*input.borderColor="#fff000";//设置 input 的文本边框颜色。
+		*Laya.stage.addChild(input);//将 input 添加到显示列表。
+		*input.on(laya.events.Event.FOCUS,this,onFocus);//给 input 对象添加获得焦点事件侦听。
+		*input.on(laya.events.Event.BLUR,this,onBlur);//给 input 对象添加失去焦点事件侦听。
+		*input.on(laya.events.Event.INPUT,this,onInput);//给 input 对象添加输入字符事件侦听。
+		*input.on(laya.events.Event.ENTER,this,onEnter);//给 input 对象添加敲回车键事件侦听。
+		*}
+	*function onFocus()
+	*{
+		*console.log("输入框 input 获得焦点。");
+		*}
+	*function onBlur()
+	*{
+		*console.log("输入框 input 失去焦点。");
+		*}
+	*function onInput()
+	*{
+		*console.log("用户在输入框 input 输入字符。文本内容：",input.text);
+		*}
+	*function onEnter()
+	*{
+		*console.log("用户在输入框 input 内敲回车键。");
+		*}
+	*</listing>
+	*<listing version="3.0">
+	*import Input=laya.display.Input;
+	*class Input_Example {
+		*private input:Input;
+		*constructor(){
+			*Laya.init(640,800);//设置游戏画布宽高、渲染模式。
+			*Laya.stage.bgColor="#efefef";//设置画布的背景颜色。
+			*this.onInit();
+			*}
+		*private onInit():void {
+			*this.input=new Input();//创建一个 Input 类的实例对象 input 。
+			*this.input.text="这个是一个 Input 文本示例。";
+			*this.input.color="#008fff";//设置 input 的文本颜色。
+			*this.input.font="Arial";//设置 input 的文本字体。
+			*this.input.bold=true;//设置 input 的文本显示为粗体。
+			*this.input.fontSize=30;//设置 input 的字体大小。
+			*this.input.wordWrap=true;//设置 input 的文本自动换行。
+			*this.input.x=100;//设置 input 对象的属性 x 的值，用于控制 input 对象的显示位置。
+			*this.input.y=100;//设置 input 对象的属性 y 的值，用于控制 input 对象的显示位置。
+			*this.input.width=300;//设置 input 的宽度。
+			*this.input.height=200;//设置 input 的高度。
+			*this.input.italic=true;//设置 input 的文本显示为斜体。
+			*this.input.borderColor="#fff000";//设置 input 的文本边框颜色。
+			*Laya.stage.addChild(this.input);//将 input 添加到显示列表。
+			*this.input.on(laya.events.Event.FOCUS,this,this.onFocus);//给 input 对象添加获得焦点事件侦听。
+			*this.input.on(laya.events.Event.BLUR,this,this.onBlur);//给 input 对象添加失去焦点事件侦听。
+			*this.input.on(laya.events.Event.INPUT,this,this.onInput);//给 input 对象添加输入字符事件侦听。
+			*this.input.on(laya.events.Event.ENTER,this,this.onEnter);//给 input 对象添加敲回车键事件侦听。
+			*}
+		*private onFocus():void {
+			*console.log("输入框 input 获得焦点。");
+			*}
+		*private onBlur():void {
+			*console.log("输入框 input 失去焦点。");
+			*}
+		*private onInput():void {
+			*console.log("用户在输入框 input 输入字符。文本内容：",this.input.text);
+			*}
+		*private onEnter():void {
+			*console.log("用户在输入框 input 内敲回车键。");
+			*}
+		*}
+	*</listing>
+	*/
+	//class laya.display.Input extends laya.display.Text
+	var Input=(function(_super){
+		function Input(){
+			this._focus=false;
+			this._multiline=false;
+			this._editable=true;
+			this._restrictPattern=null;
+			this.inputElementXAdjuster=0;
+			this.inputElementYAdjuster=0;
+			this._prompt='';
+			this._promptColor="#A9A9A9";
+			this._originColor="#000000";
+			this._content='';
+			Input.__super.call(this);
+			this._maxChars=1E5;
+			this._width=100;
+			this._height=20;
+			this.multiline=false;
+			this.overflow=Text.SCROLL;
+			this.on("mousedown",this,this._onMouseDown);
+			this.on("undisplay",this,this._onUnDisplay);
+		}
+
+		__class(Input,'laya.display.Input',_super);
+		var __proto=Input.prototype;
+		/**@private */
+		__proto._onUnDisplay=function(e){
+			this.focus=false;
+		}
+
+		/**@private */
+		__proto._onMouseDown=function(e){
+			this.focus=true;
+			Browser.document.addEventListener(Browser.enableTouch ? "touchstart" :"mousedown",laya.display.Input._checkBlur);
+		}
+
+		/**@inheritDoc*/
+		__proto.render=function(context,x,y){
+			laya.display.Sprite.prototype.render.call(this,context,x,y);
+		}
+
+		/**
+		*在输入期间，如果 Input 实例的位置改变，调用该方法同步输入框的位置。
+		*/
+		__proto._syncInputTransform=function(){
+			var style=this.nativeInput.style;
+			var stage=Laya.stage;
+			var rec;
+			rec=Utils.getGlobalPosAndScale(this);
+			var a=stage._canvasTransform.a,d=stage._canvasTransform.d;
+			var x=(rec.x+this.padding[3]+this.inputElementXAdjuster)*stage.clientScaleX *a+Math.max(0,stage.offset.x);
+			var y=(rec.y+this.padding[0]+this.inputElementYAdjuster)*stage.clientScaleY *d+Math.max(0,stage.offset.y);
+			Input.inputContainer.setPos(x,y);
+			var inputWid=this._width-this.padding[1]-this.padding[3];
+			var inputHei=this._height-this.padding[0]-this.padding[2];
+			this.nativeInput.setSize(inputWid,inputHei);
+			if (Render.isConchApp){
+				this.nativeInput.setPos(x,y);
+			}
+			if (!this._getVisible())this.focus=false;
+			if (stage.transform || rec.width !=1 || rec.height !=1 || a !=1 || d !=1){
+				x=stage.clientScaleX *a *rec.width;
+				y=stage.clientScaleY *d *rec.height;
+				var ts="scale("+x+","+y+")";
+				if (ts !=style.transform){
+					style.transform=ts;
+					if (Render.isConchApp){
+						this.nativeInput.setScale(x,y);
+					}
+				}
+			}
+		}
+
+		/**@private */
+		__proto._getVisible=function(){
+			var target=this;
+			while (target){
+				if (target.visible===false)return false;
+				target=target.parent;
+			}
+			return true;
+		}
+
+		/**选中所有文本。*/
+		__proto.select=function(){
+			this.nativeInput.select();
+		}
+
+		/**@private 设置输入法（textarea或input）*/
+		__proto._setInputMethod=function(){
+			Input.input.parentElement && (Input.inputContainer.removeChild(Input.input));
+			Input.area.parentElement && (Input.inputContainer.removeChild(Input.area));
+			Input.inputElement=(this._multiline ? Input.area :Input.input);
+			Input.inputContainer.appendChild(Input.inputElement);
+		}
+
+		/**@private */
+		__proto._focusIn=function(){
+			var input=this.nativeInput;
+			this._focus=true;
+			var cssStyle=input.style;
+			cssStyle.whiteSpace=(this.wordWrap ? "pre-wrap" :"nowrap");
+			this._setPromptColor();
+			input.readOnly=!this._editable;
+			input.maxLength=this._maxChars;
+			var padding=this.padding;
+			input.value=this._content;
+			input.type=this.asPassword ? "password" :"text";
+			input.placeholder=this._prompt;
+			Laya.stage.off("keydown",this,this._onKeyDown);
+			Laya.stage.on("keydown",this,this._onKeyDown);
+			Laya.stage.focus=this;
+			this.event("focus");
+			if (Browser.onPC)input.focus();
+			var temp=this._text;
+			this._text=null;
+			this.typeset();
+			input.setColor(this._originColor);
+			input.setFontSize(this.fontSize);
+			input.setFontFace(this.font);
+			if (Render.isConchApp){
+				input.setMultiAble && input.setMultiAble(this._multiline);
+			}
+			cssStyle.lineHeight=(this.leading+this.fontSize)+"px";
+			cssStyle.fontStyle=(this.italic ? "italic" :"normal");
+			cssStyle.fontWeight=(this.bold ? "bold" :"normal");
+			cssStyle.textAlign=this.align;
+			cssStyle.padding="0 0";
+			this._syncInputTransform();
+			if (!Render.isConchApp && Browser.onPC)
+				Laya.timer.frameLoop(1,this,this._syncInputTransform);
+		}
+
+		// 设置DOM输入框提示符颜色。
+		__proto._setPromptColor=function(){
+			Input.promptStyleDOM=Browser.getElementById("promptStyle");
+			if (!Input.promptStyleDOM){
+				Input.promptStyleDOM=Browser.createElement("style");
+				Browser.document.head.appendChild(Input.promptStyleDOM);
+			}
+			Input.promptStyleDOM.innerText="input::-webkit-input-placeholder, textarea::-webkit-input-placeholder {"+"color:"+this._promptColor+"}"+"input:-moz-placeholder, textarea:-moz-placeholder {"+"color:"+this._promptColor+"}"+"input::-moz-placeholder, textarea::-moz-placeholder {"+"color:"+this._promptColor+"}"+"input:-ms-input-placeholder, textarea:-ms-input-placeholder {"+"color:"+this._promptColor+"}";
+		}
+
+		/**@private */
+		__proto._focusOut=function(){
+			this._focus=false;
+			this._text=null;
+			this._content=Input.inputElement.value;
+			if (!this._content){
+				_super.prototype._$set_text.call(this,this._prompt);
+				_super.prototype._$set_color.call(this,this._promptColor);
+			}
+			else{
+				_super.prototype._$set_text.call(this,this._content);
+				_super.prototype._$set_color.call(this,this._originColor);
+			}
+			Laya.stage.off("keydown",this,this._onKeyDown);
+			Laya.stage.focus=null;
+			this.event("blur");
+			if (Render.isConchApp)this.nativeInput.blur();
+			Browser.onPC && Laya.timer.clear(this,this._syncInputTransform);
+			Browser.document.removeEventListener(Browser.enableTouch ? "touchstart" :"mousedown",laya.display.Input._checkBlur);
+		}
+
+		/**@private */
+		__proto._onKeyDown=function(e){
+			if (e.keyCode===13){
+				if (Browser.onMobile && !this._multiline)
+					this.focus=false;
+				this.event("enter");
+			}
+		}
+
+		/**表示是否是多行输入框。*/
+		__getset(0,__proto,'multiline',function(){
+			return this._multiline;
+			},function(value){
+			this._multiline=value;
+			this.valign=value ? "top" :"middle";
+		});
+
+		/**@inheritDoc */
+		__getset(0,__proto,'color',_super.prototype._$get_color,function(value){
+			if (this._focus)
+				this.nativeInput.setColor(value);
+			_super.prototype._$set_color.call(this,this._content?value:this._promptColor);
+			this._originColor=value;
+		});
+
+		/**
+		*设置输入提示符颜色。
+		*/
+		__getset(0,__proto,'promptColor',function(){
+			return this._promptColor;
+			},function(value){
+			this._promptColor=value;
+			if (!this._content)_super.prototype._$set_color.call(this,value);
+		});
+
+		/**
+		*获取对输入框的引用实例。
+		*/
+		__getset(0,__proto,'nativeInput',function(){
+			return this._multiline ? Input.area :Input.input;
+		});
+
+		// 因此 调用focus接口是无法都在移动平台立刻弹出键盘的
+		/**
+		*表示焦点是否在显示对象上。
+		*/
+		__getset(0,__proto,'focus',function(){
+			return this._focus;
+			},function(value){
+			var input=this.nativeInput;
+			if (this._focus!==value){
+				laya.display.Input.isInputting=value;
+				if (value){
+					input.target && (input.target.focus=false);
+					input.target=this;
+					this._setInputMethod();
+					Browser.container.appendChild(Input.inputContainer);
+					this._focusIn();
+				}
+				else{
+					input.target=null;
+					this._focusOut();
+					Browser.container.removeChild(Input.inputContainer);
+					if (Render.isConchApp){
+						input.setPos(-10000,-10000);
+					}
+				}
+			}
+		});
+
+		/**@inheritDoc */
+		__getset(0,__proto,'text',function(){
+			if (this._focus)
+				return this.nativeInput.value;
+			else
+			return this._text || "";
+			},function(value){
+			_super.prototype._$set_color.call(this,this._originColor);
+			value+='';
+			if (this._focus){
+				this.nativeInput.value=value || '';
+				this.event("change");
+			}
+			else{
+				if (!this._multiline)
+					value=value.replace(/\r?\n/g,'');
+				this._content=value;
+				if(value)
+					_super.prototype._$set_text.call(this,value);
+				else{
+					_super.prototype._$set_text.call(this,this._prompt);
+					_super.prototype._$set_color.call(this,this.promptColor);
+				}
+			}
+		});
+
+		/**
+		*字符数量限制，默认为10000。
+		*设置字符数量限制时，小于等于0的值将会限制字符数量为10000。
+		*/
+		__getset(0,__proto,'maxChars',function(){
+			return this._maxChars;
+			},function(value){
+			if (value <=0)
+				value=1E5;
+			this._maxChars=value;
+		});
+
+		/**
+		*设置输入提示符。
+		*/
+		__getset(0,__proto,'prompt',function(){
+			return this._prompt;
+			},function(value){
+			if (!this._text && value)
+				_super.prototype._$set_color.call(this,this._promptColor);
+			this.promptColor=this._promptColor;
+			if(this._text)
+				_super.prototype._$set_text.call(this,(this._text==this._prompt)?value:this._text);
+			else
+			_super.prototype._$set_text.call(this,value);
+			this._prompt=value;
+		});
+
+		/**限制输入的字符。*/
+		__getset(0,__proto,'restrict',function(){
+			if (this._restrictPattern){
+				return this._restrictPattern.source;
+			}
+			return "";
+			},function(pattern){
+			if (pattern){
+				pattern="[^"+pattern+"]";
+				if (pattern.indexOf("^^")>-1)
+					pattern=pattern.replace("^^","");
+				this._restrictPattern=new RegExp(pattern,"g");
+			}
+			else
+			this._restrictPattern=null;
+		});
+
+		/**
+		*是否可编辑。
+		*/
+		__getset(0,__proto,'editable',function(){
+			return this._editable;
+			},function(value){
+			this._editable=value;
+		});
+
+		Input.__init__=function(){
+			Input._createInputElement();
+			if (Browser.onMobile){
+				Render.canvas.addEventListener(Input.IOS_IFRAME ? "click" :"touchend",Input._popupInputMethod);
+			}
+		}
+
+		Input._popupInputMethod=function(){
+			if (!laya.display.Input.isInputting)return;
+			var input=laya.display.Input.inputElement;
+			input.selectionStart=input.selectionEnd=input.value.length;
+			input.focus();
+			Laya.timer.once(300,null,function(){
+				input.scrollIntoView();
+			});
+		}
+
+		Input._createInputElement=function(){
+			Input._initInput(Input.area=Browser.createElement("textarea"));
+			Input._initInput(Input.input=Browser.createElement("input"));
+			Input.inputContainer=Browser.createElement("div");
+			Input.inputContainer.style.position="absolute";
+			Input.inputContainer.appendChild(Input.input);
+			Input.inputContainer.appendChild(Input.area);
+			Input.inputContainer.setPos=function (x,y){Input.inputContainer.style.left=x+'px';Input.inputContainer.style.top=y+'px';};
+		}
+
+		Input._initInput=function(input){
+			var style=input.style;
+			style.cssText="position:absolute;overflow:hidden;resize:none;z-index:999;transform-origin:0 0;-webkit-transform-origin:0 0;-moz-transform-origin:0 0;-o-transform-origin:0 0;";
+			style.resize='none';
+			style.backgroundColor='transparent';
+			style.border='none';
+			style.outline='none';
+			input.addEventListener('input',Input._processInputting);
+			input.addEventListener('mousemove',Input._stopEvent);
+			input.addEventListener('mousedown',Input._stopEvent);
+			input.addEventListener('touchmove',Input._stopEvent);
+			if(!Render.isConchApp){
+				input.setColor=function (color){input.style.color=color;};
+				input.setFontSize=function (fontSize){input.style.fontSize=fontSize+'px';};
+				input.setSize=function (w,h){input.style.width=w+'px';input.style.height=h+'px';};
+			}
+			input.setFontFace=function (fontFace){input.style.fontFamily=fontFace;};
+		}
+
+		Input._processInputting=function(e){
+			var input=laya.display.Input.inputElement.target;
+			var value=laya.display.Input.inputElement.value;
+			if (input._restrictPattern){
+				value=value.replace(input._restrictPattern,"");
+				var prevIndex=Input.inputElement.selectionStart;
+				laya.display.Input.inputElement.value=value;
+				laya.display.Input.inputElement.selectionStart=laya.display.Input.inputElement.selectionEnd=prevIndex;
+			}
+			input._text=value;
+			input.event("input");
+		}
+
+		Input._stopEvent=function(e){
+			if(e.type=='touchmove')
+				e.preventDefault();
+			e.stopPropagation && e.stopPropagation();
+		}
+
+		Input._checkBlur=function(e){
+			if (e.target !=laya.display.Input.input && e.target !=laya.display.Input.area && e.target !=Input.confirmButton){
+				laya.display.Input.inputElement.target.focus=false;
+			}
+		}
+
+		Input.input=null
+		Input.area=null
+		Input.inputElement=null
+		Input.inputContainer=null
+		Input.confirmButton=null
+		Input.promptStyleDOM=null
+		Input.inputHeight=45;
+		Input.isInputting=false;
+		__static(Input,
+		['IOS_IFRAME',function(){return this.IOS_IFRAME=(Browser.onIOS && Browser.window.top !=Browser.window.self);}
+		]);
+		return Input;
+	})(Text)
+
+
+	/**
 	*关键帧动画播放类
 	*
 	*/
@@ -31407,7 +35133,7 @@ window.Laya=(function(window,document){
 		__proto._init_=function(src){
 			this._src=src;
 			this._source=new Browser.window.Image();
-			this._source.crossOrigin="";
+			if (src.indexOf("data:image")!=0)this._source.crossOrigin="";
 			(src)&& (this._source.src=src);
 		}
 
@@ -31656,6 +35382,13 @@ window.Laya=(function(window,document){
 			uiView && this.createView(uiView);
 		}
 
+		View._regs=function(){
+			var key;
+			for (key in View.uiClassMap){
+				ClassUtils.regClass(key,View.uiClassMap[key]);
+			}
+		}
+
 		View.createComp=function(uiView,comp,view){
 			comp=comp || View.getCompInstance(uiView);
 			var child=uiView.child;
@@ -31664,8 +35397,19 @@ window.Laya=(function(window,document){
 					var node=child[i];
 					if (comp.hasOwnProperty("itemRender")&& node.props.name=="render"){
 						(comp).itemRender=node;
-						}else {
-						comp.addChild(View.createComp(node,null,view));
+					}else
+					if (node.type=="Graphic"){
+						ClassUtils.addGraphicsToSprite(node,comp);
+					}else
+					if (ClassUtils.isDrawType(node.type)){
+						ClassUtils.addGraphicToSprite(node,comp,true);
+						}else{
+						var tChild=View.createComp(node,null,view);
+						if (tChild.name=="mask"){
+							comp.mask=tChild;
+							}else{
+							comp.addChild(tChild);
+						}
 					}
 				}
 			};
@@ -31701,6 +35445,7 @@ window.Laya=(function(window,document){
 
 		View.regComponent=function(key,compClass){
 			View.uiClassMap[key]=compClass;
+			ClassUtils.regClass(key,compClass);
 		}
 
 		View.regViewRuntime=function(key,compClass){
@@ -31712,6 +35457,10 @@ window.Laya=(function(window,document){
 		__static(View,
 		['uiClassMap',function(){return this.uiClassMap={"ViewStack":ViewStack,"LinkButton":Button,"TextArea":TextArea,"ColorPicker":ColorPicker,"Box":Box,"Button":Button,"CheckBox":CheckBox,"Clip":Clip,"ComboBox":ComboBox,"Component":Component,"HScrollBar":HScrollBar,"HSlider":HSlider,"Image":Image,"Label":Label,"List":List,"Panel":Panel,"ProgressBar":ProgressBar,"Radio":Radio,"RadioGroup":RadioGroup,"ScrollBar":ScrollBar,"Slider":Slider,"Tab":Tab,"TextInput":TextInput,"View":View,"VScrollBar":VScrollBar,"VSlider":VSlider,"Tree":Tree,"HBox":HBox,"VBox":VBox};}
 		]);
+		View.__init$=function(){
+			View._regs();
+		}
+
 		return View;
 	})(Box)
 
@@ -32032,14 +35781,19 @@ window.Laya=(function(window,document){
 		*/
 		__proto.initItems=function(){
 			if (!this._itemRender){
+				this.repeatX=1;
+				var count=0;
+				count=0;
 				for (var i=0;i < 10000;i++){
 					var cell=this.getChildByName("item"+i);
 					if (cell){
 						this.addCell(cell);
+						count++;
 						continue ;
 					}
 					break ;
 				}
+				this.repeatY=count;
 			}
 		}
 
@@ -32558,7 +36312,7 @@ window.Laya=(function(window,document){
 		/**@inheritDoc */
 		__getset(0,__proto,'dataSource',_super.prototype._$get_dataSource,function(value){
 			this._dataSource=value;
-			if (((typeof value=='number')&& Math.floor(value)==value)|| (typeof value=='string'))this.selectedIndex=Laya.__parseInt(value);
+			if (((typeof value=='number')&& Math.floor(value)==value)|| (typeof value=='string'))this.selectedIndex=parseInt(value);
 			else if ((value instanceof Array))this.array=value
 			else _super.prototype._$set_dataSource.call(this,value);
 		});
@@ -33581,7 +37335,7 @@ window.Laya=(function(window,document){
 		/**@inheritDoc */
 		__getset(0,__proto,'dataSource',_super.prototype._$get_dataSource,function(value){
 			this._dataSource=value;
-			if (((typeof value=='number')&& Math.floor(value)==value)|| (typeof value=='string'))this.selectedIndex=Laya.__parseInt(value);
+			if (((typeof value=='number')&& Math.floor(value)==value)|| (typeof value=='string'))this.selectedIndex=parseInt(value);
 			else if ((value instanceof Array))this.labels=(value).join(",");
 			else _super.prototype._$set_dataSource.call(this,value);
 		});
@@ -34124,7 +37878,7 @@ window.Laya=(function(window,document){
 		__getset(0,__proto,'dataSource',_super.prototype._$get_dataSource,function(value){
 			this._dataSource=value;
 			if (((typeof value=='number')&& Math.floor(value)==value)|| (typeof value=='string')){
-				this.selectedIndex=Laya.__parseInt(value);
+				this.selectedIndex=parseInt(value);
 				}else {
 				for (var prop in this._dataSource){
 					if (this.hasOwnProperty(prop)){
@@ -34405,7 +38159,7 @@ window.Laya=(function(window,document){
 		/**@inheritDoc */
 		__proto.initialize=function(){
 			_super.prototype.initialize.call(this);
-			this._slider.isVertical=false;
+			this.slider.isVertical=false;
 		}
 
 		return HScrollBar;
@@ -35034,7 +38788,7 @@ window.Laya=(function(window,document){
 			this._src=src;
 			this._image=new Browser.window.Image();
 			this._image.crossOrigin="";
-			(src)&&(this._image.src=src);WebGLImageCube
+			(src)&& (this._image.src=src);
 			this._enableMerageInAtlas=true;
 		}
 
@@ -35227,303 +38981,33 @@ window.Laya=(function(window,document){
 	})(View)
 
 
-	//class ui.game.AreanResultViewUI extends laya.ui.View
-	var AreanResultViewUI=(function(_super){
-		function AreanResultViewUI(){
-			this.img_bg=null;
-			this.img_win_title=null;
-			this.btn_goon=null;
-			this.btn_win=null;
-			AreanResultViewUI.__super.call(this);
-		}
-
-		__class(AreanResultViewUI,'ui.game.AreanResultViewUI',_super);
-		var __proto=AreanResultViewUI.prototype;
-		__proto.createChildren=function(){
-			laya.ui.Component.prototype.createChildren.call(this);
-			this.createView(AreanResultViewUI.uiView);
-		}
-
-		__static(AreanResultViewUI,
-		['uiView',function(){return this.uiView={"type":"View","child":[{"props":{"x":0,"y":-4,"skin":"result/img_win_bg.png","var":"img_bg","name":"img_bg"},"type":"Image"},{"props":{"x":61,"y":-24,"skin":"result/img_win_Titile.png","var":"img_win_title","name":"img_win_title"},"type":"Image"},{"props":{"x":617,"y":315,"skin":"result/btn_goon.png","var":"btn_goon","name":"btn_goon","stateNum":"1"},"type":"Button"},{"props":{"x":291,"y":315,"skin":"result/btn_win.png","stateNum":"1","var":"btn_win","name":"btn_win"},"type":"Button"}],"props":{"width":1136,"height":640}};}
-		]);
-		return AreanResultViewUI;
-	})(View)
-
-
-	//class ui.game.ArenaRoleItemViewUI extends laya.ui.View
-	var ArenaRoleItemViewUI=(function(_super){
-		function ArenaRoleItemViewUI(){
-			this.imgHeaderBg=null;
-			this.imgHeader=null;
-			this.imgHeaderFg=null;
-			this.imgPin=null;
-			this.imgStar=null;
-			this.imgType=null;
-			this.hpView=null;
-			this.mpView=null;
-			ArenaRoleItemViewUI.__super.call(this);
-		}
-
-		__class(ArenaRoleItemViewUI,'ui.game.ArenaRoleItemViewUI',_super);
-		var __proto=ArenaRoleItemViewUI.prototype;
-		__proto.createChildren=function(){
-			View.viewClassMap["com.gamepark.casino.game.arena.view.ArenaRoleItemView"]=ArenaRoleItemView;
-			View.viewClassMap["ui.game.ArenaRoleHpViewUI"]=ArenaRoleHpViewUI;
-			View.viewClassMap["ui.game.ArenaRoleMpViewUI"]=ArenaRoleMpViewUI;
-			laya.ui.Component.prototype.createChildren.call(this);
-			this.createView(ArenaRoleItemViewUI.uiView);
-		}
-
-		__static(ArenaRoleItemViewUI,
-		['uiView',function(){return this.uiView={"type":"View","child":[{"props":{"x":0,"y":6,"skin":"sanguo/img_role_bg.png","var":"imgHeaderBg","name":"imgHeaderBg"},"type":"Image"},{"props":{"x":10,"y":16,"skin":"sanguo/img_role_header.png","var":"imgHeader","name":"imgHeader"},"type":"Image"},{"props":{"x":1,"y":7,"skin":"sanguo/img_role_fg.png","var":"imgHeaderFg","name":"imgHeaderFg"},"type":"Image"},{"props":{"x":49,"y":0,"skin":"sanguo/img_icon_pin.png","var":"imgPin","name":"imgPin"},"type":"Image"},{"props":{"x":5,"y":106,"skin":"sanguo/img_icon_star.png","var":"imgStar","name":"imgStar"},"type":"Image"},{"props":{"x":87,"y":94,"skin":"sanguo/img_icon_gong.png","var":"imgType","name":"imgType"},"type":"Image"},{"type":"ArenaRoleHpView","props":{"x":11,"y":129,"var":"hpView","name":"hpView","runtime":"ui.game.ArenaRoleHpViewUI"}},{"type":"ArenaRoleMpView","props":{"x":11,"y":147,"var":"mpView","name":"mpView","runtime":"ui.game.ArenaRoleMpViewUI"}}],"props":{"width":123,"height":167,"runtime":"com.gamepark.casino.game.arena.view.ArenaRoleItemView"}};}
-		]);
-		return ArenaRoleItemViewUI;
-	})(View)
-
-
-	//class ui.game.ArenaSceneUI extends laya.ui.View
-	var ArenaSceneUI=(function(_super){
-		function ArenaSceneUI(){
-			this.imgBg=null;
-			this.leftPlayerInfoView=null;
-			this.rightPlayerInfoView=null;
+	//class ui.game.ArenaFootViewUI extends laya.ui.View
+	var ArenaFootViewUI=(function(_super){
+		function ArenaFootViewUI(){
 			this.roleListView=null;
-			this.battleRoundView=null;
+			this.btn_auto=null;
 			this.btnSpeed=null;
-			ArenaSceneUI.__super.call(this);
+			this.btn_pause=null;
+			this.img_clock_bg=null;
+			this.lab_time=null;
+			this.btn_tuichu=null;
+			this.img_state_bg=null;
+			this.img_state=null;
+			ArenaFootViewUI.__super.call(this);
 		}
 
-		__class(ArenaSceneUI,'ui.game.ArenaSceneUI',_super);
-		var __proto=ArenaSceneUI.prototype;
+		__class(ArenaFootViewUI,'ui.game.ArenaFootViewUI',_super);
+		var __proto=ArenaFootViewUI.prototype;
 		__proto.createChildren=function(){
-			View.viewClassMap["ui.game.ArenaLeftPlayerViewUI"]=ArenaLeftPlayerViewUI;
-			View.viewClassMap["ui.game.ArenaRightPlayerViewUI"]=ArenaRightPlayerViewUI;
-			View.viewClassMap["ui.game.ArenaRoleListViewUI"]=ArenaRoleListViewUI;
-			View.viewClassMap["ui.game.ArenaBattleRoundViewUI"]=ArenaBattleRoundViewUI;
+			View.regComponent("ui.game.ArenaRoleListViewUI",ArenaRoleListViewUI);
 			laya.ui.Component.prototype.createChildren.call(this);
-			this.createView(ArenaSceneUI.uiView);
+			this.createView(ArenaFootViewUI.uiView);
 		}
 
-		__static(ArenaSceneUI,
-		['uiView',function(){return this.uiView={"type":"View","child":[{"props":{"x":0,"y":0,"skin":"sanguo/img_bg.jpg","var":"imgBg","name":"imgBg","visible":true},"type":"Image"},{"type":"ArenaLeftPlayerView","props":{"x":32,"y":6,"var":"leftPlayerInfoView","name":"leftPlayerInfoView","runtime":"ui.game.ArenaLeftPlayerViewUI"}},{"type":"ArenaRightPlayerView","props":{"x":613,"y":6,"var":"rightPlayerInfoView","name":"rightPlayerInfoView","runtime":"ui.game.ArenaRightPlayerViewUI"}},{"type":"ArenaRoleListView","props":{"x":118,"y":456,"var":"roleListView","name":"roleListView","runtime":"ui.game.ArenaRoleListViewUI"}},{"type":"ArenaBattleRoundView","props":{"x":484,"y":19,"var":"battleRoundView","name":"battleRoundView","runtime":"ui.game.ArenaBattleRoundViewUI"}},{"props":{"x":12,"y":348,"skin":"sanguo/btn_speed.png","label":"X1.0","stateNum":"1","var":"btnSpeed","labelFont":"微软雅黑","labelColors":"#FFFFFF","labelSize":22,"labelPadding":"-2"},"type":"Button"}],"props":{"width":1136,"height":400}};}
+		__static(ArenaFootViewUI,
+		['uiView',function(){return this.uiView={"type":"View","props":{"width":1136,"height":640},"child":[{"type":"ArenaRoleListView","props":{"y":459,"x":120,"var":"roleListView","name":"roleListView","runtime":"ui.game.ArenaRoleListViewUI"}},{"type":"Button","props":{"y":212,"x":1016,"var":"btn_auto","stateNum":"3","skin":"res/btn_auto.png","name":"btn_auto"}},{"type":"Button","props":{"y":264,"x":1039,"var":"btnSpeed","stateNum":"3","skin":"res/btn_quick_1.png","name":"btnSpeed"}},{"type":"Button","props":{"y":328,"x":1038,"var":"btn_pause","stateNum":"3","skin":"res/btn_pase.png","name":"btn_pause"}},{"type":"Image","props":{"y":190,"x":937,"var":"img_clock_bg","skin":"res/img_clock_bg.png","name":"img_clock_bg"}},{"type":"Label","props":{"y":208,"x":958,"var":"lab_time","text":"5","name":"lab_time","font":"G"}},{"type":"Button","props":{"y":86,"x":5,"var":"btn_tuichu","stateNum":"3","skin":"res/btn_tuichu.png","name":"btn_tuichu"}},{"type":"Image","props":{"y":108,"x":440,"var":"img_state_bg","skin":"res/img_spaue_bg.png"}},{"type":"Image","props":{"y":114,"x":514,"var":"img_state","skin":"res/img_zidongzhandou.png","name":"img_state"}}]};}
 		]);
-		return ArenaSceneUI;
-	})(View)
-
-
-	/**
-	*<code>BaseView</code> 是游戏主view视图类，纯显示不应包含任何逻辑。
-	*/
-	//class com.gamepark.casino.view.BaseView extends laya.ui.View
-	var BaseView=(function(_super){
-		function BaseView(){
-			this.hasInit=false;
-			this.isOpen=false;
-			this._mediator=null;
-			this.gameContext=GameContext.i;
-			BaseView.__super.call(this);
-		}
-
-		__class(BaseView,'com.gamepark.casino.view.BaseView',_super);
-		var __proto=BaseView.prototype;
-		/**
-		*<code>BaseView</code> 初始化。
-		*
-		*/
-		__proto.initialize=function(){
-			if(!this.hasInit){
-				this.onInitialize();
-				this.mediator.initialize();
-				this.hasInit=true;
-			}
-		}
-
-		/**
-		*<code>BaseView</code> 预初始化，单例下只会执行一次。
-		*
-		*/
-		__proto.onInitialize=function(){
-			this.hasInit=true;
-		}
-
-		/**
-		*通过UiService显示ui时的自动方法调用，实现类中根据逻辑需要覆盖即可。
-		*
-		*/
-		__proto.open=function(){
-			this.isOpen=true;
-			this._mediator.open();
-		}
-
-		/**
-		*<code>BaseView</code> 关闭UI。
-		*
-		*/
-		__proto.close=function(){
-			this.isOpen=false;
-			this.hasInit=false;
-			this._mediator.close();
-			this.afterClose();
-		}
-
-		/**
-		*通过UiService关闭ui后的自动方法调用，实现类中根据逻辑需要覆盖即可。
-		*
-		*/
-		__proto.afterClose=function(){}
-		// TODO Auto Generated method stub
-		__getset(0,__proto,'mediator',function(){
-			return this._mediator;
-			},function(value){
-			this._mediator=value;
-		});
-
-		return BaseView;
-	})(View)
-
-
-	//class ui.game.ArenaBattleRoundViewUI extends laya.ui.View
-	var ArenaBattleRoundViewUI=(function(_super){
-		function ArenaBattleRoundViewUI(){
-			ArenaBattleRoundViewUI.__super.call(this);
-		}
-
-		__class(ArenaBattleRoundViewUI,'ui.game.ArenaBattleRoundViewUI',_super);
-		var __proto=ArenaBattleRoundViewUI.prototype;
-		__proto.createChildren=function(){
-			laya.ui.Component.prototype.createChildren.call(this);
-			this.createView(ArenaBattleRoundViewUI.uiView);
-		}
-
-		__static(ArenaBattleRoundViewUI,
-		['uiView',function(){return this.uiView={"type":"View","child":[{"props":{"x":0,"y":36,"text":"1/20","font":"R","align":"center","width":165,"height":59},"type":"Label"},{"props":{"x":45,"y":0,"skin":"sanguo/img_limit_max_round.png"},"type":"Image"}],"props":{"width":165,"height":95}};}
-		]);
-		return ArenaBattleRoundViewUI;
-	})(View)
-
-
-	//class ui.game.ArenaLeftPlayerViewUI extends laya.ui.View
-	var ArenaLeftPlayerViewUI=(function(_super){
-		function ArenaLeftPlayerViewUI(){
-			this.imgPlayerHeader=null;
-			this.imgPlayerHeaderFg=null;
-			this.imgPlayerHpBg=null;
-			this.imgPlayerHp=null;
-			this.lbName=null;
-			this.lbFirstAttack=null;
-			ArenaLeftPlayerViewUI.__super.call(this);
-		}
-
-		__class(ArenaLeftPlayerViewUI,'ui.game.ArenaLeftPlayerViewUI',_super);
-		var __proto=ArenaLeftPlayerViewUI.prototype;
-		__proto.createChildren=function(){
-			laya.ui.Component.prototype.createChildren.call(this);
-			this.createView(ArenaLeftPlayerViewUI.uiView);
-		}
-
-		__static(ArenaLeftPlayerViewUI,
-		['uiView',function(){return this.uiView={"type":"View","child":[{"props":{"x":0,"y":0,"skin":"sanguo/img_header_top.png","var":"imgPlayerHeader","name":"imgPlayerHeader"},"type":"Image"},{"props":{"x":3,"y":0,"skin":"sanguo/img_header_1.png","var":"imgPlayerHeaderFg","name":"imgPlayerHeaderFg"},"type":"Image"},{"props":{"x":160,"y":16,"skin":"sanguo/img_player_hp_bg_left.png","var":"imgPlayerHpBg","name":"imgPlayerHpBg"},"type":"Image"},{"props":{"x":174,"y":16,"skin":"sanguo/img_player_hp.png","var":"imgPlayerHp","name":"imgPlayerHp"},"type":"Image"},{"props":{"x":147,"y":40,"text":"玩家名字七个字","font":"微软雅黑","color":"#ffffff","fontSize":22,"width":154,"height":22,"stroke":2,"var":"lbName","name":"lbName"},"type":"Label"},{"props":{"x":333,"y":39,"text":"先手值：4000","font":"微软雅黑","color":"#ffffff","fontSize":21,"width":154,"height":22,"stroke":2,"var":"lbFirstAttack","name":"lbFirstAttack"},"type":"Label"}],"props":{"width":487,"height":65}};}
-		]);
-		return ArenaLeftPlayerViewUI;
-	})(View)
-
-
-	//class ui.game.ArenaRightPlayerViewUI extends laya.ui.View
-	var ArenaRightPlayerViewUI=(function(_super){
-		function ArenaRightPlayerViewUI(){
-			this.imgPlayerHpBg=null;
-			this.imgPlayerHp=null;
-			this.imgPlayerHeader=null;
-			this.imgPlayerHeaderFg=null;
-			this.lbName=null;
-			this.lbFirstAttack=null;
-			ArenaRightPlayerViewUI.__super.call(this);
-		}
-
-		__class(ArenaRightPlayerViewUI,'ui.game.ArenaRightPlayerViewUI',_super);
-		var __proto=ArenaRightPlayerViewUI.prototype;
-		__proto.createChildren=function(){
-			laya.ui.Component.prototype.createChildren.call(this);
-			this.createView(ArenaRightPlayerViewUI.uiView);
-		}
-
-		__static(ArenaRightPlayerViewUI,
-		['uiView',function(){return this.uiView={"type":"View","child":[{"props":{"x":0,"y":16,"skin":"sanguo/img_player_hp_bg_right.png","var":"imgPlayerHpBg","name":"imgPlayerHpBg"},"type":"Image"},{"props":{"x":6,"y":16,"skin":"sanguo/img_player_hp.png","var":"imgPlayerHp","name":"imgPlayerHp"},"type":"Image"},{"props":{"x":351,"y":0,"skin":"sanguo/img_header_top.png","var":"imgPlayerHeader","name":"imgPlayerHeader","visible":true},"type":"Image"},{"props":{"x":354,"y":0,"skin":"sanguo/img_header_1.png","var":"imgPlayerHeaderFg","name":"imgPlayerHeaderFg"},"type":"Image"},{"props":{"x":183,"y":40,"text":"玩家名字七个字","font":"微软雅黑","color":"#ffffff","fontSize":22,"width":154,"height":22,"stroke":2,"var":"lbName","name":"lbName"},"type":"Label"},{"props":{"x":19,"y":39,"text":"先手值：4000","font":"微软雅黑","color":"#ffffff","fontSize":21,"width":154,"height":22,"stroke":2,"var":"lbFirstAttack","name":"lbFirstAttack"},"type":"Label"}],"props":{"width":487,"height":66}};}
-		]);
-		return ArenaRightPlayerViewUI;
-	})(View)
-
-
-	//class ui.game.ArenaRoleHpViewUI extends laya.ui.View
-	var ArenaRoleHpViewUI=(function(_super){
-		function ArenaRoleHpViewUI(){
-			this.imgBg=null;
-			this.imgHp=null;
-			ArenaRoleHpViewUI.__super.call(this);
-		}
-
-		__class(ArenaRoleHpViewUI,'ui.game.ArenaRoleHpViewUI',_super);
-		var __proto=ArenaRoleHpViewUI.prototype;
-		__proto.createChildren=function(){
-			laya.ui.Component.prototype.createChildren.call(this);
-			this.createView(ArenaRoleHpViewUI.uiView);
-		}
-
-		__static(ArenaRoleHpViewUI,
-		['uiView',function(){return this.uiView={"type":"View","child":[{"props":{"x":0,"y":0,"skin":"sanguo/img_role_hp_mp_bg.png","var":"imgBg","name":"imgBg"},"type":"Image"},{"props":{"x":5,"y":5,"skin":"sanguo/img_role_hp.png","var":"imgHp","name":"imgHp"},"type":"Image"}],"props":{"width":102,"height":20}};}
-		]);
-		return ArenaRoleHpViewUI;
-	})(View)
-
-
-	//class ui.game.ArenaRoleListViewUI extends laya.ui.View
-	var ArenaRoleListViewUI=(function(_super){
-		function ArenaRoleListViewUI(){
-			this.imgBg=null;
-			this.roleItemView1=null;
-			this.roleItemView2=null;
-			this.roleItemView3=null;
-			this.roleItemView4=null;
-			this.roleItemView5=null;
-			this.roleItemView6=null;
-			ArenaRoleListViewUI.__super.call(this);
-		}
-
-		__class(ArenaRoleListViewUI,'ui.game.ArenaRoleListViewUI',_super);
-		var __proto=ArenaRoleListViewUI.prototype;
-		__proto.createChildren=function(){
-			View.viewClassMap["com.gamepark.casino.game.arena.view.ArenaRoleItemView"]=ArenaRoleItemView;
-			laya.ui.Component.prototype.createChildren.call(this);
-			this.createView(ArenaRoleListViewUI.uiView);
-		}
-
-		__static(ArenaRoleListViewUI,
-		['uiView',function(){return this.uiView={"type":"View","child":[{"props":{"x":0,"y":0,"skin":"sanguo/img_role_list_bg.png","var":"imgBg","name":"imgBg"},"type":"Image"},{"type":"ArenaRoleItemView","props":{"x":40,"y":3,"var":"roleItemView1","name":"roleItemView1","runtime":"com.gamepark.casino.game.arena.view.ArenaRoleItemView"}},{"type":"ArenaRoleItemView","props":{"x":178,"y":3,"var":"roleItemView2","name":"roleItemView2","runtime":"com.gamepark.casino.game.arena.view.ArenaRoleItemView"}},{"type":"ArenaRoleItemView","props":{"x":316,"y":3,"var":"roleItemView3","name":"roleItemView3","runtime":"com.gamepark.casino.game.arena.view.ArenaRoleItemView"}},{"type":"ArenaRoleItemView","props":{"x":454,"y":3,"var":"roleItemView4","name":"roleItemView4","runtime":"com.gamepark.casino.game.arena.view.ArenaRoleItemView"}},{"type":"ArenaRoleItemView","props":{"x":592,"y":3,"var":"roleItemView5","name":"roleItemView5","runtime":"com.gamepark.casino.game.arena.view.ArenaRoleItemView"}},{"type":"ArenaRoleItemView","props":{"x":730,"y":3,"var":"roleItemView6","name":"roleItemView6","runtime":"com.gamepark.casino.game.arena.view.ArenaRoleItemView"}}],"props":{"width":600,"height":400}};}
-		]);
-		return ArenaRoleListViewUI;
-	})(View)
-
-
-	//class ui.game.ArenaRoleMpViewUI extends laya.ui.View
-	var ArenaRoleMpViewUI=(function(_super){
-		function ArenaRoleMpViewUI(){
-			this.imgBg=null;
-			this.imgMp=null;
-			ArenaRoleMpViewUI.__super.call(this);
-		}
-
-		__class(ArenaRoleMpViewUI,'ui.game.ArenaRoleMpViewUI',_super);
-		var __proto=ArenaRoleMpViewUI.prototype;
-		__proto.createChildren=function(){
-			laya.ui.Component.prototype.createChildren.call(this);
-			this.createView(ArenaRoleMpViewUI.uiView);
-		}
-
-		__static(ArenaRoleMpViewUI,
-		['uiView',function(){return this.uiView={"type":"View","child":[{"props":{"x":0,"y":0,"skin":"sanguo/img_role_hp_mp_bg.png","var":"imgBg","name":"imgBg"},"type":"Image"},{"props":{"x":5,"y":5,"skin":"sanguo/img_role_mp.png","var":"imgMp","name":"imgMp"},"type":"Image"}],"props":{"width":102,"height":20}};}
-		]);
-		return ArenaRoleMpViewUI;
+		return ArenaFootViewUI;
 	})(View)
 
 
@@ -35796,8 +39280,10 @@ window.Laya=(function(window,document){
 					DialogManager.__super.call(this);
 					this.dialogLayer=new Sprite();
 					this.modalLayer=new Sprite();
-					this.mouseEnabled=this.dialogLayer.mouseEnabled=this.modalLayer.mouseEnabled=true;
+					this.maskLayer=new Sprite();
+					this.mouseEnabled=this.dialogLayer.mouseEnabled=this.modalLayer.mouseEnabled=this.maskLayer.mouseEnabled=true;
 					this.addChild(this.dialogLayer);
+					this.addChild(this.modalLayer);
 					this._stage=Laya.stage;
 					this._stage.addChild(this);
 					this._stage.on("resize",this,this.onResize);
@@ -35811,12 +39297,11 @@ window.Laya=(function(window,document){
 				*@param e
 				*/
 				__proto.onResize=function(e){
-					var width=this.modalLayer.width=this._stage.width;
-					var height=this.modalLayer.height=this._stage.height;
-					this.modalLayer.graphics.clear();
-					this.modalLayer.graphics.alpha(UIConfig.popupBgAlpha);
-					this.modalLayer.graphics.drawRect(0,0,width,height,UIConfig.popupBgColor);
-					this.modalLayer.graphics.alpha(1 / UIConfig.popupBgAlpha);
+					var width=this.maskLayer.width=this._stage.width;
+					var height=this.maskLayer.height=this._stage.height;
+					this.maskLayer.graphics.clear();
+					this.maskLayer.graphics.drawRect(0,0,width,height,UIConfig.popupBgColor);
+					this.maskLayer.alpha=UIConfig.popupBgAlpha;
 					for (var i=this.dialogLayer.numChildren-1;i >-1;i--){
 						var item=this.dialogLayer.getChildAt(i);
 						if (item.popupCenter)this._centerDialog(item);
@@ -35853,8 +39338,8 @@ window.Laya=(function(window,document){
 					(closeOther===void 0)&& (closeOther=false);
 					if (closeOther)this.modalLayer.removeChildren();
 					if (dialog.popupCenter)this._centerDialog(dialog);
+					this.modalLayer.addChild(this.maskLayer);
 					this.modalLayer.addChild(dialog);
-					this.addChild(this.modalLayer);
 					this.event("open");
 				}
 				/**
@@ -35863,20 +39348,12 @@ window.Laya=(function(window,document){
 				*/
 				__proto.close=function(dialog){
 					dialog.removeSelf();
-					if (this.modalLayer.numChildren===0){
-						this.modalLayer.removeSelf();
+					if (this.modalLayer.numChildren < 2){
+						this.maskLayer.removeSelf();
 						}else {
-						this.showFirst();
+						this.modalLayer.setChildIndex(this.maskLayer,this.modalLayer.numChildren-2);
 					}
 					this.event("close");
-				}
-				/**
-				*@private
-				*/
-				__proto.showFirst=function(){
-					for (var i=0,n=this.modalLayer.numChildren-1;i <=n;i++){
-						(this.modalLayer.getChildAt(i)).visible=i===n;
-					}
 				}
 				/**
 				*关闭所有的对话框。
@@ -35884,7 +39361,7 @@ window.Laya=(function(window,document){
 				__proto.closeAll=function(){
 					this.dialogLayer.removeChildren();
 					this.modalLayer.removeChildren();
-					this.modalLayer.removeSelf();
+					this.maskLayer.removeSelf();
 					this.event("close");
 				}
 				return DialogManager;
@@ -35892,6 +39369,412 @@ window.Laya=(function(window,document){
 		}
 
 		return Dialog;
+	})(View)
+
+
+	//class ui.game.AreanResultViewUI extends laya.ui.View
+	var AreanResultViewUI=(function(_super){
+		function AreanResultViewUI(){
+			this.img_bg=null;
+			this.img_win_title=null;
+			this.btn_goon=null;
+			this.btn_win=null;
+			AreanResultViewUI.__super.call(this);
+		}
+
+		__class(AreanResultViewUI,'ui.game.AreanResultViewUI',_super);
+		var __proto=AreanResultViewUI.prototype;
+		__proto.createChildren=function(){
+			laya.ui.Component.prototype.createChildren.call(this);
+			this.createView(AreanResultViewUI.uiView);
+		}
+
+		__static(AreanResultViewUI,
+		['uiView',function(){return this.uiView={"type":"View","child":[{"props":{"x":0,"y":-4,"skin":"result/img_win_bg.png","var":"img_bg","name":"img_bg"},"type":"Image"},{"props":{"x":61,"y":-24,"skin":"result/img_win_Titile.png","var":"img_win_title","name":"img_win_title"},"type":"Image"},{"props":{"x":617,"y":315,"skin":"result/btn_goon.png","var":"btn_goon","name":"btn_goon","stateNum":"1"},"type":"Button"},{"props":{"x":291,"y":315,"skin":"result/btn_win.png","stateNum":"1","var":"btn_win","name":"btn_win"},"type":"Button"}],"props":{"width":1136,"height":640}};}
+		]);
+		return AreanResultViewUI;
+	})(View)
+
+
+	//class ui.game.ArenaLeftHpViewUI extends laya.ui.View
+	var ArenaLeftHpViewUI=(function(_super){
+		function ArenaLeftHpViewUI(){
+			this.img_hp_bg=null;
+			this.img_hp=null;
+			ArenaLeftHpViewUI.__super.call(this);
+		}
+
+		__class(ArenaLeftHpViewUI,'ui.game.ArenaLeftHpViewUI',_super);
+		var __proto=ArenaLeftHpViewUI.prototype;
+		__proto.createChildren=function(){
+			laya.ui.Component.prototype.createChildren.call(this);
+			this.createView(ArenaLeftHpViewUI.uiView);
+		}
+
+		__static(ArenaLeftHpViewUI,
+		['uiView',function(){return this.uiView={"type":"View","props":{"width":90,"height":7},"child":[{"type":"Image","props":{"y":0,"x":0,"var":"img_hp_bg","skin":"res/img_battle_red.png","name":"img_hp_bg"}},{"type":"Image","props":{"y":0,"x":0,"var":"img_hp","skin":"res/img_battle_green.png","name":"img_hp"}}]};}
+		]);
+		return ArenaLeftHpViewUI;
+	})(View)
+
+
+	//class ui.game.ArenaRightHpViewUI extends laya.ui.View
+	var ArenaRightHpViewUI=(function(_super){
+		function ArenaRightHpViewUI(){
+			this.img_hp_bg=null;
+			this.img_hp=null;
+			ArenaRightHpViewUI.__super.call(this);
+		}
+
+		__class(ArenaRightHpViewUI,'ui.game.ArenaRightHpViewUI',_super);
+		var __proto=ArenaRightHpViewUI.prototype;
+		__proto.createChildren=function(){
+			laya.ui.Component.prototype.createChildren.call(this);
+			this.createView(ArenaRightHpViewUI.uiView);
+		}
+
+		__static(ArenaRightHpViewUI,
+		['uiView',function(){return this.uiView={"type":"View","props":{"width":90,"height":7},"child":[{"type":"Image","props":{"y":7,"x":90,"width":90,"var":"img_hp_bg","skin":"res/img_battle_red.png","pivotY":7,"pivotX":90,"name":"img_hp_bg","height":7}},{"type":"Image","props":{"y":7,"x":90,"var":"img_hp","skin":"res/img_battle_green.png","pivotY":7,"pivotX":90,"name":"img_hp"}}]};}
+		]);
+		return ArenaRightHpViewUI;
+	})(View)
+
+
+	//class ui.game.ArenaRoleItemViewUI extends laya.ui.View
+	var ArenaRoleItemViewUI=(function(_super){
+		function ArenaRoleItemViewUI(){
+			this.img_texiao=null;
+			this.imgHeaderBg=null;
+			this.imgHeader=null;
+			this.imgHeaderFg=null;
+			this.img_head_texiao=null;
+			this.imgPin=null;
+			this.imgStar=null;
+			this.imgType=null;
+			this.hpView=null;
+			this.mpView=null;
+			this.lab_number=null;
+			this.img_die=null;
+			this.lab_jiacheng=null;
+			ArenaRoleItemViewUI.__super.call(this);
+		}
+
+		__class(ArenaRoleItemViewUI,'ui.game.ArenaRoleItemViewUI',_super);
+		var __proto=ArenaRoleItemViewUI.prototype;
+		__proto.createChildren=function(){
+			View.regComponent("com.gamepark.casino.game.arena.view.ArenaRoleItemView",ArenaRoleItemView);
+			View.regComponent("ui.game.ArenaRoleHpViewUI",ArenaRoleHpViewUI);
+			View.regComponent("ui.game.ArenaRoleMpViewUI",ArenaRoleMpViewUI);
+			laya.ui.Component.prototype.createChildren.call(this);
+			this.createView(ArenaRoleItemViewUI.uiView);
+		}
+
+		__static(ArenaRoleItemViewUI,
+		['uiView',function(){return this.uiView={"type":"View","props":{"width":126,"runtime":"com.gamepark.casino.game.arena.view.ArenaRoleItemView","height":170},"child":[{"type":"Image","props":{"y":100,"x":-2,"width":131,"var":"img_texiao","skin":"res/img_role_texiao.png","name":"img_texiao","height":105}},{"type":"Image","props":{"y":4,"x":8,"var":"imgHeaderBg","skin":"res/img_headImage_bg1.png","name":"imgHeaderBg"}},{"type":"Image","props":{"y":8,"x":12,"var":"imgHeader","skin":"res/img_role_10001.png","name":"imgHeader"}},{"type":"Image","props":{"y":5,"x":9,"var":"imgHeaderFg","skin":"res/img_headImage_bg5.png","name":"imgHeaderFg"}},{"type":"Image","props":{"y":-8,"x":-7,"var":"img_head_texiao","skin":"res/img_headImage_hight.png","name":"img_head_texiao"}},{"type":"Image","props":{"y":0,"x":49,"var":"imgPin","skin":"sanguo/img_icon_pin.png","name":"imgPin"}},{"type":"Image","props":{"y":115,"x":76,"var":"imgStar","skin":"sanguo/img_icon_star.png","name":"imgStar"}},{"type":"Image","props":{"y":94,"x":87,"var":"imgType","skin":"res/img_type_1.png","name":"imgType"}},{"type":"ArenaRoleHpView","props":{"y":136,"x":11,"var":"hpView","name":"hpView","runtime":"ui.game.ArenaRoleHpViewUI"}},{"type":"ArenaRoleMpView","props":{"y":155,"x":11,"var":"mpView","name":"mpView","runtime":"ui.game.ArenaRoleMpViewUI"}},{"type":"Label","props":{"y":41,"x":38,"var":"lab_number","text":"1","name":"lab_number","fontSize":20,"font":"F","color":"#f8f8f8","bold":true,"align":"left"}},{"type":"Image","props":{"y":20,"x":2,"var":"img_die","skin":"res/img_role_die.png","name":"img_die"}},{"type":"Label","props":{"y":-20,"x":4,"width":114,"var":"lab_jiacheng","text":"×1.5","name":"lab_jiacheng","height":18,"font":"E","align":"center"}}]};}
+		]);
+		return ArenaRoleItemViewUI;
+	})(View)
+
+
+	//class ui.game.ArenaRoleListViewUI extends laya.ui.View
+	var ArenaRoleListViewUI=(function(_super){
+		function ArenaRoleListViewUI(){
+			this.imgBg=null;
+			this.roleItemView1=null;
+			this.roleItemView2=null;
+			this.roleItemView3=null;
+			this.roleItemView4=null;
+			this.roleItemView5=null;
+			this.roleItemView6=null;
+			ArenaRoleListViewUI.__super.call(this);
+		}
+
+		__class(ArenaRoleListViewUI,'ui.game.ArenaRoleListViewUI',_super);
+		var __proto=ArenaRoleListViewUI.prototype;
+		__proto.createChildren=function(){
+			View.regComponent("com.gamepark.casino.game.arena.view.ArenaRoleItemView",ArenaRoleItemView);
+			laya.ui.Component.prototype.createChildren.call(this);
+			this.createView(ArenaRoleListViewUI.uiView);
+		}
+
+		__static(ArenaRoleListViewUI,
+		['uiView',function(){return this.uiView={"type":"View","props":{"y":0,"x":0,"width":900,"visible":true,"height":200},"child":[{"type":"Image","props":{"y":0,"x":0,"var":"imgBg","skin":"res/img_task_bg.png","name":"imgBg"}},{"type":"ArenaRoleItemView","props":{"y":3,"x":45,"width":123,"var":"roleItemView1","runtime":"com.gamepark.casino.game.arena.view.ArenaRoleItemView","name":"roleItemView1","height":167}},{"type":"ArenaRoleItemView","props":{"y":3,"x":183,"width":123,"var":"roleItemView2","runtime":"com.gamepark.casino.game.arena.view.ArenaRoleItemView","name":"roleItemView2","height":167}},{"type":"ArenaRoleItemView","props":{"y":3,"x":321,"width":123,"var":"roleItemView3","runtime":"com.gamepark.casino.game.arena.view.ArenaRoleItemView","name":"roleItemView3","height":167}},{"type":"ArenaRoleItemView","props":{"y":3,"x":459,"width":123,"var":"roleItemView4","runtime":"com.gamepark.casino.game.arena.view.ArenaRoleItemView","name":"roleItemView4","height":167}},{"type":"ArenaRoleItemView","props":{"y":3,"x":597,"width":123,"var":"roleItemView5","runtime":"com.gamepark.casino.game.arena.view.ArenaRoleItemView","name":"roleItemView5","height":167}},{"type":"ArenaRoleItemView","props":{"y":3,"x":735,"width":123,"var":"roleItemView6","runtime":"com.gamepark.casino.game.arena.view.ArenaRoleItemView","name":"roleItemView6","height":167}}]};}
+		]);
+		return ArenaRoleListViewUI;
+	})(View)
+
+
+	//class ui.game.ArenaSceneUI extends laya.ui.View
+	var ArenaSceneUI=(function(_super){
+		function ArenaSceneUI(){
+			this.imgBg=null;
+			this.img_touch_bg=null;
+			this.leftPlayerInfoView=null;
+			this.rightPlayerInfoView=null;
+			this.battleRoundView=null;
+			ArenaSceneUI.__super.call(this);
+		}
+
+		__class(ArenaSceneUI,'ui.game.ArenaSceneUI',_super);
+		var __proto=ArenaSceneUI.prototype;
+		__proto.createChildren=function(){
+			View.regComponent("ui.game.ArenaLeftPlayerViewUI",ArenaLeftPlayerViewUI);
+			View.regComponent("ui.game.ArenaRightPlayerViewUI",ArenaRightPlayerViewUI);
+			View.regComponent("ui.game.ArenaBattleRoundViewUI",ArenaBattleRoundViewUI);
+			laya.ui.Component.prototype.createChildren.call(this);
+			this.createView(ArenaSceneUI.uiView);
+		}
+
+		__static(ArenaSceneUI,
+		['uiView',function(){return this.uiView={"type":"View","props":{"width":1136,"height":640},"child":[{"type":"Image","props":{"y":0,"x":0,"visible":true,"var":"imgBg","skin":"sanguo/img_bg.jpg","name":"imgBg"}},{"type":"Image","props":{"y":0,"x":0,"skin":"res/img_bg.png"}},{"type":"Image","props":{"y":0,"x":0,"width":1136,"var":"img_touch_bg","skin":"res/img_bg_touch.png","name":"img_touch_bg","height":640}},{"type":"ArenaLeftPlayerView","props":{"y":0,"x":0,"var":"leftPlayerInfoView","name":"leftPlayerInfoView","runtime":"ui.game.ArenaLeftPlayerViewUI"}},{"type":"ArenaRightPlayerView","props":{"y":-1,"x":650,"var":"rightPlayerInfoView","name":"rightPlayerInfoView","runtime":"ui.game.ArenaRightPlayerViewUI"}},{"type":"ArenaBattleRoundView","props":{"y":19,"x":484,"var":"battleRoundView","name":"battleRoundView","runtime":"ui.game.ArenaBattleRoundViewUI"}}]};}
+		]);
+		return ArenaSceneUI;
+	})(View)
+
+
+	//class ui.game.QteHeadImageViewUI extends laya.ui.View
+	var QteHeadImageViewUI=(function(_super){
+		function QteHeadImageViewUI(){
+			this.img_head=null;
+			this.img_bg=null;
+			this.img_head_person=null;
+			QteHeadImageViewUI.__super.call(this);
+		}
+
+		__class(QteHeadImageViewUI,'ui.game.QteHeadImageViewUI',_super);
+		var __proto=QteHeadImageViewUI.prototype;
+		__proto.createChildren=function(){
+			laya.ui.Component.prototype.createChildren.call(this);
+			this.createView(QteHeadImageViewUI.uiView);
+		}
+
+		__static(QteHeadImageViewUI,
+		['uiView',function(){return this.uiView={"type":"View","props":{"width":120,"height":270},"child":[{"type":"Image","props":{"y":217,"x":61,"width":112,"var":"img_head","skin":"combo/img_qte_head_1.png","pivotY":58.5,"pivotX":58.5,"name":"img_head","height":112}},{"type":"Image","props":{"y":217,"x":61,"width":84,"var":"img_bg","skin":"combo/img_qte_head_bg1.png","pivotY":214,"pivotX":43,"name":"img_bg","height":188}},{"type":"Image","props":{"y":178,"x":22,"var":"img_head_person","skin":"combo/img_head_1.png"}}]};}
+		]);
+		return QteHeadImageViewUI;
+	})(View)
+
+
+	//class ui.game.QteViewUI extends laya.ui.View
+	var QteViewUI=(function(_super){
+		function QteViewUI(){
+			this.img_touch=null;
+			this.img_hit_bg=null;
+			this.img_hit_hlight=null;
+			this.img_hit_normal=null;
+			this.img_fight_bg=null;
+			this.img_fight_bt=null;
+			this.img_go_bg=null;
+			this.img_go=null;
+			QteViewUI.__super.call(this);
+		}
+
+		__class(QteViewUI,'ui.game.QteViewUI',_super);
+		var __proto=QteViewUI.prototype;
+		__proto.createChildren=function(){
+			laya.ui.Component.prototype.createChildren.call(this);
+			this.createView(QteViewUI.uiView);
+		}
+
+		__static(QteViewUI,
+		['uiView',function(){return this.uiView={"type":"View","props":{"width":1136,"height":640},"child":[{"type":"Image","props":{"y":0,"x":0,"var":"img_touch","skin":"combo/background.png","name":"img_touch"}},{"type":"Image","props":{"y":348,"x":572,"var":"img_hit_bg","skin":"combo/img_hit_bg.png","pivotY":261,"pivotX":261,"name":"img_hit_bg"}},{"type":"Image","props":{"y":348,"x":572,"var":"img_hit_hlight","skin":"combo/img_qte_hit_hight.png","pivotY":64,"pivotX":64,"name":"img_hit_hlight"}},{"type":"Image","props":{"y":348,"x":572,"width":128,"var":"img_hit_normal","skin":"combo/img_qte_hit_normal.png","pivotY":64,"pivotX":64,"name":"img_hit_normal","height":128}},{"type":"Image","props":{"y":290,"x":343,"var":"img_fight_bg","skin":"combo/img_fight_bg.png","name":"img_fight_bg"}},{"type":"Image","props":{"y":268,"x":426,"var":"img_fight_bt","skin":"combo/img_fight.png","name":"img_fight_bt"}},{"type":"Image","props":{"y":199,"x":0,"var":"img_go_bg","skin":"combo/img_go_bg.png","name":"img_go_bg"}},{"type":"Image","props":{"y":239,"x":554,"var":"img_go","skin":"combo/img_go.png","pivotY":71,"pivotX":124,"name":"img_go"}}]};}
+		]);
+		return QteViewUI;
+	})(View)
+
+
+	/**
+	*<code>BaseView</code> 是游戏主view视图类，纯显示不应包含任何逻辑。
+	*/
+	//class com.gamepark.casino.view.BaseView extends laya.ui.View
+	var BaseView=(function(_super){
+		function BaseView(){
+			this.hasInit=false;
+			this.isOpen=false;
+			this._mediator=null;
+			this.gameContext=GameContext.i;
+			BaseView.__super.call(this);
+		}
+
+		__class(BaseView,'com.gamepark.casino.view.BaseView',_super);
+		var __proto=BaseView.prototype;
+		/**
+		*<code>BaseView</code> 初始化。
+		*
+		*/
+		__proto.initialize=function(){
+			if(!this.hasInit){
+				this.onInitialize();
+				this.mediator.initialize();
+				this.hasInit=true;
+			}
+		}
+
+		/**
+		*<code>BaseView</code> 预初始化，单例下只会执行一次。
+		*
+		*/
+		__proto.onInitialize=function(){
+			this.hasInit=true;
+		}
+
+		/**
+		*通过UiService显示ui时的自动方法调用，实现类中根据逻辑需要覆盖即可。
+		*
+		*/
+		__proto.open=function(){
+			this.isOpen=true;
+			this._mediator.open();
+		}
+
+		/**
+		*<code>BaseView</code> 关闭UI。
+		*
+		*/
+		__proto.close=function(){
+			this.isOpen=false;
+			this.hasInit=false;
+			this._mediator.close();
+			this.afterClose();
+		}
+
+		/**
+		*通过UiService关闭ui后的自动方法调用，实现类中根据逻辑需要覆盖即可。
+		*
+		*/
+		__proto.afterClose=function(){}
+		// TODO Auto Generated method stub
+		__getset(0,__proto,'mediator',function(){
+			return this._mediator;
+			},function(value){
+			this._mediator=value;
+		});
+
+		return BaseView;
+	})(View)
+
+
+	//class ui.game.ArenaBattleRoundViewUI extends laya.ui.View
+	var ArenaBattleRoundViewUI=(function(_super){
+		function ArenaBattleRoundViewUI(){
+			this.lab_text2=null;
+			this.lab_text1=null;
+			ArenaBattleRoundViewUI.__super.call(this);
+		}
+
+		__class(ArenaBattleRoundViewUI,'ui.game.ArenaBattleRoundViewUI',_super);
+		var __proto=ArenaBattleRoundViewUI.prototype;
+		__proto.createChildren=function(){
+			laya.ui.Component.prototype.createChildren.call(this);
+			this.createView(ArenaBattleRoundViewUI.uiView);
+		}
+
+		__static(ArenaBattleRoundViewUI,
+		['uiView',function(){return this.uiView={"type":"View","props":{"width":165,"height":95},"child":[{"type":"Label","props":{"y":48,"x":51,"width":71,"var":"lab_text2","text":"1/20","name":"lab_text2","height":30,"font":"B","align":"center"}},{"type":"Label","props":{"y":-12,"x":54,"var":"lab_text1","text":"12","name":"lab_text1","font":"A"}}]};}
+		]);
+		return ArenaBattleRoundViewUI;
+	})(View)
+
+
+	//class ui.game.ArenaLeftPlayerViewUI extends laya.ui.View
+	var ArenaLeftPlayerViewUI=(function(_super){
+		function ArenaLeftPlayerViewUI(){
+			this.img_bg=null;
+			this.imgPlayerHeader=null;
+			this.imgPlayerHeaderFg=null;
+			this.imgPlayerHpBg=null;
+			this.lbName=null;
+			this.img_xianshou_bg=null;
+			this.lbFirstAttack=null;
+			this.imgPlayerHp=null;
+			ArenaLeftPlayerViewUI.__super.call(this);
+		}
+
+		__class(ArenaLeftPlayerViewUI,'ui.game.ArenaLeftPlayerViewUI',_super);
+		var __proto=ArenaLeftPlayerViewUI.prototype;
+		__proto.createChildren=function(){
+			laya.ui.Component.prototype.createChildren.call(this);
+			this.createView(ArenaLeftPlayerViewUI.uiView);
+		}
+
+		__static(ArenaLeftPlayerViewUI,
+		['uiView',function(){return this.uiView={"type":"View","props":{"width":487,"height":65},"child":[{"type":"Image","props":{"y":0,"x":0,"var":"img_bg","skin":"res/img_role_bg.png","name":"img_bg"}},{"type":"Image","props":{"y":64,"x":-1,"var":"imgPlayerHeader","skin":"res/img_role_left_bg.png","name":"imgPlayerHeader"}},{"type":"Image","props":{"y":0,"x":3,"var":"imgPlayerHeaderFg","skin":"res/img_role_left.png","name":"imgPlayerHeaderFg"}},{"type":"Image","props":{"y":26,"x":124,"var":"imgPlayerHpBg","skin":"res/img_hp_top_bg.png","name":"imgPlayerHpBg"}},{"type":"Label","props":{"y":67,"x":172,"width":154,"var":"lbName","text":"玩家名字七个字","stroke":2,"name":"lbName","height":22,"fontSize":18,"font":"汉仪粗宋简8号","color":"#ffffff","bold":false}},{"type":"Image","props":{"y":62,"x":350,"var":"img_xianshou_bg","skin":"res/img_xianshou_bg.png","name":"img_xianshou_bg"}},{"type":"Label","props":{"y":63,"x":362,"width":137,"var":"lbFirstAttack","text":"先手值：4000","stroke":2,"name":"lbFirstAttack","height":22,"fontSize":16,"font":"微软雅黑","color":"#ffffff"}},{"type":"Image","props":{"y":32,"x":130,"var":"imgPlayerHp","skin":"res/img_left_hp1.png","pivotY":0,"pivotX":0,"name":"imgPlayerHp"}}]};}
+		]);
+		return ArenaLeftPlayerViewUI;
+	})(View)
+
+
+	//class ui.game.ArenaRightPlayerViewUI extends laya.ui.View
+	var ArenaRightPlayerViewUI=(function(_super){
+		function ArenaRightPlayerViewUI(){
+			this.img_hradImage_bg=null;
+			this.imgPlayerHeaderFg=null;
+			this.imgPlayerHpBg=null;
+			this.imgPlayerHp=null;
+			this.img_xianshou=null;
+			this.lbName=null;
+			this.lbFirstAttack=null;
+			ArenaRightPlayerViewUI.__super.call(this);
+		}
+
+		__class(ArenaRightPlayerViewUI,'ui.game.ArenaRightPlayerViewUI',_super);
+		var __proto=ArenaRightPlayerViewUI.prototype;
+		__proto.createChildren=function(){
+			laya.ui.Component.prototype.createChildren.call(this);
+			this.createView(ArenaRightPlayerViewUI.uiView);
+		}
+
+		__static(ArenaRightPlayerViewUI,
+		['uiView',function(){return this.uiView={"type":"View","props":{"width":487,"height":66},"child":[{"type":"Image","props":{"y":38,"x":321,"width":324,"var":"img_hradImage_bg","skin":"res/img_role_bg.png","scaleX":-1,"pivotY":38.5,"pivotX":166.5,"name":"img_hradImage_bg","height":75}},{"type":"Image","props":{"y":0,"x":320,"var":"imgPlayerHeaderFg","skin":"res/img_role_right.png","skewX":180,"name":"imgPlayerHeaderFg"}},{"type":"Image","props":{"y":45,"x":181,"var":"imgPlayerHpBg","skin":"res/img_hp_top_bg.png","scaleX":-1,"pivotY":20,"pivotX":180,"name":"imgPlayerHpBg"}},{"type":"Image","props":{"y":31,"x":-24,"visible":true,"var":"imgPlayerHp","skin":"res/img_right_hp1.png","name":"imgPlayerHp"}},{"type":"Image","props":{"y":63,"x":486,"skin":"res/img_role_left_bg.png","scaleX":-1}},{"type":"Image","props":{"y":64,"x":4,"width":125,"var":"img_xianshou","skin":"res/img_xianshou_bg.png","height":23}},{"type":"Label","props":{"y":68,"x":156,"width":154,"var":"lbName","text":"玩家名字七个字","stroke":2,"name":"lbName","height":22,"fontSize":18,"font":"汉仪粗宋简8号黑","color":"#ffffff","align":"right"}},{"type":"Label","props":{"y":65,"x":16,"width":154,"var":"lbFirstAttack","text":"先手值：4000","stroke":2,"name":"lbFirstAttack","height":22,"fontSize":16,"font":"微软雅黑","color":"#ffffff"}}]};}
+		]);
+		return ArenaRightPlayerViewUI;
+	})(View)
+
+
+	//class ui.game.ArenaRoleHpViewUI extends laya.ui.View
+	var ArenaRoleHpViewUI=(function(_super){
+		function ArenaRoleHpViewUI(){
+			this.imgBg=null;
+			this.imgHp=null;
+			ArenaRoleHpViewUI.__super.call(this);
+		}
+
+		__class(ArenaRoleHpViewUI,'ui.game.ArenaRoleHpViewUI',_super);
+		var __proto=ArenaRoleHpViewUI.prototype;
+		__proto.createChildren=function(){
+			laya.ui.Component.prototype.createChildren.call(this);
+			this.createView(ArenaRoleHpViewUI.uiView);
+		}
+
+		__static(ArenaRoleHpViewUI,
+		['uiView',function(){return this.uiView={"type":"View","props":{"width":102,"height":20},"child":[{"type":"Image","props":{"y":0,"x":0,"var":"imgBg","skin":"res/img_role_hp_bg.png","name":"imgBg"}},{"type":"Image","props":{"y":3,"x":2,"var":"imgHp","skin":"res/img_role_hp.png","name":"imgHp"}}]};}
+		]);
+		return ArenaRoleHpViewUI;
+	})(View)
+
+
+	//class ui.game.ArenaRoleMpViewUI extends laya.ui.View
+	var ArenaRoleMpViewUI=(function(_super){
+		function ArenaRoleMpViewUI(){
+			this.imgBg=null;
+			this.img_mp_max_bg=null;
+			this.imgMp=null;
+			this.img_mp_max=null;
+			this.img_max=null;
+			ArenaRoleMpViewUI.__super.call(this);
+		}
+
+		__class(ArenaRoleMpViewUI,'ui.game.ArenaRoleMpViewUI',_super);
+		var __proto=ArenaRoleMpViewUI.prototype;
+		__proto.createChildren=function(){
+			laya.ui.Component.prototype.createChildren.call(this);
+			this.createView(ArenaRoleMpViewUI.uiView);
+		}
+
+		__static(ArenaRoleMpViewUI,
+		['uiView',function(){return this.uiView={"type":"View","props":{"width":102,"height":20},"child":[{"type":"Image","props":{"y":0,"x":0,"var":"imgBg","skin":"res/img_role_hp_bg.png","name":"imgBg"}},{"type":"Image","props":{"y":-14,"x":-15,"var":"img_mp_max_bg","skin":"res/img_mp_max_bg.png","name":"img_mp_max_bg"}},{"type":"Image","props":{"y":3,"x":2,"var":"imgMp","skin":"res/img_role_mp.png","name":"imgMp"}},{"type":"Image","props":{"y":3,"x":2,"var":"img_mp_max","skin":"res/img_mp.png","name":"img_mp_max"}},{"type":"Image","props":{"y":-1,"x":34,"var":"img_max","skin":"res/img_max.png","name":"img_max"}}]};}
+		]);
+		return ArenaRoleMpViewUI;
 	})(View)
 
 
@@ -36307,17 +40190,144 @@ window.Laya=(function(window,document){
 	*/
 	//class laya.ui.TextArea extends laya.ui.TextInput
 	var TextArea=(function(_super){
-		/**
-		*<p>创建一个新的 <code>TextArea</code> 示例。</p>
-		*@param text 文本内容字符串。
-		*/
 		function TextArea(text){
+			this._vScrollBar=null;
+			this._hScrollBar=null;
 			(text===void 0)&& (text="");
 			TextArea.__super.call(this,text);
-			this.multiline=true;
 		}
 
 		__class(TextArea,'laya.ui.TextArea',_super);
+		var __proto=TextArea.prototype;
+		__proto.destroy=function(destroyChild){
+			(destroyChild===void 0)&& (destroyChild=true);
+			_super.prototype.destroy.call(this,destroyChild);
+			this._vScrollBar && this._vScrollBar.destroy();
+			this._hScrollBar && this._hScrollBar.destroy();
+			this._vScrollBar=null;
+			this._hScrollBar=null;
+		}
+
+		__proto.initialize=function(){
+			this.width=180;
+			this.height=150;
+			this._tf.wordWrap=true;
+			this.multiline=true;
+		}
+
+		__proto.onVBarChanged=function(e){
+			if (this._tf.scrollY !=this._vScrollBar.value){
+				this._tf.scrollY=this._vScrollBar.value;
+			}
+		}
+
+		__proto.onHBarChanged=function(e){
+			if (this._tf.scrollX !=this._hScrollBar.value){
+				this._tf.scrollX=this._hScrollBar.value;
+			}
+		}
+
+		__proto.changeScroll=function(){
+			var vShow=this._vScrollBar && this._tf.maxScrollY > 0;
+			var hShow=this._hScrollBar && this._tf.maxScrollX > 0;
+			var showWidth=vShow ? this._width-this._vScrollBar.width :this._width;
+			var showHeight=hShow ? this._height-this._hScrollBar.height :this._height;
+			var padding=this._tf.padding || Styles.labelPadding;
+			this._tf.width=showWidth-padding[0]-padding[2];
+			this._tf.height=showHeight-padding[1]-padding[3];
+			if (this._vScrollBar){
+				this._vScrollBar.x=this._width-this._vScrollBar.width-padding[2];
+				this._vScrollBar.y=padding[1];
+				this._vScrollBar.height=this._height-(hShow ? this._hScrollBar.height :0)-padding[1]-padding[3];
+				this._vScrollBar.scrollSize=1;
+				this._vScrollBar.thumbPercent=showHeight / Math.max(this._tf.textHeight,showHeight);
+				this._vScrollBar.setScroll(1,this._tf.maxScrollY,this._tf.scrollY);
+				this._vScrollBar.visible=vShow;
+			}
+			if (this._hScrollBar){
+				this._hScrollBar.x=padding[0];
+				this._hScrollBar.y=this._height-this._hScrollBar.height-padding[3];
+				this._hScrollBar.width=this._width-(vShow ? this._vScrollBar.width :0)-padding[0]-padding[2];
+				this._hScrollBar.scrollSize=Math.max(showWidth *0.033,1);
+				this._hScrollBar.thumbPercent=showWidth / Math.max(this._tf.textWidth,showWidth);
+				this._hScrollBar.setScroll(0,this.maxScrollX,this.scrollX);
+				this._hScrollBar.visible=hShow;
+			}
+		}
+
+		/**滚动到某个位置*/
+		__proto.scrollTo=function(y){
+			this.commitMeasure();
+			this._tf.scrollY=y;
+		}
+
+		/**垂直滚动条实体*/
+		__getset(0,__proto,'vScrollBar',function(){
+			return this._vScrollBar;
+		});
+
+		__getset(0,__proto,'width',_super.prototype._$get_width,function(value){
+			_super.prototype._$set_width.call(this,value);
+			this.callLater(this.changeScroll);
+		});
+
+		/**水平滚动条皮肤*/
+		__getset(0,__proto,'hScrollBarSkin',function(){
+			return this._hScrollBar ? this._hScrollBar.skin :null;
+			},function(value){
+			if (this._hScrollBar==null){
+				this.addChild(this._hScrollBar=new HScrollBar());
+				this._hScrollBar.on("change",this,this.onHBarChanged);
+				this._hScrollBar.mouseWheelEnable=false;
+				this._hScrollBar.target=this._tf;
+				this.callLater(this.changeScroll);
+			}
+			this._hScrollBar.skin=value;
+		});
+
+		/**垂直滚动最大值*/
+		__getset(0,__proto,'maxScrollY',function(){
+			return this._tf.maxScrollY;
+		});
+
+		__getset(0,__proto,'height',_super.prototype._$get_height,function(value){
+			_super.prototype._$set_height.call(this,value);
+			this.callLater(this.changeScroll);
+		});
+
+		/**水平滚动最大值*/
+		__getset(0,__proto,'maxScrollX',function(){
+			return this._tf.maxScrollX;
+		});
+
+		/**垂直滚动条皮肤*/
+		__getset(0,__proto,'vScrollBarSkin',function(){
+			return this._vScrollBar ? this._vScrollBar.skin :null;
+			},function(value){
+			if (this._vScrollBar==null){
+				this.addChild(this._vScrollBar=new VScrollBar());
+				this._vScrollBar.on("change",this,this.onVBarChanged);
+				this._vScrollBar.target=this._tf;
+				this.callLater(this.changeScroll);
+			}
+			this._vScrollBar.skin=value;
+		});
+
+		/**水平滚动条实体*/
+		__getset(0,__proto,'hScrollBar',function(){
+			return this._hScrollBar;
+		});
+
+		/**垂直滚动值*/
+		__getset(0,__proto,'scrollY',function(){
+			return this._tf.scrollY;
+		});
+
+		/**水平滚动值*/
+		__getset(0,__proto,'scrollX',function(){
+			return this._tf.scrollX;
+		});
+
 		return TextArea;
 	})(TextInput)
 
@@ -36331,6 +40341,294 @@ window.Laya=(function(window,document){
 		__class(LoadingScene,'com.gamepark.casino.functions.loading.view.LoadingScene',_super);
 		return LoadingScene;
 	})(LoadingSceneUI)
+
+
+	//class com.gamepark.casino.game.arena.view.AreanFootView extends ui.game.ArenaFootViewUI
+	var AreanFootView=(function(_super){
+		function AreanFootView(){
+			AreanFootView.__super.call(this);
+			this.initUI();
+		}
+
+		__class(AreanFootView,'com.gamepark.casino.game.arena.view.AreanFootView',_super);
+		var __proto=AreanFootView.prototype;
+		__proto.initUI=function(){
+			this.img_clock_bg.visible=false;
+			this.lab_time.visible=false;
+		}
+
+		__proto.showView=function($roleInfo,$args){
+			this.roleListView["roleItemView"+($args+1)].imgStar.visible=false;
+			this.roleListView["roleItemView"+($args+1)];
+			$roleInfo
+			for (var i=0;i < $roleInfo.star;i++){
+				var imgStars=new Image("res/img_star_bg.png")
+				imgStars.pos(this.roleListView["roleItemView"+($args+1)].imgStar.x-i *10,
+				this.roleListView["roleItemView"+($args+1)].imgStar.y)
+				this.roleListView["roleItemView"+($args+1)].addChild(imgStars);
+			}
+			if ($roleInfo.quality <=1){
+				var imgQuality1=new Image("res/img_star_0.png");
+				imgQuality1.pos(this.roleListView["roleItemView"+($args+1)].imgPin.x,
+				this.roleListView["roleItemView"+($args+1)].imgPin.y)
+				this.roleListView["roleItemView"+($args+1)].addChild(imgQuality1);
+				this.roleListView["roleItemView"+($args+1)].imgHeaderFg.skin="res/img_headImage_bg0.png"
+			}
+			else if($roleInfo.quality > 1 && $roleInfo.quality<=4){
+				this.roleListView["roleItemView"+($args+1)].imgHeaderFg.skin="res/img_headImage_bg1.png"
+				if (($roleInfo.quality-1)==1){
+					var imgQuality2=new Image("res/img_star_1.png");
+					imgQuality2.pos(this.roleListView["roleItemView"+($args+1)].imgPin.x,
+					this.roleListView["roleItemView"+($args+1)].imgPin.y)
+					this.roleListView["roleItemView"+($args+1)].addChild(imgQuality2);
+				}
+				else if(($roleInfo.quality-1)==2){
+					for (var j=0;j < 2;j++){
+						var imgQuality=new Image("res/img_star_1.png");
+						if (j<1){
+							imgQuality.x=this.roleListView["roleItemView"+($args+1)].imgPin.x-8;
+						}
+						else{
+							imgQuality.x=this.roleListView["roleItemView"+($args+1)].imgPin.x+8;
+						}
+						imgQuality.y=this.roleListView["roleItemView"+($args+1)].imgPin.y;
+						this.roleListView["roleItemView"+($args+1)].addChild(imgQuality);
+					}
+				}
+				else if(($roleInfo.quality-1)==3){
+					for (var a=0;a < 3;a++){
+						var imgQuality2q=new Image("res/img_star_1.png");
+						imgQuality2q.pos(this.roleListView["roleItemView"+($args+1)].imgPin.x+(a-1)*15,
+						this.roleListView["roleItemView"+($args+1)].imgPin.y)
+						this.roleListView["roleItemView"+($args+1)].addChild(imgQuality2q);
+					}
+				}
+			}
+			else if($roleInfo.quality > 4 && $roleInfo.quality<=8){
+				if (($roleInfo.quality-4)==1){
+					var imgQuality3=new Image("res/img_star_2.png");
+					imgQuality3.pos(this.roleListView["roleItemView"+($args+1)].imgPin.x,
+					this.roleListView["roleItemView"+($args+1)].imgPin.y)
+					this.roleListView["roleItemView"+($args+1)].addChild(imgQuality3);
+				}
+				else if(($roleInfo.quality-4)==2){
+					for (var c=0;c < 2;c++){
+						var imgQualityc=new Image("res/img_star_2.png");
+						if (c<1){
+							imgQualityc.x=this.roleListView["roleItemView"+($args+1)].imgPin.x-8;
+						}
+						else{
+							imgQualityc.x=this.roleListView["roleItemView"+($args+1)].imgPin.x+8;
+						}
+						imgQualityc.y=this.roleListView["roleItemView"+($args+1)].imgPin.y;
+						this.roleListView["roleItemView"+($args+1)].addChild(imgQualityc);
+					}
+				}
+				else if(($roleInfo.quality-4)==3){
+					for (var d=0;d < 3;d++){
+						var imgQualityd=new Image("res/img_star_2.png");
+						imgQualityd.pos(this.roleListView["roleItemView"+($args+1)].imgPin.x+(d-1)*15,
+						this.roleListView["roleItemView"+($args+1)].imgPin.y)
+						this.roleListView["roleItemView"+($args+1)].addChild(imgQualityd);
+					}
+				}
+				else if(($roleInfo.quality-4)==4){
+					for (var e=0;d < 4;d++){
+						var imgQualitye=new Image("res/img_star_2.png");
+						if (e<2){
+							imgQualitye.x=this.roleListView["roleItemView"+($args+1)].imgPin.x+(e-1)*15-8;
+						}
+						else{
+							imgQualitye.x=this.roleListView["roleItemView"+($args+1)].imgPin.x+(e-2)*15+8;
+						}
+						imgQualitye.y=this.roleListView["roleItemView"+($args+1)].imgPin.y;
+						this.roleListView["roleItemView"+($args+1)].addChild(imgQualitye);
+					}
+				}
+				this.roleListView["roleItemView"+($args+1)].imgHeaderFg.skin="res/img_headImage_bg2.png"
+			}
+			else if($roleInfo.quality > 8 && $roleInfo.quality<=13){
+				if (($roleInfo.quality-8)==1){
+					var imgQuality4=new Image("res/img_star_3.png");
+					imgQuality4.pos(this.roleListView["roleItemView"+($args+1)].imgPin.x,
+					this.roleListView["roleItemView"+($args+1)].imgPin.y)
+					this.roleListView["roleItemView"+($args+1)].addChild(imgQuality4);
+				}
+				else if(($roleInfo.quality-8)==2){
+					for (var q=0;q < 2;q++){
+						var imgQualityq=new Image("res/img_star_3.png");
+						if (q<1){
+							imgQualityq.x=this.roleListView["roleItemView"+($args+1)].imgPin.x-8;
+						}
+						else{
+							imgQualityq.x=this.roleListView["roleItemView"+($args+1)].imgPin.x+8;
+						}
+						imgQualityq.y=this.roleListView["roleItemView"+($args+1)].imgPin.y;
+						this.roleListView["roleItemView"+($args+1)].addChild(imgQualityq);
+					}
+				}
+				else if(($roleInfo.quality-8)==3){
+					for (var w=0;w < 3;w++){
+						var imgQualityw=new Image("res/img_star_3.png");
+						imgQualityw.pos(this.roleListView["roleItemView"+($args+1)].imgPin.x+(w-1)*15,
+						this.roleListView["roleItemView"+($args+1)].imgPin.y)
+						this.roleListView["roleItemView"+($args+1)].addChild(imgQualityw);
+					}
+				}
+				else if(($roleInfo.quality-8)==4){
+					for (var r=0;r < 4;r++){
+						var imgQualityr=new Image("res/img_star_3.png");
+						if (r<2){
+							imgQualityr.x=this.roleListView["roleItemView"+($args+1)].imgPin.x+(r-1)*15-8;
+						}
+						else{
+							imgQualityr.x=this.roleListView["roleItemView"+($args+1)].imgPin.x+(r-2)*15+8;
+						}
+						imgQualityr.y=this.roleListView["roleItemView"+($args+1)].imgPin.y;
+						this.roleListView["roleItemView"+($args+1)].addChild(imgQualityr);
+					}
+				}
+				else if(($roleInfo.quality-8)==5){
+					for (var t=0;t < 4;t++){
+						var imgQualityt=new Image("res/img_star_3.png");
+						imgQualityt.pos(this.roleListView["roleItemView"+($args+1)].imgPin.x+(t-2)*15,
+						this.roleListView["roleItemView"+($args+1)].imgPin.y)
+						this.roleListView["roleItemView"+($args+1)].addChild(imgQualityt);
+					}
+				}
+				this.roleListView["roleItemView"+($args+1)].imgHeaderFg.skin="res/img_headImage_bg3.png"
+			}
+			else if($roleInfo.quality > 13 && $roleInfo.quality<=18){
+				if (($roleInfo.quality-13)==1){
+					var imgQuality5=new Image("res/img_star_.png");
+					imgQuality5.pos(this.roleListView["roleItemView"+($args+1)].imgPin.x,
+					this.roleListView["roleItemView"+($args+1)].imgPin.y)
+					this.roleListView["roleItemView"+($args+1)].addChild(imgQuality5);
+				}
+				else if(($roleInfo.quality-13)==2){
+					for (var z=0;z < 2;z++){
+						var imgQualityz=new Image("res/img_star_4.png");
+						if (z<1){
+							imgQualityz.x=this.roleListView["roleItemView"+($args+1)].imgPin.x-8;
+						}
+						else{
+							imgQualityz.x=this.roleListView["roleItemView"+($args+1)].imgPin.x+8;
+						}
+						imgQualityz.y=this.roleListView["roleItemView"+($args+1)].imgPin.y;
+						this.roleListView["roleItemView"+($args+1)].addChild(imgQualityz);
+					}
+				}
+				else if(($roleInfo.quality-13)==3){
+					for (var v=0;v < 3;v++){
+						var imgQualityv=new Image("res/img_star_4.png");
+						imgQualityv.pos(this.roleListView["roleItemView"+($args+1)].imgPin.x+(v-1)*15,
+						this.roleListView["roleItemView"+($args+1)].imgPin.y)
+						this.roleListView["roleItemView"+($args+1)].addChild(imgQualityv);
+					}
+				}
+				else if(($roleInfo.quality-13)==4){
+					for (var b=0;b < 4;b++){
+						var imgQualityb=new Image("res/img_star_4.png");
+						if (b<2){
+							imgQualityb.x=this.roleListView["roleItemView"+($args+1)].imgPin.x+(b-1)*15-8;
+						}
+						else{
+							imgQualityb.x=this.roleListView["roleItemView"+($args+1)].imgPin.x+(b-2)*15+8;
+						}
+						imgQualityb.y=this.roleListView["roleItemView"+($args+1)].imgPin.y;
+						this.roleListView["roleItemView"+($args+1)].addChild(imgQualityb);
+					}
+				}
+				else if(($roleInfo.quality-13)==5){
+					for (var n=0;n < 4;n++){
+						var imgQualityn=new Image("res/img_star_4.png");
+						imgQualityn.pos(this.roleListView["roleItemView"+($args+1)].imgPin.x+(n-2)*15,
+						this.roleListView["roleItemView"+($args+1)].imgPin.y)
+						this.roleListView["roleItemView"+($args+1)].addChild(imgQualityn);
+					}
+				}
+				this.roleListView["roleItemView"+($args+1)].imgHeaderFg.skin="res/img_headImage_bg4.png"
+			}
+			else if($roleInfo.quality > 18 && $roleInfo.quality<=23){
+				if (($roleInfo.quality-18)==1){
+					var imgQuality6=new Image("res/img_star_5.png");
+					imgQuality6.pos(this.roleListView["roleItemView"+($args+1)].imgPin.x,
+					this.roleListView["roleItemView"+($args+1)].imgPin.y)
+					this.roleListView["roleItemView"+($args+1)].addChild(imgQuality6);
+				}
+				else if(($roleInfo.quality-18)==2){
+					for (var u=0;u < 2;u++){
+						var imgQualityu=new Image("res/img_star_5.png");
+						if (u<1){
+							imgQualityu.x=this.roleListView["roleItemView"+($args+1)].imgPin.x-8;
+						}
+						else{
+							imgQualityu.x=this.roleListView["roleItemView"+($args+1)].imgPin.x+8;
+						}
+						imgQualityu.y=this.roleListView["roleItemView"+($args+1)].imgPin.y;
+						this.roleListView["roleItemView"+($args+1)].addChild(imgQualityu);
+					}
+				}
+				else if(($roleInfo.quality-18)==3){
+					for (var o=0;o < 3;o++){
+						var imgQualityo=new Image("res/img_star_5.png");
+						imgQualityo.pos(this.roleListView["roleItemView"+($args+1)].imgPin.x+(o-1)*15,
+						this.roleListView["roleItemView"+($args+1)].imgPin.y)
+						this.roleListView["roleItemView"+($args+1)].addChild(imgQualityo);
+					}
+				}
+				else if(($roleInfo.quality-18)==4){
+					for (var p=0;p < 4;p++){
+						var imgQualityp=new Image("res/img_star_5.png");
+						if (p<2){
+							imgQualityp.x=this.roleListView["roleItemView"+($args+1)].imgPin.x+(p-1)*15-8;
+						}
+						else{
+							imgQualityp.x=this.roleListView["roleItemView"+($args+1)].imgPin.x+(p-2)*15+8;
+						}
+						imgQualityp.y=this.roleListView["roleItemView"+($args+1)].imgPin.y;
+						this.roleListView["roleItemView"+($args+1)].addChild(imgQualityp);
+					}
+				}
+				else if(($roleInfo.quality-18)==5){
+					for (var l=0;l < 4;l++){
+						var imgQualityl=new Image("res/img_star_5.png");
+						imgQualityl.pos(this.roleListView["roleItemView"+($args+1)].imgPin.x+(l-2)*15,
+						this.roleListView["roleItemView"+($args+1)].imgPin.y)
+						this.roleListView["roleItemView"+($args+1)].addChild(imgQualityl);
+					}
+				}
+				this.roleListView["roleItemView"+($args+1)].imgHeaderFg.skin="res/img_headImage_bg5.png"
+			}
+			this.roleListView["roleItemView"+($args+1)].imgPin.visible=false;
+		}
+
+		return AreanFootView;
+	})(ArenaFootViewUI)
+
+
+	//class ui.game.MultyViewUI extends laya.ui.Dialog
+	var MultyViewUI=(function(_super){
+		function MultyViewUI(){
+			this.img_hit=null;
+			this.multyText=null;
+			this.lab_total_damge=null;
+			this.lab_total_bg=null;
+			MultyViewUI.__super.call(this);
+		}
+
+		__class(MultyViewUI,'ui.game.MultyViewUI',_super);
+		var __proto=MultyViewUI.prototype;
+		__proto.createChildren=function(){
+			laya.ui.Component.prototype.createChildren.call(this);
+			this.createView(MultyViewUI.uiView);
+		}
+
+		__static(MultyViewUI,
+		['uiView',function(){return this.uiView={"type":"Dialog","props":{"width":324,"height":214},"child":[{"type":"Image","props":{"y":56,"x":49,"skin":"res/img_hit_bg.png"}},{"type":"Image","props":{"y":73,"x":145,"var":"img_hit","skin":"res/img_hit.png","name":"img_hit"}},{"type":"Label","props":{"y":66,"x":72,"width":77,"var":"multyText","text":"13","name":"multyText","height":49,"font":"D","align":"center"}},{"type":"Label","props":{"y":121,"x":59,"width":81,"var":"lab_total_damge","text":"12000","name":"lab_total_damge","height":28,"font":"C"}},{"type":"Label","props":{"y":122,"x":151,"width":60,"var":"lab_total_bg","text":"总伤害","name":"lab_total_bg","height":16,"fontSize":20,"color":"#ffffff"}}]};}
+		]);
+		return MultyViewUI;
+	})(Dialog)
 
 
 	//class com.gamepark.casino.game.arena.view.AreanResultView extends ui.game.AreanResultViewUI
@@ -36358,15 +40656,99 @@ window.Laya=(function(window,document){
 	})(AreanResultViewUI)
 
 
+	//class com.gamepark.casino.game.arena.view.AreanRoleLeftHpView extends ui.game.ArenaLeftHpViewUI
+	var AreanRoleLeftHpView=(function(_super){
+		function AreanRoleLeftHpView(){
+			this.imgState=false;
+			this.imgHideStarNumber=0;
+			this.imgHideEndNumber=0;
+			AreanRoleLeftHpView.__super.call(this);
+			this.timer.loop(1000,this,this.hideView);
+		}
+
+		__class(AreanRoleLeftHpView,'com.gamepark.casino.game.arena.view.AreanRoleLeftHpView',_super);
+		var __proto=AreanRoleLeftHpView.prototype;
+		__proto.refreshView=function(){
+			this.imgHideStarNumber==this.imgHideEndNumber
+		}
+
+		__proto.hideView=function(){
+			if ((this.imgHideEndNumber-this.imgHideStarNumber)>=3){
+				this.visible=false;
+			}
+			this.imgHideEndNumber++;
+		}
+
+		return AreanRoleLeftHpView;
+	})(ArenaLeftHpViewUI)
+
+
+	//class com.gamepark.casino.game.arena.view.AreanRoleRightHpView extends ui.game.ArenaRightHpViewUI
+	var AreanRoleRightHpView=(function(_super){
+		function AreanRoleRightHpView(){
+			this.imgState=false;
+			this.imgHideStarNumber=0;
+			this.imgHideEndNumber=0;
+			AreanRoleRightHpView.__super.call(this);
+			this.timer.loop(1000,this,this.hideView);
+		}
+
+		__class(AreanRoleRightHpView,'com.gamepark.casino.game.arena.view.AreanRoleRightHpView',_super);
+		var __proto=AreanRoleRightHpView.prototype;
+		__proto.refreshView=function(){
+			this.imgHideStarNumber==this.imgHideEndNumber
+		}
+
+		__proto.hideView=function(){
+			if ((this.imgHideEndNumber-this.imgHideStarNumber)>=3){
+				this.visible=false;
+			}
+			this.imgHideEndNumber++;
+		}
+
+		return AreanRoleRightHpView;
+	})(ArenaRightHpViewUI)
+
+
 	//class com.gamepark.casino.game.arena.view.ArenaRoleItemView extends ui.game.ArenaRoleItemViewUI
 	var ArenaRoleItemView=(function(_super){
 		function ArenaRoleItemView(){
+			this.imgHeaderFgState=false;
+			this.imgPosState=0;
+			this.imgHeaderNumber=NaN;
 			ArenaRoleItemView.__super.call(this);
+			this.initUi();
 		}
 
 		__class(ArenaRoleItemView,'com.gamepark.casino.game.arena.view.ArenaRoleItemView',_super);
 		var __proto=ArenaRoleItemView.prototype;
+		__proto.initUi=function(){
+			this.lab_jiacheng.visible=false;
+			this.imgPosState=0;
+			this.img_texiao.visible=false;
+			this.img_head_texiao.visible=false;
+			this.mpView.img_max.visible=false;
+			this.mpView.img_mp_max.visible=false;
+			this.mpView.img_mp_max_bg.visible=false;
+			this.img_die.visible=false;
+			this.imgHeaderFgState=false;
+		}
+
+		//this.imgHeader.on(Event.CLICK,this,imgHeaderClickHandler);
 		__proto.refreshHP=function($mpNumber){
+			if ($mpNumber==1){
+				this.imgHeader.blendMode="light";
+				this.mpView.img_max.visible=true;
+				this.mpView.img_mp_max.visible=true;
+				this.mpView.img_mp_max_bg.visible=true;
+				this.img_head_texiao.visible=true;
+				}else{
+				this.mpView.img_max.visible=false;
+				this.mpView.img_mp_max.visible=false;
+				this.mpView.img_mp_max_bg.visible=false;
+				this.img_head_texiao.visible=false;
+				this.imgHeader.blendMode="";
+			}
 			Tween.to(this.mpView.imgMp,{
 				scaleX:$mpNumber
 			},300,null);
@@ -36377,16 +40759,73 @@ window.Laya=(function(window,document){
 				scaleX:$hpNumber
 			},300,null);
 			if ($hpNumber==0){
+				this.imgHeaderFg.visible=true;
+				this.imgHeader.blendMode="";
 				this.disabled=true;
+				this.mpView.img_max.visible=false;
+				this.mpView.img_mp_max.visible=false;
+				this.mpView.img_mp_max_bg.visible=false;
+				this.img_head_texiao.visible=false;
+				this.img_die.visible=true;
+				this.img_die.disabled=false;
+				if (this.imgPosState==2){
+					this.y+=25;
+					this.img_texiao.visible=false;
+					this.img_head_texiao.visible=false;
+					this.imgPosState=0;
+				}
 				Tween.to(this.mpView.imgMp,{
 					scaleX:0
 				},300,null);
 			}
 			else{
+				if ($mpNumber==1){
+					this.imgHeader.blendMode="light";
+					this.mpView.img_max.visible=true;
+					this.mpView.img_mp_max.visible=true;
+					this.mpView.img_mp_max_bg.visible=true;
+					this.img_head_texiao.visible=true;
+					}else{
+					this.imgHeader.blendMode="";
+					this.mpView.img_max.visible=false;
+					this.mpView.img_mp_max.visible=false;
+					this.mpView.img_mp_max_bg.visible=false;
+					this.img_head_texiao.visible=false;
+					if (this.imgPosState==2){
+						this.y+=25;
+						this.img_texiao.visible=false;
+						this.img_head_texiao.visible=false;
+						this.imgPosState=0;
+					}
+				}
 				Tween.to(this.mpView.imgMp,{
 					scaleX:$mpNumber
 				},300,null);
 			}
+		}
+
+		__proto.imgBlink=function($img){
+			if (this.imgHeaderFgState){
+				this.imgHeaderFgState=false;
+				$img.visible=false;
+				}else{
+				this.imgHeaderFgState=true;
+				$img.visible=true;
+			}
+		}
+
+		__proto.refreshPos=function(){
+			if (this.imgPosState==0){
+			}
+			else if (this.imgPosState==1){
+			}
+			else if (this.imgPosState==2){
+			}
+		}
+
+		__proto.imgHeaderClickHandler=function(){
+			console.log("1111");
+			console.log("imgHeaderNumber==",this.imgHeaderNumber)
 		}
 
 		return ArenaRoleItemView;
@@ -36398,35 +40837,416 @@ window.Laya=(function(window,document){
 		function ArenaView(){
 			this.roleView=null;
 			this.effectView=null;
+			this.qteSelectView=null;
+			this.arenaFootView=null;
+			this.multyView=null;
+			this.leftHP1=null;
+			this.leftHP2=null;
+			this.leftZhezhao1Sprite=null;
+			this.leftZhezhao2Sprite=null;
+			this.rightHP1=null;
+			this.rightHP2=null;
+			this.rightZhezhao1Sprite=null;
+			this.rightZhezhao2Sprite
 			ArenaView.__super.call(this);
+			this.img_touch_bg.mouseThrough=true;
+			this.multyView=new AreanMultyView();
+			this.multyView.multyText.text="1";
+			this.multyView.pos(50,50);
+			this.multyView.visible=false;
+			this.addChild(this.multyView);
 			this.roleView=new RoleListView();
 			this.addChild(this.roleView);
 			this.effectView=new ArenaEffectView();
 			this.addChild(this.effectView);
+			this.arenaFootView=new AreanFootView();
+			this.arenaFootView.mouseThrough=true;
+			this.addChild(this.arenaFootView);
+			this.arenaFootView.img_clock_bg.visible=false;
+			this.arenaFootView.lab_time.visible=false;
+			this.arenaFootView.img_state_bg.visible=false;
+			this.arenaFootView.img_state.visible=false;
+			this.leftHP1=new Sprite();
+			this.leftHP1.loadImage("res/img_left_hp2.png");
+			this.leftHP1.pos(this.leftPlayerInfoView.imgPlayerHp.x,this.leftPlayerInfoView.imgPlayerHp.y);
+			this.leftPlayerInfoView.addChild(this.leftHP1);
+			this.leftZhezhao1Sprite=new Sprite();
+			this.leftZhezhao1Sprite.loadImage("res/img_left_hp_zhegai.png");
+			this.leftZhezhao1Sprite.visible=false;
+			this.leftHP1.mask=this.leftZhezhao1Sprite;
+			this.leftHP2=new Sprite();
+			this.leftHP2.loadImage("res/img_left_hp1.png");
+			this.leftHP2.pos(this.leftPlayerInfoView.imgPlayerHp.x,this.leftPlayerInfoView.imgPlayerHp.y);
+			this.leftPlayerInfoView.addChild(this.leftHP2);
+			this.leftZhezhao2Sprite=new Sprite();
+			this.leftZhezhao2Sprite.loadImage("res/img_left_hp_zhegai.png");
+			this.leftZhezhao2Sprite.visible=false;
+			this.leftHP2.mask=this.leftZhezhao2Sprite;
+			this.leftPlayerInfoView.imgPlayerHp.visible=false;
+			this.rightHP1=new Sprite();
+			this.rightHP1.loadImage("res/img_right_hp2.png");
+			this.rightHP1.pos(this.rightPlayerInfoView.imgPlayerHp.x,this.rightPlayerInfoView.imgPlayerHp.y);
+			this.rightPlayerInfoView.addChild(this.rightHP1);
+			this.rightZhezhao1Sprite=new Sprite();
+			this.rightZhezhao1Sprite.loadImage("res/img_right_zhegai.png");
+			this.rightHP1.mask=this.rightZhezhao1Sprite;
+			this.rightHP2=new Sprite();
+			this.rightHP2.loadImage("res/img_right_hp1.png");
+			this.rightHP2.pos(this.rightPlayerInfoView.imgPlayerHp.x,this.rightPlayerInfoView.imgPlayerHp.y);
+			this.rightPlayerInfoView.addChild(this.rightHP2);
+			this.rightZhezhao2Sprite=new Sprite();
+			this.rightZhezhao2Sprite.loadImage("res/img_right_zhegai.png");
+			this.rightHP2.mask=this.rightZhezhao2Sprite;
+			this.rightPlayerInfoView.imgPlayerHp.visible=false;
 		}
 
 		__class(ArenaView,'com.gamepark.casino.game.arena.view.ArenaView',_super);
+		var __proto=ArenaView.prototype;
+		/*
+		public function get arenaFootView():AreanFootView{
+			return this.arenaFootView as AreanFootView;
+		}
+
+		*/
+		__proto.getTargetViewByBattleTargetRoleInfo=function($targetRoleInfo){
+			return this.roleView.getTargetViewByBattleTargetRoleInfo($targetRoleInfo);
+		}
+
 		return ArenaView;
 	})(ArenaSceneUI)
 
 
-	/**
-	*<code>PopupView</code> 弹窗view视图类，所有弹窗都应继承此类，UiService对弹窗有动画操作处理。
-	*/
-	//class com.gamepark.casino.view.PopupView extends com.gamepark.casino.view.BaseView
-	var PopupView=(function(_super){
-		function PopupView(){
-			PopupView.__super.call(this);
+	//class com.gamepark.casino.game.arena.view.QteHeadImageView extends ui.game.QteHeadImageViewUI
+	var QteHeadImageView=(function(_super){
+		function QteHeadImageView(){
+			this.imgState=false;
+			this.imgDelayState=false;
+			this.updateTotalNumber=0;
+			this.updateNumber=0;
+			this.posX=NaN;
+			this.posY=NaN;
+			this.speedX=NaN;
+			this.speedY=NaN;
+			QteHeadImageView.__super.call(this);
+			this.radius
 		}
 
-		__class(PopupView,'com.gamepark.casino.view.PopupView',_super);
-		var __proto=PopupView.prototype;
-		__proto.onInitialize=function(){
-			_super.prototype.onInitialize.call(this);
+		__class(QteHeadImageView,'com.gamepark.casino.game.arena.view.QteHeadImageView',_super);
+		var __proto=QteHeadImageView.prototype;
+		__proto.initUI=function($x,$y,$totalNumber,$radius){
+			this.updateTotalNumber=$totalNumber;
+			this.posX=$x;
+			this.posY=$y;
+			this.radius=$radius;
+			if (this.img_head.x==$x){
+				this.speedX=0;
+				}else{
+				this.speedX=-(this.img_head.x-$x)/this.updateTotalNumber
+			}
+			if (this.img_head.y==$y){
+				this.speedY=0;
+			}
+			else{
+				this.speedY=(this.img_head.y-$y)/this.updateTotalNumber
+			}
 		}
 
-		return PopupView;
-	})(BaseView)
+		__proto.updateView=function(){
+			if (this.updateNumber < this.updateTotalNumber){
+				this.x+=this.speedX;
+				this.y-=this.speedY;
+			}
+			else if (this.updateNumber >=this.updateTotalNumber && this.updateNumber <=(this.updateTotalNumber+10)){
+				this.imgDelayState=true;
+				this.imgState=false;
+				this.alpha=1-(this.updateNumber-this.updateTotalNumber)*0.08
+				}else{
+				this.imgState=true;
+				this.imgDelayState=false;
+			}
+			this.updateNumber++;
+		}
+
+		__proto.clickDecide=function(){
+			var number=0;
+			if(this.imgState==true){
+				return number;
+				}else if(this.imgDelayState==true){
+				return 4;
+			};
+			var range=Math.sqrt(Math.pow ((this.updateNumber *this.speedX),2)+Math.pow((this.updateNumber *this.speedY),2))
+			if (range < this.radius *0.05){
+				number=0
+				return number
+				}else if(range < this.radius *0.20){
+				number=1
+				return number
+			}
+			else if(range < this.radius *0.40){
+				number=2
+				return number
+			}
+			else if(range < this.radius *0.80){
+				number=3
+				return number
+			}
+			else if(range < this.radius){
+				number=4
+				return number
+			}
+			return number;
+		}
+
+		return QteHeadImageView;
+	})(QteHeadImageViewUI)
+
+
+	//class com.gamepark.casino.game.arena.view.QteSelectView extends ui.game.QteViewUI
+	var QteSelectView=(function(_super){
+		function QteSelectView(){
+			this.huoPresonNumber=NaN;
+			this.showViewList=[];
+			this.randomList=[1,2,3,4,5,6];
+			this.randomSpeed=[25,35,45];
+			this.randomShowTime=[];
+			this.updateTimeNumber=0;
+			this.showComboImage=[];
+			this.comboImage=null;
+			this.QteResultList=[];
+			this.QteSpeedList=[];
+			this.qteRoleInfoList=[];
+			this.qteShowHeadViewState=false;
+			this.qteHeadViewNumber=0;
+			this.qteUpdateNumber=0;
+			this.qteHitNumber=100;
+			QteSelectView.__super.call(this);
+			this.initUI();
+			this.qteRoleInfoList=[];
+			this.showView();
+		}
+
+		__class(QteSelectView,'com.gamepark.casino.game.arena.view.QteSelectView',_super);
+		var __proto=QteSelectView.prototype;
+		__proto.showView=function(){
+			this.qteRoleInfoList=GameContext.i.arenaContext.manager.roleListLogic.attackPlayer.roleVO.getAttackRoleInfoList();
+			this.qteHeadViewNumber=0;
+		}
+
+		__proto.initUI=function(){
+			this.img_hit_hlight.visible=false
+			this.img_hit_normal.visible=false;
+			this.img_hit_bg.visible=false;
+			this.img_fight_bt.visible=true;
+			this.img_go.visible=false;
+			this.img_go_bg.visible=false;
+			this.img_touch.visible=false;
+			this.img_fight_bt.on("click",this,this.clickFightHandler);
+			this.mouseThrough=true;
+			this.comboImage=new Image();
+		}
+
+		//this.showHeadImage();
+		__proto.clickFightHandler=function(){
+			GameContext.i.arenaContext.gameMediator.touchImageState=true;
+			this.img_fight_bg.visible=false;
+			this.img_fight_bt.visible=false;
+			this.img_hit_normal.visible=true;
+			this.img_hit_bg.visible=true;
+			this.initRandom();
+			this.img_touch.visible=true
+			this.img_touch.mouseThrough=false;
+			this.img_touch.on("click",this,this.clickDecideHandler);
+			this.timer.frameLoop(1,this,this.updateAnmation,[1]);
+		}
+
+		__proto.initRandom=function(){
+			var numberTime=10;
+			var speedNumber=0;
+			for (var i=0;i <this.qteRoleInfoList.length;i++){
+				speedNumber=this.randomSpeed[Math.ceil(Math.random()*1000%3)-1];
+				this.QteSpeedList.push(speedNumber);
+				numberTime+=(speedNumber+40);
+				this.randomShowTime.push(numberTime);
+			}
+			this.randomList=[1,2,3,4,5,6];
+			this.randomSpeed=[25,35,45];
+		}
+
+		__proto.clickDecideHandler=function(){
+			var number=0;
+			if (this.showViewList.length > 0){
+				var itemHeadView=this.showViewList[0];
+				number=itemHeadView.clickDecide();
+				itemHeadView.removeSelf();
+				this.showViewList.splice(0,1);
+				this.addBuffImage(number);
+				this.QteResultList.push(number);
+			}
+		}
+
+		__proto.addBuffImage=function($args){
+			this.img_hit_hlight.visible=true;
+			switch($args){
+				case 0:
+					this.comboImage.skin="combo/img_combo_miss.png";
+					this.comboImage.pivot(this.comboImage.width*0.5,this.comboImage.height*0.5)
+					this.comboImage.pos(this.img_hit_bg.x,this.img_hit_bg.y-80);
+					this.comboImage.scale(0,0);
+					this.addChild(this.comboImage);
+					this.tweenComboImage(this.comboImage);
+					break ;
+				case 1:
+					this.comboImage.skin="combo/img_combo_bad.png";
+					this.comboImage.pivot(this.comboImage.width*0.5,this.comboImage.height*0.5)
+					this.comboImage.pos(this.img_hit_bg.x,this.img_hit_bg.y-80);
+					this.comboImage.scale(0,0);
+					this.addChild(this.comboImage);
+					this.tweenComboImage(this.comboImage);
+					this.tweenComboImage(this.comboImage);
+					this.qteHitNumber+=5;
+					break ;
+				case 2:
+					this.comboImage.skin="combo/img_combo_good.png";
+					this.comboImage.pivot(this.comboImage.width*0.5,this.comboImage.height*0.5)
+					this.comboImage.pos(this.img_hit_bg.x,this.img_hit_bg.y-80);
+					this.comboImage.scale(0,0);
+					this.comboImage.scale(0,0);
+					this.addChild(this.comboImage);
+					this.tweenComboImage(this.comboImage);
+					this.qteHitNumber+=10;
+					break ;
+				case 3:
+					this.comboImage.skin="combo/img_combo_great.png";
+					this.comboImage.pivot(this.comboImage.width*0.5,this.comboImage.height*0.5)
+					this.comboImage.pos(this.img_hit_bg.x,this.img_hit_bg.y-80);
+					this.comboImage.scale(0,0);
+					this.addChild(this.comboImage);
+					this.tweenComboImage(this.comboImage);
+					this.qteHitNumber+=15;
+					break ;
+				case 4:
+					this.comboImage.skin="combo/img_combo_perfect.png";
+					this.comboImage.pivot(this.comboImage.width*0.5,this.comboImage.height*0.5)
+					this.comboImage.pos(this.img_hit_bg.x,this.img_hit_bg.y-80);
+					this.comboImage.scale(0,0);
+					this.addChild(this.comboImage);
+					this.tweenComboImage(this.comboImage);
+					this.qteHitNumber+=20;
+					break ;
+				}
+			GameContext.i.arenaContext.gameMediator.qteRefreshHit(6-this.qteRoleInfoList.length+this.qteHeadViewNumber,this.qteHitNumber/100);
+		}
+
+		__proto.tweenComboImage=function($comboImage){
+			Tween.to($comboImage,{
+				scaleX:1.2,
+				scaleY:1.2
+			},100,null,Handler.create(this,this.changeImage,[$comboImage]));
+		}
+
+		__proto.changeImage=function($image){
+			this.img_hit_hlight.visible=false;
+			$image.frameOnce(20,this,this.removeImage,[$image]);
+		}
+
+		__proto.removeImage=function($image){
+			this.qteShowHeadViewState=false;
+			$image.removeSelf();
+		}
+
+		__proto.showHeadImage=function($args){
+			var radius=this.img_hit_bg.width*0.5;
+			var itemHeadView=new QteHeadImageView();
+			itemHeadView.pivot(itemHeadView.img_head.x,itemHeadView.img_head.y);
+			var numberPos=this.randomPos();
+			switch(numberPos){
+				case 1:
+					itemHeadView.img_bg.rotation=30;
+					itemHeadView.pos(this.img_hit_bg.x+Math.cos(Math.PI/3)*radius ,this.img_hit_bg.y-Math.sin(Math.PI/3)*radius);break ;
+				case 2:
+					itemHeadView.img_bg.rotation=60;
+					itemHeadView.pos(this.img_hit_bg.x+Math.cos(Math.PI/6)*radius ,this.img_hit_bg.y-Math.sin(Math.PI/6)*radius);
+					break ;
+				case 3:
+					itemHeadView.img_bg.rotation=90;
+					itemHeadView.pos(this.img_hit_bg.x+radius ,this.img_hit_bg.y);
+					break ;
+				case 4:
+					itemHeadView.img_bg.rotation=270;
+					itemHeadView.pos(this.img_hit_bg.x-radius ,this.img_hit_bg.y);
+					break ;
+				case 5:
+					itemHeadView.img_bg.rotation=300;
+					itemHeadView.pos(this.img_hit_bg.x-Math.cos(Math.PI/6)*radius ,this.img_hit_bg.y-Math.sin(Math.PI/6)*radius);
+					break ;
+				case 6:
+					itemHeadView.img_bg.rotation=330;
+					itemHeadView.pos(this.img_hit_bg.x-Math.cos(Math.PI/3)*radius ,this.img_hit_bg.y-Math.sin(Math.PI/3)*radius);
+					break ;
+				}
+			this.addChild(itemHeadView);
+			var posPoint=itemHeadView.fromParentPoint(new Point(this.img_hit_bg.x,this.img_hit_bg.y))
+			var speed=this.QteSpeedList[$args];
+			itemHeadView.initUI(posPoint.x,posPoint.y,speed,radius);
+			this.showViewList.push(itemHeadView);
+		}
+
+		__proto.randomPos=function(){
+			var randomNumber=0;
+			var numberPos=0
+			if (this.randomList.length>1){
+				randomNumber=Math.ceil(Math.random()*1000%this.randomList.length)-1
+				numberPos=this.randomList[randomNumber];
+				this.randomList.splice(randomNumber,1);
+				}else{
+				numberPos=this.randomList[0];
+				this.randomList=[];
+				this.randomList=[1,2,3,4,5,6];
+			}
+			return numberPos;
+		}
+
+		__proto.updateAnmation=function(){
+			if (this.qteShowHeadViewState==false && this.qteHeadViewNumber < this.qteRoleInfoList.length){
+				this.showHeadImage(this.qteHeadViewNumber);
+				this.qteHeadViewNumber++;
+				this.qteShowHeadViewState=true;
+			}
+			else if(this.qteShowHeadViewState==false && this.qteHeadViewNumber==this.qteRoleInfoList.length){
+				this.img_hit_bg.visible=false;
+				this.img_hit_normal.visible=false;
+				this.img_go.visible=true;
+				this.img_go_bg.visible=true;
+				this.img_go.scale(0,0);
+				Tween.to(this.img_go,{
+					scaleX:1,
+					scaleY:1
+				},35,null,null);
+				this.qteUpdateNumber=this.updateTimeNumber;
+				this.qteHeadViewNumber++;
+			}
+			else if(this.updateTimeNumber==this.qteUpdateNumber+45 && this.qteHeadViewNumber==this.qteRoleInfoList.length+1){
+				this.qteHeadViewNumber++;
+				GameContext.i.arenaContext.gameMediator.qteEndHandler(this.QteResultList)
+				GameContext.i.uiService.removePopup(this);
+			}
+			for (var i=0;i < this.showViewList.length;i++){
+				var itemHeadView=this.showViewList[i];
+				if(itemHeadView.imgState==true && itemHeadView.imgDelayState==false){
+					this.clickDecideHandler();
+				}
+				else if(itemHeadView.imgState==false){
+					itemHeadView.updateView();
+					}else{
+					itemHeadView.removeSelf();
+					this.showViewList.splice(i,1);
+				}
+			}
+			this.updateTimeNumber++;
+		}
+
+		return QteSelectView;
+	})(QteViewUI)
 
 
 	//class ui.game.ComboViewUI extends laya.ui.Dialog
@@ -36446,31 +41266,29 @@ window.Laya=(function(window,document){
 		}
 
 		__static(ComboViewUI,
-		['uiView',function(){return this.uiView={"type":"Dialog","child":[{"props":{"x":80,"skin":"combo/img_combo_bg.png","var":"img_multy_bg","name":"img_multy_bg","y":53,"pivotX":64.5,"pivotY":46.5},"type":"Image"},{"props":{"x":81,"y":48,"text":"X12","width":103,"height":48,"var":"lab_multy","name":"lab_multy","align":"center","font":"comboBS","pivotX":51.5,"pivotY":24},"type":"Label"},{"props":{"x":78,"y":96,"skin":"combo/img_multy.png","var":"img_multy_bg1","name":"img_multy_bg1","pivotX":77.5,"pivotY":22.5},"type":"Image"}],"props":{"width":160,"height":100,"pivotX":80,"pivotY":50,"x":0,"y":0}};}
+		['uiView',function(){return this.uiView={"type":"Dialog","child":[{"props":{"x":80,"skin":"combo/img_combo_bg.png","var":"img_multy_bg","name":"img_multy_bg","y":53,"pivotX":64.5,"pivotY":46.5},"type":"Image"},{"props":{"x":77,"y":48,"text":"X1.4","width":103,"height":48,"var":"lab_multy","name":"lab_multy","align":"center","font":"comboBS","pivotX":51.5,"pivotY":24,"scaleX":0.7,"scaleY":0.7},"type":"Label"},{"props":{"x":78,"y":96,"skin":"combo/img_multy.png","var":"img_multy_bg1","name":"img_multy_bg1","pivotX":77.5,"pivotY":22.5},"type":"Image"}],"props":{"width":160,"height":100,"pivotX":80,"pivotY":50,"x":0,"y":0}};}
 		]);
 		return ComboViewUI;
 	})(Dialog)
 
 
-	//class ui.game.MultyViewUI extends laya.ui.Dialog
-	var MultyViewUI=(function(_super){
-		function MultyViewUI(){
-			this.multyText=null;
-			MultyViewUI.__super.call(this);
+	/**
+	*<code>PopupView</code> 弹窗view视图类，所有弹窗都应继承此类，UiService对弹窗有动画操作处理。
+	*/
+	//class com.gamepark.casino.view.PopupView extends com.gamepark.casino.view.BaseView
+	var PopupView=(function(_super){
+		function PopupView(){
+			PopupView.__super.call(this);
 		}
 
-		__class(MultyViewUI,'ui.game.MultyViewUI',_super);
-		var __proto=MultyViewUI.prototype;
-		__proto.createChildren=function(){
-			laya.ui.Component.prototype.createChildren.call(this);
-			this.createView(MultyViewUI.uiView);
+		__class(PopupView,'com.gamepark.casino.view.PopupView',_super);
+		var __proto=PopupView.prototype;
+		__proto.onInitialize=function(){
+			_super.prototype.onInitialize.call(this);
 		}
 
-		__static(MultyViewUI,
-		['uiView',function(){return this.uiView={"type":"Dialog","child":[{"props":{"x":0,"y":0,"skin":"bmfont/lj_bg1.png"},"type":"Image"},{"props":{"x":148,"y":47,"skin":"bmfont/lj_bg2.png"},"type":"Image"},{"props":{"x":33,"y":49,"text":"0","width":124,"height":97,"font":"LJ","align":"center","var":"multyText","name":"multyText"},"type":"Label"}],"props":{"width":324,"height":214}};}
-		]);
-		return MultyViewUI;
-	})(Dialog)
+		return PopupView;
+	})(BaseView)
 
 
 	//class view.TestView extends ui.test.TestPageUI
@@ -36514,7 +41332,34 @@ window.Laya=(function(window,document){
 	})(TestPageUI)
 
 
-	Laya.__init([EventDispatcher,Timer,ErisGamePropertyObserver,Browser,ShaderCompile,WebGLContext,WebGLContext2D,Render,LoaderManager,WebGLFilter,Dialog,AtlasGrid,RenderTargetMAX,DrawText]);
+	//class com.gamepark.casino.game.arena.view.AreanMultyView extends ui.game.MultyViewUI
+	var AreanMultyView=(function(_super){
+		function AreanMultyView(){
+			this.hitState=0;
+			this.hitNumber=0;
+			AreanMultyView.__super.call(this);
+			this.inintUI();
+		}
+
+		__class(AreanMultyView,'com.gamepark.casino.game.arena.view.AreanMultyView',_super);
+		var __proto=AreanMultyView.prototype;
+		__proto.inintUI=function(){}
+		//this.lab_total_damge.visible=false;
+		__proto.hideView=function(){
+			this.timerOnce(30,this,this.hideHitView);
+		}
+
+		__proto.hideHitView=function(){
+			if(this.hitState!=0){
+				this.visible=false;
+			}
+		}
+
+		return AreanMultyView;
+	})(MultyViewUI)
+
+
+	Laya.__init([EventDispatcher,Timer,ShaderCompile,View,ErisGamePropertyObserver,Browser,Render,WebGLContext,WebGLContext2D,LoaderManager,WebGLFilter,Dialog,AtlasGrid,RenderTargetMAX,DrawText]);
 	new Sanguo();
 
 })(window,document,Laya);
